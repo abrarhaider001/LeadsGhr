@@ -17,7 +17,7 @@ The Email Hunter-style mode reproduces the installed extension's *page HTML matc
 2. The activity row changes from "Fetching webpage..." to "Webpage fetched". The crawler opens the approved page in a sandboxed Electron webview and scrolls it in steps.
 3. It extracts same-site URLs from homepage content. A contact-like path is matched with a regular expression to prioritize that URL in the queue.
 4. It queues the contact page first. With **Crawl homepage and contact page only** on, it stops after that page. With it off, every other unique same-site homepage URL enters the queue in discovered order. Duplicate URLs are not queued again.
-5. Each queued page is fetched and crawled one at a time. The URL table shows order, URL, type, status, and actual emails found on that page. Blocked or failed pages are marked Skipped.
+5. Each queued page is fetched and crawled one at a time. The URL table shows order, URL, type, status, an email-count chip, and an eye action. Select the eye action to open a right side panel with the page URL, type, crawl status, extraction mode, and the emails found on that page. The homepage panel also shows discovery metadata when available. Blocked or failed pages are marked Skipped.
 6. The table heading shows the unique email total across crawled pages. Publicly exposed form recipients may be included; possible script recipients are unconfirmed. Forms are never submitted.
 
 Live activity shows one changing status line with a grey dot while working and a primary blue dot for successful results. Fetching text updates to fetched when successful. The preview shows the current page when enabled in Profile > Preferences. Hiding it leaves the isolated webview mounted offscreen for crawling.

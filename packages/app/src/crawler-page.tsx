@@ -1,6 +1,7 @@
 import { createElement, useEffect, useRef, useState } from 'react'
 import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leadsghr/extract'
 import { Button, EmptyTable } from '@leadsghr/ui'
+import { MdOutlineVisibility } from 'react-icons/md'
 import type { DesktopPreferences } from '@leadsghr/schemas'
 
 type GuestView = HTMLElement & {
@@ -33,11 +34,14 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
   const [pageResults, setPageResults] = useState<PageResult[]>([])
   const [homepageUrl, setHomepageUrl] = useState('')
   const [urlRows, setUrlRows] = useState<UrlRow[]>([])
+  const [selectedUrl, setSelectedUrl] = useState<string | null>(null)
   const [formRecipients, setFormRecipients] = useState<string[]>([])
   const [possibleRecipients, setPossibleRecipients] = useState<string[]>([])
   const [formCount, setFormCount] = useState(0)
   const [activity, setActivity] = useState<Activity[]>([])
   const viewRef = useRef<GuestView | null>(null)
+  const detailCloseRef = useRef<HTMLButtonElement | null>(null)
+  const detailTriggerRef = useRef<HTMLButtonElement | null>(null)
   const runRef = useRef(0)
   const foundRef = useRef(new Set<string>())
   const linksRef = useRef(new Set<string>())
@@ -131,6 +135,7 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
     setPageResults([])
     setHomepageUrl('')
     setUrlRows([])
+    setSelectedUrl(null)
     setFormRecipients([])
     setPossibleRecipients([])
     setFormCount(0)
@@ -253,8 +258,25 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
 
   useEffect(() => () => { runRef.current++ }, [])
 
+  useEffect(() => {
+    if (!selectedUrl) return
+    detailCloseRef.current?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeDetails()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedUrl])
+
+  const closeDetails = () => {
+    setSelectedUrl(null)
+    requestAnimationFrame(() => detailTriggerRef.current?.focus())
+  }
+
   const working = phase === 'fetching' || phase === 'loading' || phase === 'crawling'
   const emailCount = new Set([...emails, ...formRecipients, ...possibleRecipients]).size
+  const selectedRow = urlRows.find((row) => row.url === selectedUrl)
+  const selectedEmails = pageResults.find((page) => page.url === selectedUrl)?.emails ?? []
   const webview = preview ? createElement('webview', { key: preview.partition, ref: (node: HTMLElement | null) => { viewRef.current = node as GuestView | null }, partition: preview.partition, className: 'la-crawler-webview', 'aria-label': 'Crawled webpage preview' }) : null
   return <div className="la-crawler">
     <div className="la-crawler-heading"><h2>Crawl public pages</h2><span className="la-crawler-badge">TEST MODE - NO SAVING</span></div>
@@ -275,7 +297,38 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
         </div>
       </section> : webview && <div className="la-crawler-hidden-preview" aria-hidden="true">{webview}</div>}
     </div>
-    <section className="la-crawler-links-section"><h3>URL queue <span>{urlRows.length} pages · {emailCount} unique emails</span></h3><div className={`la-crawler-queue-activity la-crawler-event--${activity.at(-1)?.kind ?? 'working'}`} role="status" aria-live="polite"><span className="la-crawler-dot" /><span>{activity.at(-1)?.text ?? 'Ready to crawl'}</span></div><div className={`la-crawler-table-wrap${urlRows.length ? '' : ' la-crawler-table-wrap--empty'}`}><table className="la-table la-crawler-table"><thead><tr><th>#</th><th>Page URL</th><th>Type</th><th>Status</th><th>Emails found</th></tr></thead><tbody>{urlRows.map((row, index) => { const found = pageResults.find((item) => item.url === row.url)?.emails ?? []; return <tr key={row.url}><td>{index + 1}</td><td title={row.url}><a href={row.url} target="_blank" rel="noreferrer">{row.url}</a></td><td>{row.kind}</td><td><span className={`la-crawler-queue-status la-crawler-queue-status--${row.status.toLowerCase()}`}>{row.status}</span></td><td>{found.length ? <div className="la-crawler-table-emails">{found.map((email) => <span key={email}>{email}</span>)}</div> : row.status === 'Crawled' ? 'None found' : '—'}</td></tr> })}</tbody></table>{!urlRows.length && <EmptyTable title="No pages queued" description="Enter a public homepage URL to discover pages and their email addresses." />}</div></section>
+    <section className="la-crawler-links-section">
+      <h3>URL queue <span>{urlRows.length} pages · {emailCount} unique emails</span></h3>
+      <div className={`la-crawler-queue-activity la-crawler-event--${activity.at(-1)?.kind ?? 'working'}`} role="status" aria-live="polite"><span className="la-crawler-dot" /><span>{activity.at(-1)?.text ?? 'Ready to crawl'}</span></div>
+      <div className={`la-crawler-table-wrap${urlRows.length ? '' : ' la-crawler-table-wrap--empty'}`}>
+        <table className="la-table la-crawler-table">
+          <thead><tr><th>#</th><th>Page URL</th><th>Type</th><th>Status</th><th>Emails found</th><th>Actions</th></tr></thead>
+          <tbody>{urlRows.map((row, index) => <tr key={row.url}>
+            <td>{index + 1}</td>
+            <td title={row.url}><a href={row.url} target="_blank" rel="noreferrer">{row.url}</a></td>
+            <td>{row.kind}</td>
+            <td><span className={`la-crawler-queue-status la-crawler-queue-status--${row.status.toLowerCase()}`}>{row.status}</span></td>
+            <td><span className="la-crawler-email-chip" aria-label={`${row.emails} emails found`}>{row.emails}</span></td>
+            <td><button type="button" className="la-crawler-view-button" title="View page emails" aria-label={`View emails and details for ${row.url}`} onClick={(event) => { detailTriggerRef.current = event.currentTarget; setSelectedUrl(row.url) }}><MdOutlineVisibility aria-hidden="true" /></button></td>
+          </tr>)}</tbody>
+        </table>
+        {!urlRows.length && <EmptyTable title="No pages queued" description="Enter a public homepage URL to discover pages and their email addresses." />}
+      </div>
+    </section>
+    {selectedRow && <div className="la-niche-panel-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDetails() }}>
+      <aside className="la-niche-panel la-crawler-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="crawler-detail-title">
+        <div className="la-niche-panel-heading"><div><h2 id="crawler-detail-title">Page emails</h2><p>Addresses found while crawling this public page.</p></div><button ref={detailCloseRef} type="button" className="la-niche-panel-close" aria-label="Close page details" onClick={closeDetails}>&times;</button></div>
+        <dl className="la-crawler-detail-meta">
+          <div><dt>Page URL</dt><dd><a href={selectedRow.url} target="_blank" rel="noreferrer">{selectedRow.url}</a></dd></div>
+          <div><dt>Page type</dt><dd>{selectedRow.kind}</dd></div>
+          <div><dt>Crawl status</dt><dd>{selectedRow.status}</dd></div>
+          <div><dt>Email source</dt><dd>{emailSourceRef.current === 'email-hunter' ? 'Email Hunter-style rendered HTML' : 'LeadsGhr extraction'}</dd></div>
+          {selectedRow.kind === 'Homepage' && <><div><dt>Links discovered</dt><dd>{homepageLinks.length}</dd></div>{discoveryMs !== null && <div><dt>Discovery time</dt><dd>{discoveryMs} ms</dd></div>}{contactUrl && <div><dt>Contact page</dt><dd><a href={contactUrl} target="_blank" rel="noreferrer">{contactUrl}</a></dd></div>}</>}
+        </dl>
+        <div className="la-crawler-detail-emails-heading"><h3>Emails found</h3><span className="la-crawler-email-chip">{selectedEmails.length}</span></div>
+        {selectedEmails.length ? <ol className="la-crawler-detail-emails">{selectedEmails.map((email) => <li key={email}><span>{email}</span></li>)}</ol> : <p className="la-crawler-detail-empty">{selectedRow.status === 'Crawled' ? 'No emails found on this page.' : 'No emails found yet.'}</p>}
+      </aside>
+    </div>}
   </div>
 }
 
