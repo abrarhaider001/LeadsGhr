@@ -1,0 +1,14 @@
+﻿appId: com.leadsghr.desktop
+productName: LeadsGhr
+electronDist: node_modules/electron/dist
+directories:
+  output: dist-installer
+files:
+  - out/**/*
+extraResources:
+  - from: resources/leadsghr-icon.png
+    to: icons/leadsghr-icon.png
+win:
+  icon: resources/leadsghr-icon.ico
+publish: null
+

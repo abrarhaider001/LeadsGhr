@@ -1,0 +1,26 @@
+{
+    "name": "@leadsghr/app",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "typecheck": "tsc --noEmit",
+        "build": "tsc --noEmit",
+        "lint": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@leadsghr/extract": "workspace:*",
+        "@leadsghr/schemas": "workspace:*",
+        "@leadsghr/ui": "workspace:*",
+        "react": "^19.2.0",
+        "react-icons": "^5.7.0",
+        "react-nice-avatar": "^1.5.0",
+        "read-excel-file": "^9.3.14"
+    },
+    "peerDependencies": {
+        "react": "^19.0.0"
+    }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@leadsghr/crawler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@leadsghr/platform": "workspace:*",
+    "@leadsghr/extract": "workspace:*",
+    "robots-parser": "^3.0.1"
+  }
+}

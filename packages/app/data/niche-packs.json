@@ -1,0 +1,740 @@
+{
+  "version": 1,
+  "packs": [
+    {
+      "name": "General Contractors",
+      "category": "Construction",
+      "searchTerms": [
+        "General Contractors",
+        "general contractor",
+        "commercial general contractor"
+      ],
+      "relatedServices": [
+        "construction management",
+        "design build"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "general contracting services",
+        "commercial construction projects"
+      ]
+    },
+    {
+      "name": "Electrical Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Electrical Contractors",
+        "electrical contractor",
+        "commercial electrician"
+      ],
+      "relatedServices": [
+        "electrical installation",
+        "electrical maintenance"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "licensed electrical contractor",
+        "commercial electrical services"
+      ]
+    },
+    {
+      "name": "Mechanical Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Mechanical Contractors",
+        "mechanical contractor",
+        "mechanical construction"
+      ],
+      "relatedServices": [
+        "mechanical systems",
+        "building services"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "mechanical contracting services",
+        "building mechanical systems"
+      ]
+    },
+    {
+      "name": "HVAC Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "HVAC Contractors",
+        "HVAC contractor",
+        "heating and cooling contractor"
+      ],
+      "relatedServices": [
+        "air conditioning installation",
+        "commercial HVAC"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "HVAC installation and service",
+        "heating and cooling systems"
+      ]
+    },
+    {
+      "name": "Roofing Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Roofing Contractors",
+        "roofing contractor",
+        "commercial roofer"
+      ],
+      "relatedServices": [
+        "roof replacement",
+        "roof repair"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "commercial roofing services",
+        "roof installation"
+      ]
+    },
+    {
+      "name": "Flooring Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Flooring Contractors",
+        "flooring contractor",
+        "floor installation contractor"
+      ],
+      "relatedServices": [
+        "commercial flooring",
+        "tile installation"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "floor installation services",
+        "commercial flooring projects"
+      ]
+    },
+    {
+      "name": "Painting Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Painting Contractors",
+        "painting contractor",
+        "commercial painter"
+      ],
+      "relatedServices": [
+        "exterior painting",
+        "interior painting"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "commercial painting services",
+        "professional painters"
+      ]
+    },
+    {
+      "name": "Drywall Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Drywall Contractors",
+        "drywall contractor",
+        "commercial drywall installer"
+      ],
+      "relatedServices": [
+        "drywall installation",
+        "wallboard finishing"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "drywall installation services",
+        "commercial drywall"
+      ]
+    },
+    {
+      "name": "Masonary Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Masonary Contractors",
+        "masonry contractor",
+        "brickwork contractor"
+      ],
+      "relatedServices": [
+        "stone masonry",
+        "concrete blockwork"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "masonry services",
+        "brick and stone construction"
+      ]
+    },
+    {
+      "name": "Fire Protection Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Fire Protection Contractors",
+        "fire protection contractor",
+        "fire sprinkler contractor"
+      ],
+      "relatedServices": [
+        "sprinkler installation",
+        "fire suppression"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "fire protection systems",
+        "fire sprinkler installation"
+      ]
+    },
+    {
+      "name": "Excavation Contractors",
+      "category": "Site and civil",
+      "searchTerms": [
+        "Excavation Contractors",
+        "excavation contractor",
+        "site excavation company"
+      ],
+      "relatedServices": [
+        "trenching",
+        "grading"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "excavation services",
+        "site preparation"
+      ]
+    },
+    {
+      "name": "Plumbing Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Plumbing Contractors",
+        "plumbing contractor",
+        "commercial plumber"
+      ],
+      "relatedServices": [
+        "pipe installation",
+        "plumbing maintenance"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "commercial plumbing services",
+        "licensed plumbers"
+      ]
+    },
+    {
+      "name": "Sitework & Utilities Contractors",
+      "category": "Site and civil",
+      "searchTerms": [
+        "Sitework & Utilities Contractors",
+        "sitework contractor",
+        "underground utilities contractor"
+      ],
+      "relatedServices": [
+        "utility installation",
+        "site preparation"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "sitework and utilities",
+        "underground utility services"
+      ]
+    },
+    {
+      "name": "Earthwork Contractors",
+      "category": "Site and civil",
+      "searchTerms": [
+        "Earthwork Contractors",
+        "earthwork contractor",
+        "grading contractor"
+      ],
+      "relatedServices": [
+        "land clearing",
+        "soil stabilization"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "earthwork services",
+        "site grading"
+      ]
+    },
+    {
+      "name": "Fence Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Fence Contractors",
+        "fence contractor",
+        "commercial fencing company"
+      ],
+      "relatedServices": [
+        "fence installation",
+        "security fencing"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "commercial fence installation",
+        "fencing services"
+      ]
+    },
+    {
+      "name": "Demolition Contractors",
+      "category": "Site and civil",
+      "searchTerms": [
+        "Demolition Contractors",
+        "demolition contractor",
+        "commercial demolition company"
+      ],
+      "relatedServices": [
+        "building demolition",
+        "selective demolition"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "demolition services",
+        "building removal"
+      ]
+    },
+    {
+      "name": "Insulation Contractors",
+      "category": "Building trades",
+      "searchTerms": [
+        "Insulation Contractors",
+        "insulation contractor",
+        "commercial insulation installer"
+      ],
+      "relatedServices": [
+        "thermal insulation",
+        "building insulation"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "insulation installation",
+        "commercial insulation services"
+      ]
+    },
+    {
+      "name": "Renovation Contractors",
+      "category": "Construction",
+      "searchTerms": [
+        "Renovation Contractors",
+        "renovation contractor",
+        "commercial renovation company"
+      ],
+      "relatedServices": [
+        "building renovation",
+        "tenant improvements"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "renovation services",
+        "commercial renovations"
+      ]
+    },
+    {
+      "name": "Remodeling Contractors",
+      "category": "Construction",
+      "searchTerms": [
+        "Remodeling Contractors",
+        "remodeling contractor",
+        "commercial remodeler"
+      ],
+      "relatedServices": [
+        "interior remodeling",
+        "building refurbishment"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "remodeling services",
+        "commercial remodeling"
+      ]
+    },
+    {
+      "name": "Real Estate Developer",
+      "category": "Development",
+      "searchTerms": [
+        "Real Estate Developer",
+        "real estate developer",
+        "property developer"
+      ],
+      "relatedServices": [
+        "land development",
+        "real estate projects"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "real estate development",
+        "property development projects"
+      ]
+    },
+    {
+      "name": "Commercial Real Estate Developer",
+      "category": "Development",
+      "searchTerms": [
+        "Commercial Real Estate Developer",
+        "commercial real estate developer",
+        "commercial property developer"
+      ],
+      "relatedServices": [
+        "office development",
+        "retail development"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "commercial real estate development",
+        "commercial property projects"
+      ]
+    },
+    {
+      "name": "Multi Family Housing Developer",
+      "category": "Development",
+      "searchTerms": [
+        "Multi Family Housing Developer",
+        "multifamily housing developer",
+        "apartment developer"
+      ],
+      "relatedServices": [
+        "multifamily development",
+        "apartment construction"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "multifamily housing projects",
+        "apartment development"
+      ]
+    },
+    {
+      "name": "Industrial Real Estate Developer",
+      "category": "Development",
+      "searchTerms": [
+        "Industrial Real Estate Developer",
+        "industrial real estate developer",
+        "industrial property developer"
+      ],
+      "relatedServices": [
+        "warehouse development",
+        "industrial parks"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "industrial real estate development",
+        "warehouse projects"
+      ]
+    },
+    {
+      "name": "Property Development Companies",
+      "category": "Development",
+      "searchTerms": [
+        "Property Development Companies",
+        "property development company",
+        "real estate development firm"
+      ],
+      "relatedServices": [
+        "land development",
+        "property projects"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "property development services",
+        "real estate projects"
+      ]
+    },
+    {
+      "name": "General Contractor",
+      "category": "Construction",
+      "searchTerms": [
+        "General Contractor",
+        "general contractor",
+        "construction contractor"
+      ],
+      "relatedServices": [
+        "commercial construction",
+        "construction management"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "general contracting",
+        "construction projects"
+      ]
+    },
+    {
+      "name": "Design Build Contractor",
+      "category": "Construction",
+      "searchTerms": [
+        "Design Build Contractor",
+        "design build contractor",
+        "design-build construction company"
+      ],
+      "relatedServices": [
+        "integrated design build",
+        "turnkey construction"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "design build services",
+        "turnkey projects"
+      ]
+    },
+    {
+      "name": "structural engineering firm",
+      "category": "Professional services",
+      "searchTerms": [
+        "structural engineering firm",
+        "structural engineering firm",
+        "structural engineer"
+      ],
+      "relatedServices": [
+        "structural design",
+        "building engineering"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "structural engineering services",
+        "structural design"
+      ]
+    },
+    {
+      "name": "MEP engineering",
+      "category": "Professional services",
+      "searchTerms": [
+        "MEP engineering",
+        "MEP engineering firm",
+        "mechanical electrical plumbing engineering"
+      ],
+      "relatedServices": [
+        "building systems design",
+        "MEP consulting"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "MEP engineering services",
+        "building systems engineering"
+      ]
+    },
+    {
+      "name": "Property Management Companies",
+      "category": "Property services",
+      "searchTerms": [
+        "Property Management Companies",
+        "property management company",
+        "commercial property manager"
+      ],
+      "relatedServices": [
+        "facility management",
+        "tenant services"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "property management services",
+        "managed properties"
+      ]
+    },
+    {
+      "name": "Civil Engineering Firm",
+      "category": "Professional services",
+      "searchTerms": [
+        "Civil Engineering Firm",
+        "civil engineering firm",
+        "civil engineer"
+      ],
+      "relatedServices": [
+        "site engineering",
+        "infrastructure design"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "civil engineering services",
+        "site development engineering"
+      ]
+    },
+    {
+      "name": "Land Surveyor",
+      "category": "Professional services",
+      "searchTerms": [
+        "Land Surveyor",
+        "land surveying company",
+        "licensed land surveyor"
+      ],
+      "relatedServices": [
+        "boundary survey",
+        "topographic survey"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "land surveying services",
+        "boundary surveys"
+      ]
+    },
+    {
+      "name": "Interior Designer",
+      "category": "Professional services",
+      "searchTerms": [
+        "Interior Designer",
+        "interior design firm",
+        "commercial interior designer"
+      ],
+      "relatedServices": [
+        "space planning",
+        "interior design"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "interior design services",
+        "commercial interiors"
+      ]
+    },
+    {
+      "name": "Fit Out Contractor",
+      "category": "Construction",
+      "searchTerms": [
+        "Fit Out Contractor",
+        "fit out contractor",
+        "commercial fit-out company"
+      ],
+      "relatedServices": [
+        "interior fit out",
+        "tenant fit out"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "fit out services",
+        "commercial interiors"
+      ]
+    },
+    {
+      "name": "Architecture Firms",
+      "category": "Professional services",
+      "searchTerms": [
+        "Architecture Firms",
+        "architecture firm",
+        "architectural practice"
+      ],
+      "relatedServices": [
+        "building design",
+        "architectural design"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "architectural services",
+        "building design projects"
+      ]
+    },
+    {
+      "name": "Hotel Developer",
+      "category": "Development",
+      "searchTerms": [
+        "Hotel Developer",
+        "hotel developer",
+        "hospitality property developer"
+      ],
+      "relatedServices": [
+        "hospitality development",
+        "hotel construction"
+      ],
+      "negativeKeywords": [
+        "jobs",
+        "training"
+      ],
+      "websitePhrases": [
+        "hotel development projects",
+        "hospitality real estate development"
+      ]
+    }
+  ]
+}

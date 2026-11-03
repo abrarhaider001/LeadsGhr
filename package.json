@@ -1,0 +1,21 @@
+{
+  "name": "leadsghr",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev": "pnpm --filter @leadsghr/desktop dev",
+    "dev:desktop": "pnpm --filter @leadsghr/desktop dev",
+    "build": "pnpm --filter @leadsghr/desktop build",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@types/node": "^22.10.2",
+    "png-to-ico": "^3.0.2",
+    "turbo": "^2.5.0",
+    "typescript": "^5.9.3"
+  }
+}

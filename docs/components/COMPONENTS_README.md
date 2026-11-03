@@ -1,0 +1,73 @@
+# Components and screens
+
+The Discovery tools sidebar has separate Email Filtering, Email Validation, and Email Spam Check entries with distinct icons and active states. Email Validation and Email Spam Check open dedicated placeholder pages and do not claim to perform checks yet.
+
+## Saved crawl runs and exports
+
+Crawl Results saves each filtered row to a dedicated local SQLite run, advances its saved query index after each completed search, and writes a CSV to Documents/LeadsGhr/exports at stop or completion. The run records selected niches, states, first and last selected state numbers, timestamps, and progress. Pipeline runs additionally save every queued website URL and its page status, so an interrupted run can resume unfinished pages. The CSV includes niche, run date and time (UTC), business, website, phone, location, address, Maps URL, source, and emails. A stopped run can be resumed from Pipeline, Runs, or Exports. Dashboard displays saved runs in one Latest pipelines table with export actions. Exports shows run and file history with entry counts, file sizes and paths, plus re-export actions.
+
+## Pipeline and Crawl Results
+
+The Pipeline page lists saved pipelines with a resume action for unfinished runs and a trash icon for deletion. Deletion asks for confirmation and removes the local run, its results, URL queue, and export records. Active runs must be stopped first. Existing CSV files on disk are retained.
+
+The Pipeline overview's **Create pipeline** action opens a right-side drawer matching the Add niche panel. It contains a required name field, four provider cards, and separate **Use existing** checkboxes for niches, states, and locations, with saved choice counts. Google Maps is the currently available provider. If all checked sections contain choices, **Start pipeline** begins the run. Unchecking any section changes the action to **Add pipeline** and opens the guided selection page at the first new choice. Reused sections are skipped. Unchecking states also unchecks locations, since the saved locations may not belong to the new states. The drawer closes with the close button, Escape, or backdrop click.
+
+Provider choices in the drawer are full-width rows: an SVG brand mark on the left, with the platform name and availability on the right. Google Maps uses a local multicolor SVG pin; Google, Facebook, and LinkedIn use SVG icons from the installed React icon library. The guided setup page reuses these icons and the same horizontal option layout.
+
+Google Maps now uses the local multicolor `public/google-maps-pin.svg` asset with a transparent center, matching the supplied pin reference. The other provider marks remain SVG components from the installed icon library.
+
+Pipeline appears directly below Dashboard in the sidebar. Its overview uses four cards to explain the search → queue → crawl → export flow, plus saved pipeline rows with resume and delete actions. A compact toolbar above the cards holds the Create pipeline button. **Create pipeline** opens a name field and a custom provider-card grid. Name and an available provider are required; Google Maps is available, while Google, Facebook, and LinkedIn are visibly planned. The timeline advances through Details, Niches, States, Locations, Crawl, and Export, showing a check when a step's required selection is made. Submitting a selection opens Crawl Results with the live business table, paginated results, a persistent website URL queue, preference filters and play/pause/resume/stop controls. After searching, the website stage fetches the next page while the current page is rendered, scrolled, and inspected for emails and same-site links. A completed or stopped pipeline opens a separate export confirmation showing its CSV path. New Search remains a search-only entry to the shared selection and result UI.
+
+On New Pipeline and New Search, the niche toolbar uses a clear-all list icon for clearing selected niches and a plus icon to add niches. Each has a tooltip, an accessible label, and a visible keyboard focus ring. Niche Library stays available from the sidebar; its shortcut is absent from both search entry pages.
+
+Both search entry pages use a double-check icon for Select all states and the same clear-all list icon for Clear states. Select all states is the dark rightmost action, matching Add niche; Clear states sits before it. Their tooltips and accessible labels state the action.
+
+The shared action row stays at the bottom of the New Pipeline and New Search setup workspace. During niche and state selection, its guidance remains on the left and Select locations stays on the right. On the location step, the row contains pagination and Search contractors; it remains accessible while longer lists scroll.
+
+The location step uses a compact icon-only Back control in both entry pages, with a tooltip and accessible label that explain it returns to niche and state selection.
+
+Location selection uses icon actions on both entry pages: clear-all for Clear locations and the dark double-check for Select all. By page and By number use the double-check to apply the entered range. The footer pagination uses matching previous and next chevrons while keeping numbered page buttons and the labeled Search contractors action.
+
+`packages/ui` owns the light-only design tokens, fonts, icons, buttons, cards, and dashboard CSS. `packages/app` owns the React desktop shell, splash, dashboard, and Crawler test page. The Electron preload exposes validated operations to the renderer.
+
+`EmptyTable` in `packages/ui/src/empty-table.tsx` supplies the shared inline SVG and centered title/description used when a data table has no rows. Crawler URL queue, search results, dashboard pipelines, Leads, Runs, and Exports use the same empty state. Its viewport-based minimum height keeps an empty table from collapsing to a single text row.
+
+The desktop shell has a full-wordmark sidebar, grouped neutral navigation, a Dashboard-only descriptive header and mark-only account display. The dashboard follows a metrics / trend / quick-actions / tables layout. Other pages open directly into their own content, without the shared header. Latest pipelines has a standalone heading and a table of saved crawl runs. Metric tiles use the icon-and-copy arrangement. The dashboard metrics, saved-results chart, and Latest pipelines table all use local crawl runs and export history. Saved leads and crawl runs have separate pages. The Crawler tab presents its URL form, webpage preview, extraction count, and live activity as open sections without outer cards. It opens a public webpage in a sandboxed temporary view and does not store test results. Buttons and text fields share a 12 px corner radius.
+
+The sidebar has a page search and three groups: Main (Dashboard, Pipeline), Discovery tools (Crawler, New Search, Niche Library, Email Filtering), and Workspace (Leads, Runs, Profiles, Exports, Compliance), plus a bottom Profile entry. Dashboard is the first destination. Email Filtering has input and output panels separated by an arrow. It reads local `.xlsx` and `.csv` files in the renderer, detects likely email columns, filters pasted and imported addresses, explains removals, and offers copy/CSV export. It does not perform mailbox verification. The unfinished feature pages remain clearly labeled. Use the typography and sizing in the theme guide, keyboard-visible focus, and reduced-motion behavior.
+
+The Crawler side panel lists same-site links in their document order, emails visible on the page, and contact-form recipient emails only when the public HTML explicitly exposes them. Link discovery does not visit those links. Form destinations handled on a server cannot be determined from the page; the test never submits forms or saves results.
+
+Form analysis checks mailto actions and buttons, recipient attributes, named form fields, and inline form configuration. Script-derived addresses are labeled possible and unconfirmed; the app cannot recover a recipient stored only on a server.
+
+The **New Search** page is the niche and location draft screen. Its side panel adds one niche or comma-separated niches as selectable chips. The first screen shows niches and states; after both are selected, **Select locations** opens a second screen with a back button, paginated numbered locations, and page-range and location-number range inputs. The supplied 35 niches and 50-state location list are source JSON in `packages/app/data/`. User additions and selections are stored in a validated local JSON draft through Electron IPC. The compact chips, light grey selected state with dark text, and open section layout follow the desktop theme. The Search contractors button requires at least one selected location, then opens the Crawl Results page. It runs one niche-name/location query by default, or every distinct pack-term/location query when the expanded keyword preference is enabled, opening one Chrome instance at a time and accumulating public result cards in the table. The table shows names, website URLs, phones, searched locations, and visible addresses; it saves the filtered cards locally with their crawl run.
+
+The New Search location pagination uses the shared `CustomSelect` dropdown for results per page. Use this component for dropdowns throughout the desktop UI.
+
+The **Profile** page uses a two-tab Account/Preferences layout and generated `react-nice-avatar` artwork. Account shows truthful connection and local storage status until Supabase authentication is implemented. Preference rows pair left-aligned labels and descriptions with right-aligned checkboxes. Options control Crawler preview visibility, Chrome search window visibility, fast versus expanded niche queries, whether listings without websites are shown, and the fields retained in the saved Crawl Results table. Hidden result columns are removed from the table so the remaining columns reflow. Crawl Results starts the selected location queue immediately; its prepared-query filter and list have been removed.
+
+The component palette uses a white canvas, deep-purple navigation and actions, pale-lavender cards and table headers, and cyan keyboard focus. Refer to the theme guide for token values.
+
+The dashboard shows metrics, trend, quick actions and Latest pipelines only. Tables use near-white headers and white rows with thin horizontal dividers, following the supplied settings reference. The sidebar search filters destinations; `Ctrl + K` focuses it.
+
+The location step places a compact custom Selection method dropdown and its active controls side by side in the heading: Search shows the location search field with select-all and clear buttons; By page shows the page range inputs; By number shows the location-number range inputs. The selected method swaps controls without changing already selected locations. Compact pagination sits in the footer immediately left of Search contractors.
+
+Profile Search sources currently shows only the Maps listings switch. Crawl Results does not visit linked websites for emails, and its table has no email column. The separate Crawler test continues to extract emails from a user-entered public page.
+
+The shared top header is visible on every page and supplies the page title, short description and local-workspace brand identity.
+
+Account details are stored locally until authentication is connected. The Profile page provides editable First Name, Last Name and Email fields, a shared generated avatar, and a disabled Reset Password form with clear authentication status. The sidebar footer mirrors the saved avatar and first-name greeting.
+
+## Niche Library
+
+The separate sidebar page has category navigation, a searchable niche list, pack details, editable term chips, a custom-niche side panel, and a combined selection preview. It uses the white desktop canvas, neutral selected states, compact type, charcoal actions and blue selection accents. Continue to search keeps the locally saved niche selection and opens New Search for state and location choices. See [A1](../features/A1-Niche%20Library/FEATURES-A1-README.md).
+
+## Crawl Results controls and table
+
+The upper content row uses an icon-only Back button with an accessible label. Contractor results has colored icon controls: Play restarts from the beginning, Pause cancels the current query and retains collected rows, Resume retries that query, and Stop ends the queue. The status line reports the current operation without the redundant completed-count subtitle. A custom results-per-page dropdown and numbered pagination sit at the table's upper right. Long names, URLs, locations and addresses remain on one line with an ellipsis; the complete value is available on hover, and website links remain clickable.
+
+The shared Crawl Results transport controls use `FaPlay`, `FaPause`, and `FaStop` from `react-icons/fa`; Resume retains its existing resume icon. The same shared results component serves both Pipeline and New Search.
+
+The results pagination uses matching chevrons on both sides; the previous-page chevron is rotated to point left.
+
+Crawl Results hides business rows with no website URL by default, even when the Website URL column itself is hidden. In Profile > Preferences > Search result filters, turn on **Show businesses without a website** to include those rows. The preference is saved locally and defaults to off for existing and new users.

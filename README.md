@@ -1,0 +1,234 @@
+# LeadsGhr
+
+**Pick a niche. Get the leads.**
+
+LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase is reserved for user authentication and account/profile data; it does not store extracted leads.
+
+A separate Chrome extension may be built later for sending emails and manually extracting emails from an opened page. It is not part of this application.
+
+[Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
+
+## Pipeline
+
+The **Discovery tools** sidebar also includes **Email Validation** and **Email Spam Check**. Their pages are navigation placeholders; validation and spam analysis are not implemented yet. Email Filtering remains the available local cleanup tool.
+
+**Deleting a saved pipeline:** The Pipeline page lists previous pipelines with a trash icon. After confirmation, deletion removes that pipeline's SQLite run, business rows, queued pages, and export history. The delete button is unavailable while a pipeline is running; stop it first. CSV files already written to disk are retained.
+
+**Current creation flow:** Click **Create pipeline** to open the right-side drawer. Enter a name, select Google Maps, and choose whether to reuse the saved niche, state, and location selections. If all three checked sections have saved choices, **Start pipeline** begins the crawl. Uncheck a section and the action becomes **Add pipeline**; the guided page opens at the first section needing new choices and skips the sections being reused. New states require new locations.
+
+Open **Pipeline** directly below Dashboard for a visual overview of search, URL queue, crawl, and export. Select **Create pipeline**, enter a required name, and choose a search platform in the provider grid. Google Maps is the available automated provider; Google, Facebook, and LinkedIn are shown as planned because their automated search or access is not supported under the current public-data rules. The guided timeline then moves through Niches → States → Locations → Crawl → Export. Select **Start crawl** after choosing locations. Public Maps business cards enter the saved results table, and each business website enters a persistent URL queue. The crawler visits the homepage, prioritizes a contact page, extracts public emails, and follows further same-site links when the contact-only preference is off. A fetch stage prepares page N+1 while the crawl stage inspects page N, including a sandboxed rendered page and scrolling. The URL queue shows each page's status and emails. Completed and stopped runs produce a CSV, then the export page shows its full file location. **New Search** retains its separate search-only flow.
+
+The sidebar groups Crawler, New Search, Niche Library, and **Email Filtering** under **Discovery tools**. Email Filtering is a local two-panel workflow: import `.xlsx` or `.csv`, review detected email columns, optionally paste addresses, then select **Start filtering**. It normalizes case, removes duplicates (including Gmail dot/plus aliases), malformed and placeholder addresses, no-reply mailboxes, and a local list of known disposable domains. Kept emails and removal reasons appear on the right; copy or export the kept list as CSV. Unknown domain endings are held for manual review. The filter does not verify mailbox existence or send data to a service.
+
+### Run history and CSV files
+
+Each run records its name and provider, selected niches and states, first and last selected state numbers, query count, next query position, start and finish times, filtered business rows, and website page queue. After an app restart, in-flight pages return to the queue. **Resume** on Pipeline, Runs, or Exports retries the current Maps query or continues the unfinished website queue. Pipeline's home page lists saved pipelines for resumption or deletion. The automatic CSV is written to `Documents/LeadsGhr/exports` with niche, run date, and time in its filename. It includes the business fields, source, and collected emails. Dashboard shows saved runs in one Latest pipelines table. Runs and Exports show progress, filenames, entry counts, paths, file sizes, and re-export actions. The separate Crawler test remains unsaved.
+
+## Responsible use
+
+Collect public data only. Respect robots.txt and polite delays, pause on challenges, and do not bypass captchas or logins. Do not use external data APIs or data tools. Hosting, a domain, and an email sender are the only allowed external services.
+
+## Technology
+
+- TypeScript, React, Node.js, pnpm workspaces, Turborepo.
+- Electron and electron-vite for the desktop UI; context isolation, disabled Node integration, Zod-validated IPC, electron-builder and electron-updater.
+- Local SQLite through better-sqlite3 for leads, scan history and queued jobs. Exports are files on disk.
+- Supabase Auth and an RLS-protected user profile table for account data only.
+- Shared packages: core, extract, crawler, quality, export, schemas, ui, app and platform. Extractors accept HTML strings and use Cheerio and libphonenumber-js.
+
+## Repository
+
+```text
+apps/desktop/  Electron main, preload and React renderer
+packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
+supabase/     Account/profile-only migration
+docs/         Current desktop guides and preserved original specification
+```
+
+Legacy web, API, worker and extension source folders remain in the repository as inactive reference code. They are excluded from the pnpm workspace and all active scripts.
+
+## Run the desktop app
+
+Install Node.js and pnpm. From the project root:
+
+```bash
+pnpm install
+pnpm dev
+```
+
+`pnpm dev:desktop` is an equivalent explicit command. The light-only splash screen shows the centered `public/leadsghr-logo-v1.svg` and a loading progress bar. The Electron window opens maximized with the light-on-dark LeadsGhr wordmark in the sidebar and the geometric L-and-arrow desktop icon. Keep the terminal running while using it and press Ctrl+C to stop. The local SQLite file is created under Electron's user-data directory only when a saved-scan feature is used.
+
+If an earlier install skipped dependency scripts and reports `Electron uninstall`, run `pnpm --filter @leadsghr/desktop rebuild electron`. If your shell has `ELECTRON_RUN_AS_NODE=1`, clear it for that session with `Remove-Item Env:ELECTRON_RUN_AS_NODE` before `pnpm dev`.
+
+```bash
+pnpm typecheck
+pnpm build
+```
+
+The current scan flow can crawl a user-supplied public site through the Electron IPC bridge. Broad niche discovery, most feature pages, and Supabase sign-in UI remain planned work. See the [documentation index](docs/DOCS_README.md), [architecture](docs/structure/STRUCTURE_README.md), and [theme](docs/theme/THEME_README.md).
+## Desktop dashboard and crawler test
+
+The light-only desktop dashboard uses a white canvas, deep-purple navigation, lavender cards and tables, purple actions, and cyan focus accents. It keeps compact type, four icon-and-copy metric cards, a trend chart, quick actions, and a Latest pipelines table. Its metrics, chart, and table read saved local crawl runs and CSV history. The [theme](docs/theme/THEME_README.md), [components](docs/components/COMPONENTS_README.md), and [icons](docs/icons/ICONS_README.md) guides describe the design and brand assets.
+
+### Contractor search sources and emails
+
+Profile > Preferences controls whether Crawl Results shows public Google Maps business listings and whether it uses expanded Niche Library terms. Expanded terms are off by default: each selected niche name is searched once per location. Turn them on for broader searches that take longer. The saved run table shows the selected business fields and hides listings without a website URL by default. Profile > Preferences > Search result filters can turn those rows back on. Pipeline crawls linked public websites for emails after the Maps searches; New Search remains search-only. Google regular web-search results are not scanned because Google disallows automated `/search` access in robots.txt.
+
+### Crawler test page
+
+Open **Crawler** in the desktop sidebar, enter a public homepage URL, and click **Crawl page**. The crawler fetches and scrolls the homepage, discovers same-site links, then crawls its contact page first. One live status line changes as work progresses. The URL queue table shows each page's status and found emails. In Profile > Preferences, **Crawl homepage and contact page only** is on by default. Turn it off to queue every unique same-site URL found on the homepage. This test flow does not write to SQLite or Supabase. See the [crawler guide](docs/crawler/CRAWLER_README.md).
+
+## Profile and preferences
+
+The **Profile** sidebar page has Account and Preferences tabs. The Account tab starts with Abrar Haider and abrar@leedsghr.com as editable local profile details and displays a locally saved generated avatar. The sidebar greets the saved first name. A Reset Password form is visible but inactive until Supabase authentication is connected. Click **Generate new** to replace the avatar and save the new choice. Supabase sign-in is not wired into this desktop build, so no name, email, or plan is invented. Preferences are saved in Electron user data: show or hide the Crawler webpage preview, show Chrome during contractor searches or run it in the background, choose fast niche-name searches or expanded Niche Library terms, show or hide businesses without website URLs (hidden by default), and choose which contractor fields appear in the saved crawl results table (company, website, phone, address, and searched location). Hiding the preview does not stop the Crawler from scrolling and extracting. Crawl results and selected fields are saved locally with their run; Supabase does not receive them.
+
+## Feature summary
+
+The original specification catalogues **54 features**. Groups A-G inform this desktop product; group X documents a separate future extension. Each ID links to its own detailed document through the [feature index](docs/DOCS_README.md).
+
+<details>
+<summary><strong>A · Niche, search, and filters</strong> (6 features)</summary>
+
+**What it covers:** Define a campaign with niches, places, source and lead filters, saved setups, and a yield estimate.
+
+- [A1: Niche Library](docs/features/A1-Niche%20Library/FEATURES-A1-README.md) — A ready-made tree of business niches, each with a keyword pack: main terms, synonyms, related services, negative keywords and typical website phrases.
+- [A2: Custom Niche Builder and Keyword Expansion](docs/features/A2-Custom%20Niche%20Builder%20and%20Keyword%20Expansion/FEATURES-A2-README.md) — Lets the user type any niche in plain words and expands it into a full keyword pack without calling any external API.
+- [A3: Geo Targeting](docs/features/A3-Geo%20Targeting/FEATURES-A3-README.md) — Selects where to search: country, state or province, city, ZIP or postal code, or a map radius.
+- [A4: Filter Engine](docs/features/A4-Filter%20Engine/FEATURES-A4-README.md) — A rule builder that applies filters before and after scraping.
+- [A5: Saved Search Profiles and Templates](docs/features/A5-Saved%20Search%20Profiles%20and%20Templates/FEATURES-A5-README.md) — Stores a complete setup (niche pack, geography, filters, sources, export template) as a named profile that can be run again or scheduled.
+- [A6: Dry Run and Yield Estimator](docs/features/A6-Dry%20Run%20and%20Yield%20Estimator/FEATURES-A6-README.md) — Before the full run the tool samples a few cells and sources, then predicts how many leads, emails and phones to expect, how long the run will take and how many requests it will make.
+
+</details>
+
+<details>
+<summary><strong>B · Public discovery</strong> (8 features)</summary>
+
+**What it covers:** Find candidate companies from public and user-provided sources, with controls for higher-risk sources.
+
+- [B1: Search Engine Discovery](docs/features/B1-Search%20Engine%20Discovery/FEATURES-B1-README.md) — Finds company websites by running niche plus city queries on public search result pages using the tool's own browser automation (no paid API).
+- [B2: Map Listings Adapter](docs/features/B2-Map%20Listings%20Adapter/FEATURES-B2-README.md) — Reads the public business listing panels shown on map search pages: name, category, address, phone, website, rating and review count.
+- [B3: Public Directory Adapters](docs/features/B3-Public%20Directory%20Adapters/FEATURES-B3-README.md) — A plug-in set of adapters for public business directories and industry listing sites.
+- [B4: Open Map Data Importer](docs/features/B4-Open%20Map%20Data%20Importer/FEATURES-B4-README.md) — Imports openly licensed map data (OpenStreetMap regional extracts, downloaded once as files) into local SQLite tables on the user's computer.
+- [B5: Professional Network Company Pages (Browser Extension, Assisted Mode)](docs/features/B5-Professional%20Network%20Company%20Pages%20%28Browser%20Extension%2C%20Assisted%20Mode%29/FEATURES-B5-README.md) — Assisted capture is limited to public pages available without a source-site login.
+- [B6: Social Public Pages Reader](docs/features/B6-Social%20Public%20Pages%20Reader/FEATURES-B6-README.md) — Reads the public 'About' information of business pages that are reachable without login: phone, email, address, website and hours when the page owner has published them.
+- [B7: Associations, Chambers and Licence Registries](docs/features/B7-Associations%2C%20Chambers%20and%20Licence%20Registries/FEATURES-B7-README.md) — Adapters for public member lists of trade associations, chambers of commerce and government contractor or business registries.
+- [B8: Bring Your Own List](docs/features/B8-Bring%20Your%20Own%20List/FEATURES-B8-README.md) — Imports a CSV or Excel file of company names or domains the user already has and runs enrichment only (crawl, extract, verify, score).
+
+</details>
+
+<details>
+<summary><strong>C · Extraction</strong> (8 features)</summary>
+
+**What it covers:** Read relevant public pages and turn their contact and company information into structured records.
+
+- [C1: Website Crawler](docs/features/C1-Website%20Crawler/FEATURES-C1-README.md) — The core engine.
+- [C2: Contact Page Detector](docs/features/C2-Contact%20Page%20Detector/FEATURES-C2-README.md) — Ranks internal links by how likely they are to hold contact data using multilingual keyword lists (contact, about, team, reach us, impressum, kontakt, contacto and so on) plus URL and menu position signals.
+- [C3: Email Extractor](docs/features/C3-Email%20Extractor/FEATURES-C3-README.md) — Finds email addresses in page text, mailto links, JSON-LD and common obfuscations such as 'name [at] domain [dot] com', HTML entities, split spans and simple JavaScript string joins.
+- [C4: Phone Extractor and Normaliser](docs/features/C4-Phone%20Extractor%20and%20Normaliser/FEATURES-C4-README.md) — Extracts phone numbers from text and tel links, then normalises them to international E.164 form using the target country as a hint.
+- [C5: Address Parser and Geocoder](docs/features/C5-Address%20Parser%20and%20Geocoder/FEATURES-C5-README.md) — Finds postal addresses on pages and in structured data, splits them into street, city, state, postcode and country, and attaches latitude and longitude from the offline place database when possible.
+- [C6: Social Profile Finder](docs/features/C6-Social%20Profile%20Finder/FEATURES-C6-README.md) — Collects links to public social and professional profiles from company pages: LinkedIn, Facebook, Instagram, X, YouTube, plus review and directory profile links.
+- [C7: Company Profile Builder](docs/features/C7-Company%20Profile%20Builder/FEATURES-C7-README.md) — Summarises what the company does using only text from its own public pages: services list, specialties (for example 'MEP takeoff', 'roofing'), software mentioned, regions served, size hints (team count, years) and a short auto-generated description made by simple extraction, not by an external AI service.
+- [C8: Structured Data Reader](docs/features/C8-Structured%20Data%20Reader/FEATURES-C8-README.md) — Reads machine-readable data that sites publish for search engines: JSON-LD, microdata and RDFa such as Organization, LocalBusiness, PostalAddress, ContactPoint and sameAs.
+
+</details>
+
+<details>
+<summary><strong>D · Quality and intelligence</strong> (5 features)</summary>
+
+**What it covers:** Merge duplicates, check contact quality, rank leads, and retain source evidence.
+
+- [D1: Deduplication and Entity Resolution](docs/features/D1-Deduplication%20and%20Entity%20Resolution/FEATURES-D1-README.md) — Merges records that describe the same company across sources.
+- [D2: Email Verifier](docs/features/D2-Email%20Verifier/FEATURES-D2-README.md) — Checks syntax, domain existence, MX records, disposable domains, catch-all behaviour and (optionally) a gentle SMTP handshake without sending mail.
+- [D3: Phone Validator](docs/features/D3-Phone%20Validator/FEATURES-D3-README.md) — Validates numbers against national numbering plans, flags possible and impossible numbers and marks toll-free or premium lines.
+- [D4: Lead Scoring](docs/features/D4-Lead%20Scoring/FEATURES-D4-README.md) — Gives every lead a 0 to 100 score from transparent rules: has verified email, has phone, website quality, niche match strength, location match, size hint, rating and recency.
+- [D5: Source Tracking and Confidence](docs/features/D5-Source%20Tracking%20and%20Confidence/FEATURES-D5-README.md) — Every field remembers where it came from, when it was seen and how confident the extraction was.
+
+</details>
+
+<details>
+<summary><strong>E · Storage and export</strong> (4 features)</summary>
+
+**What it covers:** Preserve run history and deliver complete lead files in useful formats.
+
+- [E1: Live Excel Export](docs/features/E1-Live%20Excel%20Export/FEATURES-E1-README.md) — Leads are journaled in the database the moment they are found, and the Excel workbook is rebuilt on the server while the run is going.
+- [E2: Multi-format Export](docs/features/E2-Multi-format%20Export/FEATURES-E2-README.md) — Exports the same data to CSV, JSON, VCF contact cards and CRM-friendly CSV layouts, with column selection and saved export presets.
+- [E3: Database and Run History](docs/features/E3-Database%20and%20Run%20History/FEATURES-E3-README.md) — Runs, leads, sources and logs stay in local SQLite on the user's computer.
+- [E4: Excel Template Designer](docs/features/E4-Excel%20Template%20Designer/FEATURES-E4-README.md) — Visual editor for the output workbook: pick columns and order, rename headers, set colours, add conditional formatting for score and verification status, and create extra sheets such as 'Hot leads'.
+
+</details>
+
+<details>
+<summary><strong>F · Reliability and safety</strong> (6 features)</summary>
+
+**What it covers:** Schedule and resume jobs, respect site rules, handle blocks, and monitor the engine.
+
+- [F1: Job Queue and Scheduler](docs/features/F1-Job%20Queue%20and%20Scheduler/FEATURES-F1-README.md) — A persistent queue of small jobs (one geo cell on one source, or one domain crawl) processed by separate worker containers.
+- [F2: Proxy Pool Manager](docs/features/F2-Proxy%20Pool%20Manager/FEATURES-F2-README.md) — Specified capability, unavailable under the current rule that excludes external proxy services and tools.
+- [F3: Politeness Engine and robots.txt](docs/features/F3-Politeness%20Engine%20and%20robots.txt/FEATURES-F3-README.md) — Applies per-domain request spacing, concurrency of one by default, crawl-delay support, robots.txt allow and disallow rules, and honest user-agent identification with a contact URL.
+- [F4: Resilience Layer](docs/features/F4-Resilience%20Layer/FEATURES-F4-README.md) — Handles flaky networks and tricky sites: retries with exponential backoff, timeouts, redirect loops, SSL errors, encoding problems, JavaScript-only pages (auto escalate from HTTP to headless browser) and memory limits on browser contexts.
+- [F5: Challenge and Block Policy](docs/features/F5-Challenge%20and%20Block%20Policy/FEATURES-F5-README.md) — Detects captchas, login walls and 'unusual traffic' pages and responds by pausing, not by bypassing.
+- [F6: Logging and Monitoring](docs/features/F6-Logging%20and%20Monitoring/FEATURES-F6-README.md) — Structured logs for every request, extraction and decision with levels and filters, plus a health panel (requests per minute, success rate, memory, active browsers).
+
+</details>
+
+<details>
+<summary><strong>G · Product workspace</strong> (7 features)</summary>
+
+**What it covers:** Let users run campaigns, review leads, manage settings and plans, and control responsible use.
+
+- [G1: Dashboard](docs/features/G1-Dashboard/FEATURES-G1-README.md) — Home screen with totals, recent runs, leads by niche, email hit rate, quota usage and quick actions such as 'New search', 'Import list' and 'Open last file'.
+- [G2: Live Run Console](docs/features/G2-Live%20Run%20Console/FEATURES-G2-README.md) — Real-time view of an active run: progress bar by cells, leads found, emails and phones found, speed, ETA, current source and recent leads stream.
+- [G3: Lead Table Workspace](docs/features/G3-Lead%20Table%20Workspace/FEATURES-G3-README.md) — Spreadsheet-like table for browsing millions of rows with sorting, instant search, column chooser, inline editing, tags, notes, multi-select actions and a detail drawer.
+- [G4: Outreach Segments and Templates](docs/features/G4-Outreach%20Segments%20and%20Templates/FEATURES-G4-README.md) — Builds lists (segments) from filters and prepares mail-merge ready exports with personalised fields.
+- [G5: Compliance Center](docs/features/G5-Compliance%20Center/FEATURES-G5-README.md) — One place for responsible use: source risk labels, global source switches, suppression and do-not-contact lists, robots decisions, data retention settings, a legal notice template and a per-lead 'public source' proof link.
+- [G6: Accounts, Billing and Plans](docs/features/G6-Accounts%2C%20Billing%20and%20Plans/FEATURES-G6-README.md) — Sign-up, email verification, organisations with seats, plans and quotas, with Supabase Auth and account profile data; extracted data stays local.
+- [G7: Settings and Team](docs/features/G7-Settings%20and%20Team/FEATURES-G7-README.md) — Account and organisation settings: speed profile, defaults, language, fixed light theme, keyboard shortcuts, team members and roles, notification preferences and data export.
+
+</details>
+
+<details>
+<summary><strong>X · Chrome extension</strong> (10 features)</summary>
+
+**What it covers:** Archive the original extension requirements; a separate future extension is planned for email sending and manual email extraction from an opened page.
+
+- [X1: Extension Shell, Side Panel and Login](docs/features/X1-Extension%20Shell%2C%20Side%20Panel%20and%20Login/FEATURES-X1-README.md) — The extension is a Manifest V3 add-on for Chrome.
+- [X2: One-Click Site Scan](docs/features/X2-One-Click%20Site%20Scan/FEATURES-X2-README.md) — The lighter version of the crawler.
+- [X3: Page Data Capture (Assisted)](docs/features/X3-Page%20Data%20Capture%20%28Assisted%29/FEATURES-X3-README.md) — A Capture button reads only the company cards that are visible on the page the user is viewing (name, website link, phone, address, size band, category).
+- [X4: Batch Domain Scan Queue](docs/features/X4-Batch%20Domain%20Scan%20Queue/FEATURES-X4-README.md) — The user pastes a list of domains, or selects captured leads, and the extension scans them one by one with polite delays.
+- [X5: Local Lead List and Dedupe](docs/features/X5-Local%20Lead%20List%20and%20Dedupe/FEATURES-X5-README.md) — All captured and scanned leads are stored on the user's machine in IndexedDB, merged by website domain and phone number so the same company never appears twice.
+- [X6: Quick Verify](docs/features/X6-Quick%20Verify/FEATURES-X6-README.md) — Checks email syntax and phone format locally.
+- [X7: Export in the Browser (CSV and Excel)](docs/features/X7-Export%20in%20the%20Browser%20%28CSV%20and%20Excel%29/FEATURES-X7-README.md) — Exports the local list as CSV or a formatted Excel file straight from the browser, with light grey headers and the same column names as the website export.
+- [X8: Sync with the Main Website](docs/features/X8-Sync%20with%20the%20Main%20Website/FEATURES-X8-README.md) — Pushes leads from the extension into the user's website account and pulls down settings: niche keyword packs, filter profiles, suppression list and selector packs.
+- [X9: Compliance Guard in the Extension](docs/features/X9-Compliance%20Guard%20in%20the%20Extension/FEATURES-X9-README.md) — Built-in safety rules: it checks robots.txt of a site before scanning, never fetches with cookies, never auto-paginates, enforces delays and daily caps, shows risk labels for sensitive sites and honours a remote block list and suppression list.
+- [X10: Lite Filters and Quick Score](docs/features/X10-Lite%20Filters%20and%20Quick%20Score/FEATURES-X10-README.md) — A small set of filters (has email, has phone, has website, country, tag) and a simple 0 to 100 quick score from the fields found, so the user sees the best leads first.
+
+</details>
+
+Features are prioritized P0 for first release, P1 for the next release, and P2 for later work. See the [feature catalogue](docs/specification/feature-catalogue/SPECIFICATION-FEATURE-CATALOGUE-README.md) for each feature's minimum plan, priority, and effort.
+
+## Plans and responsible use
+
+The specification describes Explorer, Starter, Professional and Agency plans. The hosted account controls plans and team membership; desktop and extension may view entitlements when online. Public business data only: obey robots.txt, polite delays, suppression and opt-out rules, pause on challenges, and never bypass captchas or scrape behind logins. See [responsible use](docs/specification/responsible-use/SPECIFICATION-RESPONSIBLE-USE-README.md) and [platform limits](docs/platforms/PLATFORMS_README.md).
+
+
+
+
+
+
+
+
+## Desktop zoom
+
+The window opens at 100% zoom. Press `Ctrl + 0` to reset, `Ctrl + Plus` (or `Ctrl + =`) to zoom in, and `Ctrl + Minus` to zoom out. Restart the desktop app after updating to get these shortcuts.
+
+The Crawler test lists same-site homepage links in a queue table and reports publicly exposed contact-form recipient addresses. It visits the contact page first, then other homepage links when the contact-only preference is off. It does not submit forms or save test results. Server-side form destinations are not visible to the crawler.
+
+Form-recipient discovery also checks publicly exposed form fields and inline configuration. Script clues are displayed as unconfirmed candidates, never as proven delivery addresses.
+
+## Niche and location choices
+
+Open **Niche Library** from the sidebar to browse 35 categorized starter packs, edit search and negative terms, select packs, and preview the deduplicated keyword set. These local settings survive app restarts. See the [Niche Library guide](docs/features/A1-Niche%20Library/FEATURES-A1-README.md) for the full workflow and future RAG/chatbot integration plan.
+
+Open **New Search** to prepare a local search draft. The starter library has 35 contractor and business niches in `packages/app/data/niches.json`. Add more through the side panel, entering one niche or a comma-separated list; each becomes a selectable chip. U.S. states and 31,948 places from the supplied `US_STATES_LOCATIONS.rar` are stored in `packages/app/data/us-states-locations.json`. Choose niches and states on the first screen, then click **Select locations** for a separate paginated location screen. Choose Search, By page, or By number from the custom selection-method dropdown, then select individual numbered places, all matches, a page range, or an inclusive location-number range. Custom niches and selected choices are saved to `search-criteria.json` in Electron's local user-data directory. Press **Search contractors** after selecting at least one location. The next page searches each distinct selected pack search term and location in order, one Chrome search at a time, and accumulates public result cards in a saved run table with business name, clickable website URL, phone, searched location, and visible address. Stop cancels the remaining queue; a challenge or error pauses it. Google Maps controls the returned results; each search is limited to loaded cards (up to 200), is not exhaustive, and is saved to local SQLite for resume and CSV re-export, never Supabase.
+
+The Chrome search needs no external API key. It checks robots.txt, uses an empty temporary profile, pauses on challenges, and offers Stop and Retry controls. The Chrome process closes when the search finishes or is stopped. Its window visibility follows Profile preferences. Fully restart the Electron app after updating so its main process and preload expose the new scanner IPC.

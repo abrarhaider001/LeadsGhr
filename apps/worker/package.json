@@ -1,0 +1,23 @@
+{
+  "name": "@leadsghr/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@leadsghr/platform": "workspace:*",
+    "@leadsghr/crawler": "workspace:*",
+    "@leadsghr/quality": "workspace:*",
+    "@leadsghr/export": "workspace:*",
+    "pg-boss": "^10.3.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "@types/node": "^22.10.2"
+  }
+}

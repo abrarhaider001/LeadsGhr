@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 352" role="img" aria-label="Google Maps pin">
+  <defs>
+    <path id="pin" d="M128 0C57.31 0 0 57.31 0 128c0 86.4 72.4 153.8 108.5 210.3 9 14.1 30 14.1 39 0C183.6 281.8 256 214.4 256 128 256 57.31 198.69 0 128 0Z"/>
+    <clipPath id="pin-clip"><use href="#pin"/></clipPath>
+    <mask id="center-cutout"><rect width="256" height="352" fill="white"/><circle cx="128" cy="128" r="49" fill="black"/></mask>
+  </defs>
+  <g clip-path="url(#pin-clip)" mask="url(#center-cutout)">
+    <rect width="256" height="352" fill="#34A853"/>
+    <path d="M0 0H175L88 128 0 48Z" fill="#1A73E8"/>
+    <path d="M175 0H256V101L168 199 88 128Z" fill="#4285F4"/>
+    <path d="M0 48 88 128 48 215 0 231Z" fill="#EA4335"/>
+    <path d="M0 231 88 128 143 150 60 292 0 300Z" fill="#FBBC04"/>
+  </g>
+</svg>

@@ -1,0 +1,3434 @@
+{
+  "categories": {
+    "urgency": {
+      "label": "Urgency & High Pressure",
+      "color": "#ef4444",
+      "description": "High-pressure urgency phrases trigger spam filters and lower prospect trust."
+    },
+    "financial_money": {
+      "label": "Financial & Money Hype",
+      "color": "#f59e0b",
+      "description": "Aggressive financial promises and discount hype look like promotional spam."
+    },
+    "shady_phishing": {
+      "label": "Shady & Phishing Triggers",
+      "color": "#dc2626",
+      "description": "Deceptive phrases commonly used in phishing, scams, or bulk blasts."
+    },
+    "overpromising": {
+      "label": "Overpromising & Exaggeration",
+      "color": "#eab308",
+      "description": "Unrealistic guarantees and hype claims hurt B2B credibility."
+    }
+  },
+  "triggers": [
+    {
+      "phrase": "act now",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "when you have a moment"
+    },
+    {
+      "phrase": "act immediately",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "at your earliest convenience"
+    },
+    {
+      "phrase": "urgent",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "time-sensitive"
+    },
+    {
+      "phrase": "urgent response needed",
+      "category": "urgency",
+      "weight": 22,
+      "replacement": "looking forward to your thoughts"
+    },
+    {
+      "phrase": "limited time",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "upcoming"
+    },
+    {
+      "phrase": "limited time offer",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "immediately",
+      "category": "urgency",
+      "weight": 10,
+      "replacement": "soon"
+    },
+    {
+      "phrase": "don't delete",
+      "category": "urgency",
+      "weight": 20,
+      "replacement": "for your review"
+    },
+    {
+      "phrase": "do not delete",
+      "category": "urgency",
+      "weight": 20,
+      "replacement": "worth keeping on your radar"
+    },
+    {
+      "phrase": "expires today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "wrapping up today"
+    },
+    {
+      "phrase": "offer expires",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "window closes"
+    },
+    {
+      "phrase": "last chance",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "final follow-up"
+    },
+    {
+      "phrase": "final notice",
+      "category": "urgency",
+      "weight": 20,
+      "replacement": "quick follow-up"
+    },
+    {
+      "phrase": "instant access",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "direct access"
+    },
+    {
+      "phrase": "hurry up",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "let us know soon"
+    },
+    {
+      "phrase": "hurry",
+      "category": "urgency",
+      "weight": 12,
+      "replacement": "when convenient"
+    },
+    {
+      "phrase": "time sensitive",
+      "category": "urgency",
+      "weight": 10,
+      "replacement": "relevant for this quarter"
+    },
+    {
+      "phrase": "don't miss out",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "thought you might find this useful"
+    },
+    {
+      "phrase": "do not miss out",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "worth considering"
+    },
+    {
+      "phrase": "before it's too late",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "ahead of next quarter"
+    },
+    {
+      "phrase": "only a few left",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "limited onboarding spots"
+    },
+    {
+      "phrase": "spots filling fast",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "scheduling for this month"
+    },
+    {
+      "phrase": "deadline approaching",
+      "category": "urgency",
+      "weight": 12,
+      "replacement": "upcoming timeline"
+    },
+    {
+      "phrase": "now or never",
+      "category": "urgency",
+      "weight": 20,
+      "replacement": "a timely opportunity"
+    },
+    {
+      "phrase": "today only",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "currently"
+    },
+    {
+      "phrase": "while supplies last",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "while capacity allows"
+    },
+    {
+      "phrase": "take action now",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "share your thoughts"
+    },
+    {
+      "phrase": "respond now",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "let me know what you think"
+    },
+    {
+      "phrase": "apply now",
+      "category": "urgency",
+      "weight": 12,
+      "replacement": "explore this"
+    },
+    {
+      "phrase": "buy now",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "get started"
+    },
+    {
+      "phrase": "order now",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "proceed"
+    },
+    {
+      "phrase": "order today",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "move forward"
+    },
+    {
+      "phrase": "call now",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "schedule a brief call"
+    },
+    {
+      "phrase": "sign up free today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "try it out"
+    },
+    {
+      "phrase": "what are you waiting for",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "would love to hear your perspective"
+    },
+    {
+      "phrase": "don't hesitate",
+      "category": "urgency",
+      "weight": 10,
+      "replacement": "feel free"
+    },
+    {
+      "phrase": "don't waste time",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "to save your team time"
+    },
+    {
+      "phrase": "important notice",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "quick update"
+    },
+    {
+      "phrase": "action required",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "for your input"
+    },
+    {
+      "phrase": "immediate attention",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "a quick look"
+    },
+    {
+      "phrase": "100% free",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "complimentary"
+    },
+    {
+      "phrase": "completely free",
+      "category": "financial_money",
+      "weight": 15,
+      "replacement": "at no cost"
+    },
+    {
+      "phrase": "free gift",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "complimentary resource"
+    },
+    {
+      "phrase": "free money",
+      "category": "financial_money",
+      "weight": 28,
+      "replacement": "cost savings"
+    },
+    {
+      "phrase": "free trial",
+      "category": "financial_money",
+      "weight": 12,
+      "replacement": "pilot evaluation"
+    },
+    {
+      "phrase": "free quote",
+      "category": "financial_money",
+      "weight": 12,
+      "replacement": "custom estimate"
+    },
+    {
+      "phrase": "free consultation",
+      "category": "financial_money",
+      "weight": 12,
+      "replacement": "introductory strategy call"
+    },
+    {
+      "phrase": "free access",
+      "category": "financial_money",
+      "weight": 14,
+      "replacement": "complimentary access"
+    },
+    {
+      "phrase": "free sample",
+      "category": "financial_money",
+      "weight": 14,
+      "replacement": "preview"
+    },
+    {
+      "phrase": "free",
+      "category": "financial_money",
+      "weight": 8,
+      "replacement": "complimentary"
+    },
+    {
+      "phrase": "double your income",
+      "category": "financial_money",
+      "weight": 25,
+      "replacement": "grow your revenue"
+    },
+    {
+      "phrase": "triple your income",
+      "category": "financial_money",
+      "weight": 26,
+      "replacement": "scale your revenue"
+    },
+    {
+      "phrase": "make money",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "increase margins"
+    },
+    {
+      "phrase": "make money fast",
+      "category": "financial_money",
+      "weight": 28,
+      "replacement": "accelerate revenue"
+    },
+    {
+      "phrase": "earn cash",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "generate returns"
+    },
+    {
+      "phrase": "earn extra cash",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "unlock additional revenue"
+    },
+    {
+      "phrase": "extra income",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "new revenue stream"
+    },
+    {
+      "phrase": "cash bonus",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "performance incentive"
+    },
+    {
+      "phrase": "fast cash",
+      "category": "financial_money",
+      "weight": 26,
+      "replacement": "faster cash flow"
+    },
+    {
+      "phrase": "easy money",
+      "category": "financial_money",
+      "weight": 26,
+      "replacement": "streamlined ROI"
+    },
+    {
+      "phrase": "big bucks",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "strong returns"
+    },
+    {
+      "phrase": "million dollars",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "seven-figure pipeline"
+    },
+    {
+      "phrase": "financial freedom",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "predictable growth"
+    },
+    {
+      "phrase": "be your own boss",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "gain operational autonomy"
+    },
+    {
+      "phrase": "work from home",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "remote workflow"
+    },
+    {
+      "phrase": "lowest price",
+      "category": "financial_money",
+      "weight": 15,
+      "replacement": "competitive pricing"
+    },
+    {
+      "phrase": "unbeatable price",
+      "category": "financial_money",
+      "weight": 16,
+      "replacement": "cost-effective rate"
+    },
+    {
+      "phrase": "huge discount",
+      "category": "financial_money",
+      "weight": 16,
+      "replacement": "preferential partner rate"
+    },
+    {
+      "phrase": "discount",
+      "category": "financial_money",
+      "weight": 8,
+      "replacement": "preferred rate"
+    },
+    {
+      "phrase": "save big money",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "reduce operational costs"
+    },
+    {
+      "phrase": "pennies a day",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "a modest budget"
+    },
+    {
+      "phrase": "no hidden fees",
+      "category": "financial_money",
+      "weight": 14,
+      "replacement": "transparent pricing"
+    },
+    {
+      "phrase": "no hidden cost",
+      "category": "financial_money",
+      "weight": 14,
+      "replacement": "clear pricing"
+    },
+    {
+      "phrase": "zero cost",
+      "category": "financial_money",
+      "weight": 12,
+      "replacement": "no upfront cost"
+    },
+    {
+      "phrase": "100% refund",
+      "category": "financial_money",
+      "weight": 16,
+      "replacement": "flexible terms"
+    },
+    {
+      "phrase": "money back",
+      "category": "financial_money",
+      "weight": 15,
+      "replacement": "satisfaction commitment"
+    },
+    {
+      "phrase": "full refund",
+      "category": "financial_money",
+      "weight": 15,
+      "replacement": "flexible cancellation"
+    },
+    {
+      "phrase": "credit card required",
+      "category": "financial_money",
+      "weight": 16,
+      "replacement": "billing setup"
+    },
+    {
+      "phrase": "no credit check",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "simple onboarding"
+    },
+    {
+      "phrase": "get out of debt",
+      "category": "financial_money",
+      "weight": 26,
+      "replacement": "optimize liabilities"
+    },
+    {
+      "phrase": "this is not spam",
+      "category": "shady_phishing",
+      "weight": 30,
+      "replacement": "reaching out briefly"
+    },
+    {
+      "phrase": "not spam",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "a quick note"
+    },
+    {
+      "phrase": "not junk",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "relevant to your team"
+    },
+    {
+      "phrase": "click here",
+      "category": "shady_phishing",
+      "weight": 14,
+      "replacement": "explore the details"
+    },
+    {
+      "phrase": "click below",
+      "category": "shady_phishing",
+      "weight": 12,
+      "replacement": "check the resource below"
+    },
+    {
+      "phrase": "click this link",
+      "category": "shady_phishing",
+      "weight": 16,
+      "replacement": "review the page"
+    },
+    {
+      "phrase": "no catch",
+      "category": "shady_phishing",
+      "weight": 18,
+      "replacement": "straightforward process"
+    },
+    {
+      "phrase": "no strings attached",
+      "category": "shady_phishing",
+      "weight": 18,
+      "replacement": "with no obligation"
+    },
+    {
+      "phrase": "risk-free",
+      "category": "shady_phishing",
+      "weight": 16,
+      "replacement": "low-commitment"
+    },
+    {
+      "phrase": "risk free",
+      "category": "shady_phishing",
+      "weight": 16,
+      "replacement": "flexible"
+    },
+    {
+      "phrase": "100% risk-free",
+      "category": "shady_phishing",
+      "weight": 22,
+      "replacement": "completely flexible"
+    },
+    {
+      "phrase": "no obligation",
+      "category": "shady_phishing",
+      "weight": 10,
+      "replacement": "low-pressure"
+    },
+    {
+      "phrase": "congratulations",
+      "category": "shady_phishing",
+      "weight": 14,
+      "replacement": "great news"
+    },
+    {
+      "phrase": "you have been selected",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "we identified your team"
+    },
+    {
+      "phrase": "you are a winner",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "your team stood out"
+    },
+    {
+      "phrase": "winner",
+      "category": "shady_phishing",
+      "weight": 20,
+      "replacement": "top performer"
+    },
+    {
+      "phrase": "claim your prize",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "access your resource"
+    },
+    {
+      "phrase": "secret",
+      "category": "shady_phishing",
+      "weight": 14,
+      "replacement": "underutilized"
+    },
+    {
+      "phrase": "secret method",
+      "category": "shady_phishing",
+      "weight": 22,
+      "replacement": "proven framework"
+    },
+    {
+      "phrase": "hidden trick",
+      "category": "shady_phishing",
+      "weight": 20,
+      "replacement": "practical tactic"
+    },
+    {
+      "phrase": "confidential",
+      "category": "shady_phishing",
+      "weight": 14,
+      "replacement": "tailored"
+    },
+    {
+      "phrase": "verify your account",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "confirm your preferences"
+    },
+    {
+      "phrase": "confirm your identity",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "update your profile"
+    },
+    {
+      "phrase": "account suspended",
+      "category": "shady_phishing",
+      "weight": 30,
+      "replacement": "account status update"
+    },
+    {
+      "phrase": "unusual activity",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "recent metrics"
+    },
+    {
+      "phrase": "dear friend",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "hi there"
+    },
+    {
+      "phrase": "dear beloved",
+      "category": "shady_phishing",
+      "weight": 30,
+      "replacement": "hello"
+    },
+    {
+      "phrase": "direct email",
+      "category": "shady_phishing",
+      "weight": 14,
+      "replacement": "direct note"
+    },
+    {
+      "phrase": "bulk email",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "outbound campaigns"
+    },
+    {
+      "phrase": "mass email",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "scalable outreach"
+    },
+    {
+      "phrase": "opt in",
+      "category": "shady_phishing",
+      "weight": 12,
+      "replacement": "subscribe"
+    },
+    {
+      "phrase": "remove from list",
+      "category": "shady_phishing",
+      "weight": 14,
+      "replacement": "let me know if not relevant"
+    },
+    {
+      "phrase": "as seen on",
+      "category": "shady_phishing",
+      "weight": 16,
+      "replacement": "featured in"
+    },
+    {
+      "phrase": "loophole",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "efficiency opportunity"
+    },
+    {
+      "phrase": "legal loophole",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "compliant strategy"
+    },
+    {
+      "phrase": "offshore",
+      "category": "shady_phishing",
+      "weight": 20,
+      "replacement": "international"
+    },
+    {
+      "phrase": "unsecured debt",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "credit facility"
+    },
+    {
+      "phrase": "wire transfer",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "standard invoicing"
+    },
+    {
+      "phrase": "bitcoin",
+      "category": "shady_phishing",
+      "weight": 18,
+      "replacement": "digital assets"
+    },
+    {
+      "phrase": "crypto bot",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "automated workflow"
+    },
+    {
+      "phrase": "100% guaranteed",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "consistently reliable"
+    },
+    {
+      "phrase": "guaranteed",
+      "category": "overpromising",
+      "weight": 15,
+      "replacement": "proven"
+    },
+    {
+      "phrase": "satisfaction guaranteed",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "backed by our team"
+    },
+    {
+      "phrase": "guaranteed roi",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "measurable ROI"
+    },
+    {
+      "phrase": "once in a lifetime",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "rare"
+    },
+    {
+      "phrase": "miracle",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "effective solution"
+    },
+    {
+      "phrase": "magic bullet",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "practical system"
+    },
+    {
+      "phrase": "skyrocket",
+      "category": "overpromising",
+      "weight": 12,
+      "replacement": "accelerate"
+    },
+    {
+      "phrase": "skyrocket your sales",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "grow your outbound pipeline"
+    },
+    {
+      "phrase": "explode your business",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "scale your operations"
+    },
+    {
+      "phrase": "explosive growth",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "consistent growth"
+    },
+    {
+      "phrase": "10x your",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "significantly improve your"
+    },
+    {
+      "phrase": "100x",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "substantially scale"
+    },
+    {
+      "phrase": "overnight success",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "steady results"
+    },
+    {
+      "phrase": "instant results",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "fast time-to-value"
+    },
+    {
+      "phrase": "turnkey solution",
+      "category": "overpromising",
+      "weight": 10,
+      "replacement": "ready-to-use workflow"
+    },
+    {
+      "phrase": "world's best",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "leading"
+    },
+    {
+      "phrase": "number 1",
+      "category": "overpromising",
+      "weight": 14,
+      "replacement": "top-rated"
+    },
+    {
+      "phrase": "#1",
+      "category": "overpromising",
+      "weight": 14,
+      "replacement": "leading"
+    },
+    {
+      "phrase": "revolutionary",
+      "category": "overpromising",
+      "weight": 12,
+      "replacement": "modern"
+    },
+    {
+      "phrase": "game changer",
+      "category": "overpromising",
+      "weight": 10,
+      "replacement": "meaningful upgrade"
+    },
+    {
+      "phrase": "groundbreaking",
+      "category": "overpromising",
+      "weight": 10,
+      "replacement": "innovative"
+    },
+    {
+      "phrase": "unbelievable",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "notable"
+    },
+    {
+      "phrase": "incredible deal",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "tailored package"
+    },
+    {
+      "phrase": "too good to be true",
+      "category": "overpromising",
+      "weight": 24,
+      "replacement": "highly effective"
+    },
+    {
+      "phrase": "amazing stuff",
+      "category": "overpromising",
+      "weight": 14,
+      "replacement": "useful insights"
+    },
+    {
+      "phrase": "promise you",
+      "category": "overpromising",
+      "weight": 12,
+      "replacement": "confident you will see"
+    },
+    {
+      "phrase": "zero effort",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "minimal setup"
+    },
+    {
+      "phrase": "no effort",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "automated"
+    },
+    {
+      "phrase": "autopilot",
+      "category": "overpromising",
+      "weight": 12,
+      "replacement": "automated workflow"
+    },
+    {
+      "phrase": "set and forget",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "hands-off"
+    },
+    {
+      "phrase": "dominate your market",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "strengthen your market position"
+    },
+    {
+      "phrase": "crush your competition",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "stay ahead in your sector"
+    },
+    {
+      "phrase": "millionaire",
+      "category": "overpromising",
+      "weight": 24,
+      "replacement": "successful founder"
+    },
+    {
+      "phrase": "get rich",
+      "category": "overpromising",
+      "weight": 28,
+      "replacement": "build equity"
+    },
+    {
+      "phrase": "pure profit",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "high net margin"
+    },
+    {
+      "phrase": "unlimited leads",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "consistent lead flow"
+    },
+    {
+      "phrase": "unlimited traffic",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "steady qualified traffic"
+    },
+    {
+      "phrase": "guaranteed leads",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "qualified prospects"
+    },
+    {
+      "phrase": "never seen before",
+      "category": "overpromising",
+      "weight": 16,
+      "replacement": "fresh approach"
+    },
+    {
+      "phrase": "reply within one hour",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please reply when convenient"
+    },
+    {
+      "phrase": "respond within one hour",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please reply when convenient"
+    },
+    {
+      "phrase": "reply in the next hour",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please reply when convenient"
+    },
+    {
+      "phrase": "respond in the next hour",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please reply when convenient"
+    },
+    {
+      "phrase": "answer within one hour",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please reply when convenient"
+    },
+    {
+      "phrase": "answer in the next hour",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please reply when convenient"
+    },
+    {
+      "phrase": "open this email immediately",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "read this email immediately",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "open this message immediately",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "read this message immediately",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "review this email immediately",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "review this message immediately",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "only a few spots left",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "only a handful of spots left",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "only a few places left",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "only a handful of places left",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "just a few spots remain",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "just a few places remain",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "offer ends at midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "deal ends at midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "promotion ends at midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "price expires at midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "discount ends at midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "access ends at midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current availability"
+    },
+    {
+      "phrase": "respond before midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "please respond if interested"
+    },
+    {
+      "phrase": "reply before midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "please respond if interested"
+    },
+    {
+      "phrase": "confirm before midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "please respond if interested"
+    },
+    {
+      "phrase": "answer before midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "please respond if interested"
+    },
+    {
+      "phrase": "act before midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "please respond if interested"
+    },
+    {
+      "phrase": "sign up before midnight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "please respond if interested"
+    },
+    {
+      "phrase": "don't wait any longer",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "when convenient"
+    },
+    {
+      "phrase": "do not wait any longer",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "when convenient"
+    },
+    {
+      "phrase": "don't delay your response",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "when convenient"
+    },
+    {
+      "phrase": "do not delay your response",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "when convenient"
+    },
+    {
+      "phrase": "stop waiting and act",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "when convenient"
+    },
+    {
+      "phrase": "stop waiting and reply",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "when convenient"
+    },
+    {
+      "phrase": "today only special",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "current terms"
+    },
+    {
+      "phrase": "today only pricing",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "current terms"
+    },
+    {
+      "phrase": "today only discount",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "current terms"
+    },
+    {
+      "phrase": "today only access",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "current terms"
+    },
+    {
+      "phrase": "today only offer",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "current terms"
+    },
+    {
+      "phrase": "today only deal",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "current terms"
+    },
+    {
+      "phrase": "deadline is tonight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "upcoming deadline"
+    },
+    {
+      "phrase": "deadline is this evening",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "upcoming deadline"
+    },
+    {
+      "phrase": "deadline is tomorrow morning",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "upcoming deadline"
+    },
+    {
+      "phrase": "deadline closes tonight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "upcoming deadline"
+    },
+    {
+      "phrase": "deadline closes this evening",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "upcoming deadline"
+    },
+    {
+      "phrase": "deadline closes tomorrow morning",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "upcoming deadline"
+    },
+    {
+      "phrase": "you must act today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review the details"
+    },
+    {
+      "phrase": "you must respond today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review the details"
+    },
+    {
+      "phrase": "you must reply today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review the details"
+    },
+    {
+      "phrase": "you must sign up today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review the details"
+    },
+    {
+      "phrase": "you must decide today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review the details"
+    },
+    {
+      "phrase": "you must confirm today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review the details"
+    },
+    {
+      "phrase": "immediate action required",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "immediate response required",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "immediate reply required",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "immediate confirmation required",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "immediate decision required",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "immediate payment required",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please review when convenient"
+    },
+    {
+      "phrase": "while stock lasts",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "available while capacity lasts"
+    },
+    {
+      "phrase": "before stock runs out",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "available while capacity lasts"
+    },
+    {
+      "phrase": "before supplies run out",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "available while capacity lasts"
+    },
+    {
+      "phrase": "until inventory runs out",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "available while capacity lasts"
+    },
+    {
+      "phrase": "until stock runs out",
+      "category": "urgency",
+      "weight": 15,
+      "replacement": "available while capacity lasts"
+    },
+    {
+      "phrase": "enrollment closes tonight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current enrollment window"
+    },
+    {
+      "phrase": "registration closes tonight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current enrollment window"
+    },
+    {
+      "phrase": "signups close tonight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current enrollment window"
+    },
+    {
+      "phrase": "applications close tonight",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current enrollment window"
+    },
+    {
+      "phrase": "enrollment closes tomorrow",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current enrollment window"
+    },
+    {
+      "phrase": "registration closes tomorrow",
+      "category": "urgency",
+      "weight": 16,
+      "replacement": "current enrollment window"
+    },
+    {
+      "phrase": "your final reminder",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "follow-up reminder"
+    },
+    {
+      "phrase": "your last reminder",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "follow-up reminder"
+    },
+    {
+      "phrase": "your final warning",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "follow-up reminder"
+    },
+    {
+      "phrase": "your last warning",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "follow-up reminder"
+    },
+    {
+      "phrase": "final warning today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "follow-up reminder"
+    },
+    {
+      "phrase": "last warning today",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "follow-up reminder"
+    },
+    {
+      "phrase": "don't miss this opportunity",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "if this is useful"
+    },
+    {
+      "phrase": "do not miss this opportunity",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "if this is useful"
+    },
+    {
+      "phrase": "don't miss this deal",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "if this is useful"
+    },
+    {
+      "phrase": "do not miss this deal",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "if this is useful"
+    },
+    {
+      "phrase": "don't miss this offer",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "if this is useful"
+    },
+    {
+      "phrase": "do not miss this offer",
+      "category": "urgency",
+      "weight": 17,
+      "replacement": "if this is useful"
+    },
+    {
+      "phrase": "price goes up tomorrow",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "current price"
+    },
+    {
+      "phrase": "pricing goes up tomorrow",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "current price"
+    },
+    {
+      "phrase": "rate goes up tomorrow",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "current price"
+    },
+    {
+      "phrase": "cost goes up tomorrow",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "current price"
+    },
+    {
+      "phrase": "price increases tonight",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "current price"
+    },
+    {
+      "phrase": "pricing increases tonight",
+      "category": "urgency",
+      "weight": 14,
+      "replacement": "current price"
+    },
+    {
+      "phrase": "respond right away",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please respond when you can"
+    },
+    {
+      "phrase": "reply right away",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please respond when you can"
+    },
+    {
+      "phrase": "answer right away",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please respond when you can"
+    },
+    {
+      "phrase": "confirm right away",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please respond when you can"
+    },
+    {
+      "phrase": "sign up right away",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please respond when you can"
+    },
+    {
+      "phrase": "buy right away",
+      "category": "urgency",
+      "weight": 18,
+      "replacement": "please respond when you can"
+    },
+    {
+      "phrase": "claim your cash reward",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "pricing details"
+    },
+    {
+      "phrase": "claim your cash bonus",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "pricing details"
+    },
+    {
+      "phrase": "claim your money reward",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "pricing details"
+    },
+    {
+      "phrase": "claim your cash prize",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "pricing details"
+    },
+    {
+      "phrase": "claim your payment reward",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "pricing details"
+    },
+    {
+      "phrase": "claim your payment bonus",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "pricing details"
+    },
+    {
+      "phrase": "earn thousands overnight",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "revenue opportunity"
+    },
+    {
+      "phrase": "make thousands overnight",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "revenue opportunity"
+    },
+    {
+      "phrase": "earn hundreds overnight",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "revenue opportunity"
+    },
+    {
+      "phrase": "make hundreds overnight",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "revenue opportunity"
+    },
+    {
+      "phrase": "earn a fortune overnight",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "revenue opportunity"
+    },
+    {
+      "phrase": "make a fortune overnight",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "revenue opportunity"
+    },
+    {
+      "phrase": "double your profits fast",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "potential revenue growth"
+    },
+    {
+      "phrase": "triple your profits fast",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "potential revenue growth"
+    },
+    {
+      "phrase": "double your revenue fast",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "potential revenue growth"
+    },
+    {
+      "phrase": "triple your revenue fast",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "potential revenue growth"
+    },
+    {
+      "phrase": "double your earnings fast",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "potential revenue growth"
+    },
+    {
+      "phrase": "triple your earnings fast",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "potential revenue growth"
+    },
+    {
+      "phrase": "unbeatable discount today",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "available pricing"
+    },
+    {
+      "phrase": "unbeatable price today",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "available pricing"
+    },
+    {
+      "phrase": "unbeatable deal today",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "available pricing"
+    },
+    {
+      "phrase": "unbeatable offer today",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "available pricing"
+    },
+    {
+      "phrase": "unbeatable savings today",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "available pricing"
+    },
+    {
+      "phrase": "unbeatable value today",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "available pricing"
+    },
+    {
+      "phrase": "lowest price guaranteed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "pricing available on request"
+    },
+    {
+      "phrase": "cheapest price guaranteed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "pricing available on request"
+    },
+    {
+      "phrase": "best price guaranteed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "pricing available on request"
+    },
+    {
+      "phrase": "lowest rate guaranteed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "pricing available on request"
+    },
+    {
+      "phrase": "cheapest rate guaranteed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "pricing available on request"
+    },
+    {
+      "phrase": "best rate guaranteed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "pricing available on request"
+    },
+    {
+      "phrase": "instant cash bonus",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "an available incentive"
+    },
+    {
+      "phrase": "immediate cash bonus",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "an available incentive"
+    },
+    {
+      "phrase": "instant signup bonus",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "an available incentive"
+    },
+    {
+      "phrase": "immediate signup bonus",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "an available incentive"
+    },
+    {
+      "phrase": "instant joining bonus",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "an available incentive"
+    },
+    {
+      "phrase": "immediate joining bonus",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "an available incentive"
+    },
+    {
+      "phrase": "no credit check required",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the terms"
+    },
+    {
+      "phrase": "no income check required",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the terms"
+    },
+    {
+      "phrase": "no documentation required",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the terms"
+    },
+    {
+      "phrase": "no verification required",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the terms"
+    },
+    {
+      "phrase": "no approval required",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the terms"
+    },
+    {
+      "phrase": "no application required",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the terms"
+    },
+    {
+      "phrase": "riskless investment return",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the financial details"
+    },
+    {
+      "phrase": "guaranteed investment return",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the financial details"
+    },
+    {
+      "phrase": "assured investment return",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the financial details"
+    },
+    {
+      "phrase": "certain investment return",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the financial details"
+    },
+    {
+      "phrase": "fixed investment return",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the financial details"
+    },
+    {
+      "phrase": "instant investment return",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the financial details"
+    },
+    {
+      "phrase": "save thousands instantly",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "potential savings"
+    },
+    {
+      "phrase": "save hundreds instantly",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "potential savings"
+    },
+    {
+      "phrase": "save a fortune instantly",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "potential savings"
+    },
+    {
+      "phrase": "save thousands overnight",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "potential savings"
+    },
+    {
+      "phrase": "save hundreds overnight",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "potential savings"
+    },
+    {
+      "phrase": "save a fortune overnight",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "potential savings"
+    },
+    {
+      "phrase": "zero cost forever",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer terms"
+    },
+    {
+      "phrase": "free forever guaranteed",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer terms"
+    },
+    {
+      "phrase": "completely free forever",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer terms"
+    },
+    {
+      "phrase": "absolutely free forever",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer terms"
+    },
+    {
+      "phrase": "totally free forever",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer terms"
+    },
+    {
+      "phrase": "forever free guaranteed",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer terms"
+    },
+    {
+      "phrase": "massive discount available",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "pricing information"
+    },
+    {
+      "phrase": "huge discount available",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "pricing information"
+    },
+    {
+      "phrase": "enormous discount available",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "pricing information"
+    },
+    {
+      "phrase": "unbelievable discount available",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "pricing information"
+    },
+    {
+      "phrase": "incredible discount available",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "pricing information"
+    },
+    {
+      "phrase": "extraordinary discount available",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "pricing information"
+    },
+    {
+      "phrase": "earn cash from home",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "review the compensation details"
+    },
+    {
+      "phrase": "make cash from home",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "review the compensation details"
+    },
+    {
+      "phrase": "earn money from home fast",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "review the compensation details"
+    },
+    {
+      "phrase": "make money from home fast",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "review the compensation details"
+    },
+    {
+      "phrase": "earn income from home fast",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "review the compensation details"
+    },
+    {
+      "phrase": "make income from home fast",
+      "category": "financial_money",
+      "weight": 24,
+      "replacement": "review the compensation details"
+    },
+    {
+      "phrase": "cash waiting for you",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer"
+    },
+    {
+      "phrase": "money waiting for you",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer"
+    },
+    {
+      "phrase": "payment waiting for you",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer"
+    },
+    {
+      "phrase": "bonus waiting for you",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer"
+    },
+    {
+      "phrase": "reward waiting for you",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer"
+    },
+    {
+      "phrase": "prize waiting for you",
+      "category": "financial_money",
+      "weight": 20,
+      "replacement": "review the offer"
+    },
+    {
+      "phrase": "receive free cash today",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the offer details"
+    },
+    {
+      "phrase": "get free cash today",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the offer details"
+    },
+    {
+      "phrase": "collect free cash today",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the offer details"
+    },
+    {
+      "phrase": "claim free cash today",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the offer details"
+    },
+    {
+      "phrase": "receive free money today",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the offer details"
+    },
+    {
+      "phrase": "get free money today",
+      "category": "financial_money",
+      "weight": 22,
+      "replacement": "review the offer details"
+    },
+    {
+      "phrase": "guaranteed monthly profit",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "estimated return"
+    },
+    {
+      "phrase": "guaranteed weekly profit",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "estimated return"
+    },
+    {
+      "phrase": "guaranteed daily profit",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "estimated return"
+    },
+    {
+      "phrase": "guaranteed annual profit",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "estimated return"
+    },
+    {
+      "phrase": "guaranteed passive profit",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "estimated return"
+    },
+    {
+      "phrase": "guaranteed recurring profit",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "estimated return"
+    },
+    {
+      "phrase": "no payment ever needed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "cost information"
+    },
+    {
+      "phrase": "no fee ever needed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "cost information"
+    },
+    {
+      "phrase": "no charge ever needed",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "cost information"
+    },
+    {
+      "phrase": "no cost ever incurred",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "cost information"
+    },
+    {
+      "phrase": "no expense ever incurred",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "cost information"
+    },
+    {
+      "phrase": "no money ever required",
+      "category": "financial_money",
+      "weight": 18,
+      "replacement": "cost information"
+    },
+    {
+      "phrase": "send your password now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the organization through its official website",
+      "manualReview": true
+    },
+    {
+      "phrase": "share your password now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the organization through its official website",
+      "manualReview": true
+    },
+    {
+      "phrase": "reply with your password",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the organization through its official website",
+      "manualReview": true
+    },
+    {
+      "phrase": "email your password here",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the organization through its official website",
+      "manualReview": true
+    },
+    {
+      "phrase": "provide your password now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the organization through its official website",
+      "manualReview": true
+    },
+    {
+      "phrase": "confirm your password here",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the organization through its official website",
+      "manualReview": true
+    },
+    {
+      "phrase": "verify your account immediately",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "use the official account portal",
+      "manualReview": true
+    },
+    {
+      "phrase": "verify your identity immediately",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "use the official account portal",
+      "manualReview": true
+    },
+    {
+      "phrase": "confirm your login immediately",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "use the official account portal",
+      "manualReview": true
+    },
+    {
+      "phrase": "confirm your account immediately",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "use the official account portal",
+      "manualReview": true
+    },
+    {
+      "phrase": "update your password immediately",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "use the official account portal",
+      "manualReview": true
+    },
+    {
+      "phrase": "reset your password immediately",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "use the official account portal",
+      "manualReview": true
+    },
+    {
+      "phrase": "your account will be suspended",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact your provider directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your account will be locked",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact your provider directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your account will be terminated",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact your provider directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your account will be closed",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact your provider directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your account will be disabled",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact your provider directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your account will be deleted",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact your provider directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your payment has failed",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact the organization directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your payment was rejected",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact the organization directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your payment is overdue",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact the organization directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your invoice is overdue",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact the organization directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your billing is suspended",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact the organization directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "your card has been declined",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "contact the organization directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "download the attached invoice now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "review through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "open the attached invoice now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "review through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "download the attached receipt now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "review through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "open the attached receipt now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "review through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "download the attached statement now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "review through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "open the attached statement now",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "review through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "send your security code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "share your security code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "reply with your security code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "provide your security code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "confirm your security code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "enter your security code here",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "send your one-time code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "share your one-time code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "reply with your one-time code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "provide your one-time code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "confirm your one-time code",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "enter your one-time code here",
+      "category": "shady_phishing",
+      "weight": 28,
+      "replacement": "contact the sender through a verified channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "click to avoid suspension",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "click to avoid termination",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "click to avoid account closure",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "click to prevent suspension",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "click to prevent termination",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "click to prevent account closure",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "secure your account now",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "restore your account now",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "unlock your account now",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "reactivate your account now",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "recover your account now",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "protect your account now",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "review the sender and destination",
+      "manualReview": true
+    },
+    {
+      "phrase": "your mailbox is full",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact support through the official site",
+      "manualReview": true
+    },
+    {
+      "phrase": "your inbox has expired",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact support through the official site",
+      "manualReview": true
+    },
+    {
+      "phrase": "your email account has expired",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact support through the official site",
+      "manualReview": true
+    },
+    {
+      "phrase": "your mailbox has been suspended",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact support through the official site",
+      "manualReview": true
+    },
+    {
+      "phrase": "your inbox has been suspended",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact support through the official site",
+      "manualReview": true
+    },
+    {
+      "phrase": "your email account has been suspended",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact support through the official site",
+      "manualReview": true
+    },
+    {
+      "phrase": "we detected suspicious activity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "we noticed suspicious activity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "we found suspicious activity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "we identified suspicious activity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "we detected unauthorized activity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "we noticed unauthorized activity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "claim your unclaimed funds",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "review the terms through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "collect your unclaimed funds",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "review the terms through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "release your unclaimed funds",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "review the terms through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "claim your unclaimed payment",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "review the terms through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "collect your unclaimed payment",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "review the terms through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "release your unclaimed payment",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "review the terms through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "you have inherited money",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "you inherited a fortune",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "you are the sole beneficiary",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "you are a selected beneficiary",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "your inheritance is ready",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "your inheritance is waiting",
+      "category": "shady_phishing",
+      "weight": 25,
+      "replacement": "contact the sender through an official channel",
+      "manualReview": true
+    },
+    {
+      "phrase": "confidential business proposal",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "verify the sender independently",
+      "manualReview": true
+    },
+    {
+      "phrase": "secret financial proposal",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "verify the sender independently",
+      "manualReview": true
+    },
+    {
+      "phrase": "private wealth opportunity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "verify the sender independently",
+      "manualReview": true
+    },
+    {
+      "phrase": "confidential investment proposal",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "verify the sender independently",
+      "manualReview": true
+    },
+    {
+      "phrase": "secret investment proposal",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "verify the sender independently",
+      "manualReview": true
+    },
+    {
+      "phrase": "private inheritance opportunity",
+      "category": "shady_phishing",
+      "weight": 24,
+      "replacement": "verify the sender independently",
+      "manualReview": true
+    },
+    {
+      "phrase": "provide your login credentials",
+      "category": "shady_phishing",
+      "weight": 27,
+      "replacement": "never share credentials by email",
+      "manualReview": true
+    },
+    {
+      "phrase": "send your login credentials",
+      "category": "shady_phishing",
+      "weight": 27,
+      "replacement": "never share credentials by email",
+      "manualReview": true
+    },
+    {
+      "phrase": "share your login credentials",
+      "category": "shady_phishing",
+      "weight": 27,
+      "replacement": "never share credentials by email",
+      "manualReview": true
+    },
+    {
+      "phrase": "confirm your login credentials",
+      "category": "shady_phishing",
+      "weight": 27,
+      "replacement": "never share credentials by email",
+      "manualReview": true
+    },
+    {
+      "phrase": "email your login credentials",
+      "category": "shady_phishing",
+      "weight": 27,
+      "replacement": "never share credentials by email",
+      "manualReview": true
+    },
+    {
+      "phrase": "reply with your login credentials",
+      "category": "shady_phishing",
+      "weight": 27,
+      "replacement": "never share credentials by email",
+      "manualReview": true
+    },
+    {
+      "phrase": "sign in through this link",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "use the official website directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "log in through this link",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "use the official website directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "login through this link",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "use the official website directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "access your account through this link",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "use the official website directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "verify your account through this link",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "use the official website directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "confirm your identity through this link",
+      "category": "shady_phishing",
+      "weight": 26,
+      "replacement": "use the official website directly",
+      "manualReview": true
+    },
+    {
+      "phrase": "guaranteed success overnight",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "results may vary"
+    },
+    {
+      "phrase": "guaranteed growth overnight",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "results may vary"
+    },
+    {
+      "phrase": "guaranteed sales overnight",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "results may vary"
+    },
+    {
+      "phrase": "guaranteed revenue overnight",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "results may vary"
+    },
+    {
+      "phrase": "guaranteed profit overnight",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "results may vary"
+    },
+    {
+      "phrase": "guaranteed results overnight",
+      "category": "overpromising",
+      "weight": 22,
+      "replacement": "results may vary"
+    },
+    {
+      "phrase": "transform your business instantly",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "potential improvement"
+    },
+    {
+      "phrase": "transform your sales instantly",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "potential improvement"
+    },
+    {
+      "phrase": "transform your revenue instantly",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "potential improvement"
+    },
+    {
+      "phrase": "transform your workflow instantly",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "potential improvement"
+    },
+    {
+      "phrase": "transform your marketing instantly",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "potential improvement"
+    },
+    {
+      "phrase": "transform your pipeline instantly",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "potential improvement"
+    },
+    {
+      "phrase": "effortless growth guaranteed",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "practical improvements"
+    },
+    {
+      "phrase": "effortless sales guaranteed",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "practical improvements"
+    },
+    {
+      "phrase": "effortless profits guaranteed",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "practical improvements"
+    },
+    {
+      "phrase": "effortless revenue guaranteed",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "practical improvements"
+    },
+    {
+      "phrase": "effortless leads guaranteed",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "practical improvements"
+    },
+    {
+      "phrase": "effortless success guaranteed",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "practical improvements"
+    },
+    {
+      "phrase": "scientifically proven to work for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "proven to work for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "guaranteed to work for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "certain to work for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "tested to work for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "verified to work for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "increase conversions by 100%",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "increase sales by 100%",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "increase revenue by 100%",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "increase profits by 100%",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "increase leads by 100%",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "increase replies by 100%",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "boost conversions tenfold",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "boost sales tenfold",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "boost revenue tenfold",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "boost profits tenfold",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "boost leads tenfold",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "boost replies tenfold",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "possible improvement"
+    },
+    {
+      "phrase": "zero effort required for success",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "zero effort required for growth",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "zero effort required for profit",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "zero effort required for sales",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "zero effort required for leads",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "zero effort required for revenue",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "works every single time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "delivers every single time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "succeeds every single time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "converts every single time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "performs every single time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "wins every single time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "instant business transformation",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "realistic expected outcomes"
+    },
+    {
+      "phrase": "instant sales transformation",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "realistic expected outcomes"
+    },
+    {
+      "phrase": "instant revenue transformation",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "realistic expected outcomes"
+    },
+    {
+      "phrase": "instant workflow transformation",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "realistic expected outcomes"
+    },
+    {
+      "phrase": "instant marketing transformation",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "realistic expected outcomes"
+    },
+    {
+      "phrase": "instant pipeline transformation",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "realistic expected outcomes"
+    },
+    {
+      "phrase": "everyone gets results",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "review the results"
+    },
+    {
+      "phrase": "everyone sees results",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "review the results"
+    },
+    {
+      "phrase": "everyone makes money",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "review the results"
+    },
+    {
+      "phrase": "everyone closes deals",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "review the results"
+    },
+    {
+      "phrase": "everyone increases sales",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "review the results"
+    },
+    {
+      "phrase": "everyone grows revenue",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "review the results"
+    },
+    {
+      "phrase": "never fails to deliver",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "never fails to convert",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "never fails to perform",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "never fails to succeed",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "never fails to generate leads",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "never fails to increase sales",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "perfect results every time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "perfect sales every time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "perfect growth every time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "perfect conversions every time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "perfect performance every time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "perfect outcomes every time",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the claim"
+    },
+    {
+      "phrase": "revolutionary sales breakthrough",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "practical business outcomes"
+    },
+    {
+      "phrase": "revolutionary marketing breakthrough",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "practical business outcomes"
+    },
+    {
+      "phrase": "revolutionary revenue breakthrough",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "practical business outcomes"
+    },
+    {
+      "phrase": "revolutionary lead generation breakthrough",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "practical business outcomes"
+    },
+    {
+      "phrase": "revolutionary workflow breakthrough",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "practical business outcomes"
+    },
+    {
+      "phrase": "revolutionary growth breakthrough",
+      "category": "overpromising",
+      "weight": 19,
+      "replacement": "practical business outcomes"
+    },
+    {
+      "phrase": "proven to double sales overnight",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "proven to double revenue overnight",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "proven to double leads overnight",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "proven to triple sales overnight",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "proven to triple revenue overnight",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "proven to triple leads overnight",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "unstoppable business growth",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "measurable improvements"
+    },
+    {
+      "phrase": "unstoppable sales growth",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "measurable improvements"
+    },
+    {
+      "phrase": "unstoppable revenue growth",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "measurable improvements"
+    },
+    {
+      "phrase": "unstoppable profit growth",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "measurable improvements"
+    },
+    {
+      "phrase": "unstoppable lead growth",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "measurable improvements"
+    },
+    {
+      "phrase": "unstoppable conversion growth",
+      "category": "overpromising",
+      "weight": 18,
+      "replacement": "measurable improvements"
+    },
+    {
+      "phrase": "the ultimate solution for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "the perfect solution for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "the only solution you need",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "the last solution you need",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "the best solution for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    },
+    {
+      "phrase": "the definitive solution for everyone",
+      "category": "overpromising",
+      "weight": 20,
+      "replacement": "review the evidence"
+    }
+  ],
+  "url_shorteners": [
+    "bit.ly",
+    "tinyurl.com",
+    "t.co",
+    "goo.gl",
+    "ow.ly",
+    "is.gd",
+    "buff.ly",
+    "rebrand.ly",
+    "cutt.ly",
+    "shorturl.at",
+    "rb.gy",
+    "tiny.cc"
+  ],
+  "safe_acronyms": [
+    "B2B",
+    "B2C",
+    "SaaS",
+    "ROI",
+    "CEO",
+    "CTO",
+    "CFO",
+    "CMO",
+    "COO",
+    "VP",
+    "API",
+    "AI",
+    "ML",
+    "SEO",
+    "CRM",
+    "ERP",
+    "PDF",
+    "USA",
+    "UK",
+    "UAE",
+    "Q1",
+    "Q2",
+    "Q3",
+    "Q4",
+    "KPI",
+    "OKR",
+    "HR",
+    "IT",
+    "PR",
+    "AWS",
+    "GCP"
+  ],
+  "thresholds": {
+    "subject_multiplier": 1.5,
+    "max_cold_email_links": 1,
+    "max_subject_words": 8,
+    "max_caps_ratio": 0.15,
+    "max_attachment_kb": 1500
+  }
+}

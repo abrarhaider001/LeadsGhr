@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "LeadsGhr Lite",
+  "version": "0.1.0",
+  "description": "User-directed public business site scans and local lead export.",
+  "permissions": ["activeTab", "sidePanel", "storage", "offscreen", "alarms", "downloads"],
+  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "action": { "default_title": "LeadsGhr Lite" }
+}
