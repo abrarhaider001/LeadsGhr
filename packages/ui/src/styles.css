@@ -483,6 +483,7 @@ body { font-size: 13px; }
 .la-profile-facts span { font-size: 11px; color: color-mix(in srgb, var(--la-text) 65%, var(--la-muted)); }
 .la-profile-facts strong { font-size: 13px; font-weight: 650; }
 .la-profile-preferences { display: grid; gap: 18px; }
+.la-preference-content { min-width: 0; display: grid; gap: 16px; }
 .la-profile-preference-group { display: grid; gap: 10px; }
 .la-profile-preference-group h2 { margin: 0 0 3px; font-size: 16px; }
 .la-profile-option-list { border: 1px solid var(--la-line); border-radius: 13px; overflow: hidden; }
@@ -890,9 +891,21 @@ body, .la-main, .la-shell { background: var(--la-canvas); color: var(--la-text);
 .la-sidebar-profile { color: #E7E0F0; }
 .la-sidebar-profile:hover, .la-sidebar-profile[aria-current='page'] { background: #5B12C9; color: #FFFFFF; }
 .la-sidebar-profile[aria-current='page'] svg { color: #FFFFFF; }
+.la-sidebar-settings-children { display: grid; gap: 2px; margin: 3px 0 5px 16px; padding-left: 12px; border-left: 1px solid #FFFFFF40; }
+.la-sidebar-settings-children button { width: 100%; min-height: 32px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; color: #E7E0F0; text-align: left; font: inherit; font-size: 11px; cursor: pointer; }
+.la-sidebar-settings-children button:hover { background: #FFFFFF1C; color: #FFFFFF; }
+.la-sidebar-settings-children button[aria-current='page'] { background: #5B12C9; color: #FFFFFF; font-weight: 650; }
+.la-nav .la-sidebar-settings-children button { display: block; min-height: 32px; padding: 0 10px; font-size: 11px; }
+.la-sidebar-footer { width: calc(100% + 20px); background: transparent; border-right: 0; border-bottom: 0; border-left: 0; text-align: left; font: inherit; cursor: pointer; }
+.la-sidebar-footer:hover { background: #FFFFFF16; }
+.la-sidebar-footer[aria-current='page'] { background: #5B12C9; }
+@media (max-width: 900px) { .la-sidebar-settings-children { margin-left: 0; padding-left: 0; border-left: 0; } .la-sidebar-settings-children button { overflow: hidden; font-size: 10px; text-align: center; padding: 0 2px; } }
+@media (max-width: 900px) { .la-sidebar-footer { width: calc(100% + 14px); } .la-sidebar-settings-children { display: grid; } .la-nav .la-sidebar-settings-children button { padding: 0 2px; font-size: 9px; text-align: center; } }
 .la-sidebar-footer { border-top-color: #FFFFFF24; }
 .la-sidebar-footer strong { color: #FFFFFF; }
 .la-sidebar-footer small { color: #BDB0D0; }
+.la-sidebar { padding-bottom: 0; }
+.la-sidebar-footer { padding-bottom: 10px; }
 .la-topbar { background: var(--la-nav); border-bottom-color: #FFFFFF24; color: #FFFFFF; }
 .la-topbar h1 { color: #FFFFFF; }
 .la-topbar-heading p, .la-topbar-account small { color: #D3C9DF; }

@@ -20,11 +20,12 @@ import { Card, EmptyTable, Icon, type IconName } from '@leadsghr/ui'
 import Avatar, { genConfig } from 'react-nice-avatar'
 import { GrSearchAdvanced } from 'react-icons/gr'
 import { TbFilterBolt } from 'react-icons/tb'
+import { FiSettings } from 'react-icons/fi'
 import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed } from './account-data'
 
 const sidebarWordmark = new URL('../../../public/leadsghr-logo-sidebar.svg', import.meta.url).href
 const mark = new URL('../../../public/logo-leadsghr.svg', import.meta.url).href
-const navigation: { label: string; icon: IconName | 'advancedSearch' | 'filterBolt' }[] = [
+const navigation: { label: string; icon: IconName | 'advancedSearch' | 'filterBolt' | 'gear' }[] = [
   { label: 'Dashboard', icon: 'dashboard' },
   { label: 'Pipeline', icon: 'pipeline' },
   { label: 'Crawler', icon: 'spider' },
@@ -38,6 +39,7 @@ const navigation: { label: string; icon: IconName | 'advancedSearch' | 'filterBo
   { label: 'Profiles', icon: 'profiles' },
   { label: 'Exports', icon: 'exports' },
   { label: 'Compliance', icon: 'shield' },
+  { label: 'Settings', icon: 'gear' },
 ]
 const descriptions: Record<string, string> = {
   Dashboard: 'Real businesses. Public data. More opportunities.',
@@ -56,7 +58,8 @@ const descriptions: Record<string, string> = {
   Profiles: 'Organize reusable search settings and extraction rules.',
   Exports: 'Review and re-export CSV files from saved crawl runs.',
   Compliance: 'Review public data collection and source safeguards.',
-  Profile: 'Account details and desktop preferences.',
+  Profile: 'Account details and local workspace profile.',
+  Preferences: 'Configure crawler and search behavior.',
 }
 type LocalLead = { name: string; emails: string[]; phones: string[]; sourceUrl: string }
 type LocalRun = { id: string; url: string; status: string; startedAt?: string; finishedAt?: string; error?: string }
@@ -65,6 +68,7 @@ const bridge = () => (window as Window & { leadsGhrDesktop?: DesktopBridge }).le
 
 export function LeadsGhrApp() {
   const [page, setPage] = useState('Dashboard')
+  const [settingsExpanded, setSettingsExpanded] = useState(false)
   const [splashComplete, setSplashComplete] = useState(false)
   const [leads, setLeads] = useState<LocalLead[]>([])
   const [runs, setRuns] = useState<LocalRun[]>([])
@@ -179,9 +183,9 @@ export function LeadsGhrApp() {
       <div className="la-brand"><img className="la-brand-wordmark" src={sidebarWordmark} alt="LeadsGhr" /><img className="la-brand-symbol" src={mark} alt="LeadsGhr" /></div>
       <label className="la-sidebar-search"><Icon name="search" size={15}/><input ref={navSearchRef} type="search" value={navQuery} onChange={(event) => setNavQuery(event.target.value)} placeholder="Search..." aria-label="Find a page" /><kbd>Ctrl K</kbd></label>
       <nav className="la-nav" aria-label="Main navigation">
-        {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase())).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin) ? 'page' : undefined} onClick={() => void showPage(label)} title={label}>{icon === 'advancedSearch' ? <GrSearchAdvanced size={16} aria-hidden="true"/> : icon === 'filterBolt' ? <TbFilterBolt size={17} aria-hidden="true"/> : <Icon name={icon} size={16}/>}<span>{label}</span></button></div>)}
+        {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase()) || (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase()))).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={label !== 'Settings' && (page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin)) ? 'page' : undefined} aria-expanded={label === 'Settings' ? settingsExpanded : undefined} aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined} onClick={() => label === 'Settings' ? setSettingsExpanded((current) => !current) : void showPage(label)} title={label}>{icon === 'advancedSearch' ? <GrSearchAdvanced size={16} aria-hidden="true"/> : icon === 'filterBolt' ? <TbFilterBolt size={17} aria-hidden="true"/> : icon === 'gear' ? <FiSettings size={16} aria-hidden="true" /> : <Icon name={icon} size={16}/>}<span>{label}</span></button>{label === 'Settings' && (settingsExpanded || navQuery.trim()) && <div className="la-sidebar-settings-children" id="la-settings-submenu"><button type="button" aria-current={page === 'Preferences' ? 'page' : undefined} onClick={() => void showPage('Preferences')}>Preferences</button></div>}</div>)}
       </nav>
-      <div className="la-sidebar-bottom"><button className="la-sidebar-profile" type="button" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><Icon name="settings" size={16}/><span>Profile & preferences</span></button><div className="la-sidebar-footer"><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace</small></span></div></div>
+      <div className="la-sidebar-bottom"><button className="la-sidebar-footer" type="button" aria-label="Open profile" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace</small></span></button></div>
     </aside>
     <main className="la-main">
       {page === 'Dashboard' && <header className="la-topbar">
@@ -201,7 +205,7 @@ export function LeadsGhrApp() {
           : page === 'Crawl Results' && searchCriteria ? <SearchResultsPage key={runDetail?.id ?? 'new'} criteria={runDetail?.criteria ?? searchCriteria} preferences={runDetail?.preferences ?? preferences} initialRun={runDetail} pipelineMode={searchOrigin === 'Pipeline'} pipelineName={pipelineDetails?.name} provider={pipelineDetails?.provider ?? 'google-maps'} onBack={() => void showPage(searchOrigin === 'Pipeline' ? 'New Pipeline' : 'New Search')} onSaved={() => void refreshCrawlHistory()} onFinished={(item) => { setFinishedExport(item); setPage('Pipeline Export'); void refreshCrawlHistory() }} />
           : page === 'Pipeline Export' && finishedExport ? <><PipelineTimeline current={5}/><PipelineExportPage item={finishedExport} onPipeline={() => void showPage('Pipeline')} onExports={() => void showPage('Exports')} /></>
           : page === 'Runs' || page === 'Exports' ? <ExportsPage runs={crawlRuns} exports={crawlExports} showExportHistory={page === 'Exports'} onRefresh={refreshCrawlHistory} onResume={(id) => void resumeCrawl(id)} />
-          : page === 'Profile' ? <ProfilePage preferences={preferences} onPreferencesChange={updatePreferences} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
+          : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} preferences={preferences} onPreferencesChange={updatePreferences} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
           : page === 'Leads' ? <section className="la-records">
             <div className="la-records-toolbar">
               <label className="la-records-search"><Icon name="search" size={17}/><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search companies, sources, emails..." aria-label={`Search ${page.toLowerCase()}`} /></label>

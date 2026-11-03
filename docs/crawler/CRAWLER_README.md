@@ -4,7 +4,7 @@ The Crawler sidebar tab tests extraction from a user-entered public HTTP(S) home
 
 ## Email source preference
 
-In **Profile & preferences ? Preferences ? Crawler email source**, choose one of two mutually exclusive modes:
+In **Settings > Preferences > Crawler > Crawler email source**, choose one of two mutually exclusive modes:
 
 - **Our behavior** (default): existing LeadsGhr extraction from visible text, `mailto:` links, and public form-recipient clues. The URL queue, robots checks, and page preview work as before.
 - **Email Hunter-style**: match email-shaped strings in each page's complete rendered HTML, including attributes and inline scripts. This can find dynamically loaded addresses that a raw HTTP response or visible-text extraction misses. It can also count placeholders, sample data, and malformed matches; the results are unverified.
@@ -20,7 +20,7 @@ The Email Hunter-style mode reproduces the installed extension's *page HTML matc
 5. Each queued page is fetched and crawled one at a time. The URL table shows order, URL, type, status, an email-count chip, and an eye action. Select the eye action to open a right side panel with the page URL, type, crawl status, extraction mode, and the emails found on that page. The homepage panel also shows discovery metadata when available. Blocked or failed pages are marked Skipped.
 6. The table heading shows the unique email total across crawled pages. Publicly exposed form recipients may be included; possible script recipients are unconfirmed. Forms are never submitted.
 
-Live activity shows one changing status line with a grey dot while working and a primary blue dot for successful results. Fetching text updates to fetched when successful. The preview shows the current page when enabled in Profile > Preferences. Hiding it leaves the isolated webview mounted offscreen for crawling.
+Live activity shows one changing status line with a grey dot while working and a primary blue dot for successful results. Fetching text updates to fetched when successful. The preview shows the current page when enabled in Settings > Preferences > Crawler. Hiding it leaves the isolated webview mounted offscreen for crawling.
 
 The contact-only preference is on by default and stored locally. Crawls remain temporary. Each page must pass its own robots check; challenges pause the crawl and logins are never used.
 
