@@ -33,6 +33,6 @@ Keep **Instrument Sans** for interface text and **Monaspace Neon** for technical
 
 ## Brand, motion, and accessibility
 
-The splash centers the LeadsGhr wordmark over a purple progress indicator. The mark uses three white source nodes, an open diamond hub, and one violet output node on a dark-purple rounded tile. Smaller brand placements and the desktop installer use the mark-only SVG. The Profile avatar is separate from the brand logo: `react-nice-avatar` creates it from a locally saved seed and changes it only when **Generate new** is clicked.
+The splash centers the LeadsGhr wordmark over a purple progress indicator. The brand mark is the transparent angular LG monogram in `public/leadsghr-lg-monogram-transparent.png`. Smaller brand placements and the desktop installer use variants generated from this image. The Profile avatar is separate from the brand logo: `react-nice-avatar` creates it from a locally saved seed and changes it only when **Generate new** is clicked.
 
 Use gentle hover and entrance transitions, a visible cyan keyboard focus outline, accessible names for icon-only buttons, and `prefers-reduced-motion` support. Text and icon meaning remain visible without relying on color alone.
