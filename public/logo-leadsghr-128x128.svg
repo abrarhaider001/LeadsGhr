@@ -1,6 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 1024 1024" role="img" aria-label="LeadsGhr logo">
-  <rect width="1024" height="1024" rx="170" fill="#170927"/>
-  <path d="M210 230h120v450h215v114H210V230Z" fill="#FFFFFF"/>
-  <path d="m375 555 285-285 86 86-285 285-86-86Z" fill="#FFFFFF"/>
-  <path d="M665 230h135v135H665z" fill="#A932F5"/>
+  <rect width="1024" height="1024" rx="180" fill="#170927"/>
+  <path d="M258 260 449 451M188 512h214M258 764l191-191M684 512h140" fill="none" stroke="#FFFFFF" stroke-width="70" stroke-linecap="round"/>
+  <circle cx="258" cy="260" r="63" fill="#FFFFFF"/>
+  <circle cx="188" cy="512" r="63" fill="#FFFFFF"/>
+  <circle cx="258" cy="764" r="63" fill="#FFFFFF"/>
+  <rect x="439" y="403" width="218" height="218" rx="42" transform="rotate(45 548 512)" fill="#170927" stroke="#FFFFFF" stroke-width="70"/>
+  <circle cx="824" cy="512" r="84" fill="#B66AFF"/>
 </svg>

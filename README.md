@@ -56,7 +56,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev:desktop` is an equivalent explicit command. The light-only splash screen shows the centered `public/leadsghr-logo-v1.svg` and a loading progress bar. The Electron window opens maximized with the light-on-dark LeadsGhr wordmark in the sidebar and the geometric L-and-arrow desktop icon. Keep the terminal running while using it and press Ctrl+C to stop. The local SQLite file is created under Electron's user-data directory only when a saved-scan feature is used.
+`pnpm dev:desktop` is an equivalent explicit command. The light-only splash screen shows the centered `public/leadsghr-logo-v1.svg` and a loading progress bar. The Electron window opens maximized with the light-on-dark LeadsGhr wordmark in the sidebar and the network-hub desktop icon. Keep the terminal running while using it and press Ctrl+C to stop. The local SQLite file is created under Electron's user-data directory only when a saved-scan feature is used.
 
 If an earlier install skipped dependency scripts and reports `Electron uninstall`, run `pnpm --filter @leadsghr/desktop rebuild electron`. If your shell has `ELECTRON_RUN_AS_NODE=1`, clear it for that session with `Remove-Item Env:ELECTRON_RUN_AS_NODE` before `pnpm dev`.
 
