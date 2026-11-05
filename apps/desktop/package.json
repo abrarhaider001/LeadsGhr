@@ -15,6 +15,7 @@
         "@leadsghr/export": "workspace:*",
         "@leadsghr/extract": "workspace:*",
         "@leadsghr/platform": "workspace:*",
+        "@leadsghr/quality": "workspace:*",
         "@leadsghr/schemas": "workspace:*",
         "@leadsghr/ui": "workspace:*",
         "better-sqlite3": "^12.2.0",

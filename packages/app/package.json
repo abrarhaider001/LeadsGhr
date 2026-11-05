@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@leadsghr/extract": "workspace:*",
+        "@leadsghr/quality": "workspace:*",
         "@leadsghr/schemas": "workspace:*",
         "@leadsghr/ui": "workspace:*",
         "react": "^19.2.0",

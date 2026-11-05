@@ -1,4 +1,6 @@
 import type { Lead } from '@leadsghr/schemas'
+export { filterEmails } from './email-filter'
+export type { FilterResult, FilteredEmail, RejectedEmail } from './email-filter'
 
 export function dedupeLeads(leads: Lead[]): Lead[] {
   const byKey = new Map<string, Lead>()

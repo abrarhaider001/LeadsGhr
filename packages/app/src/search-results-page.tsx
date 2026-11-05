@@ -76,6 +76,7 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
     let disposed = false
     let currentId: string | null = null
     let activeRunId: string | null = null
+    let siteCrawlTask: Promise<'completed' | 'paused'> | null = null
     let finalized = false
     let saveError: unknown = null
     let unsubscribe: (() => void) | undefined
@@ -109,8 +110,16 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
       if (finalized) return false
       finalized = true
       try {
+        if (siteCrawlTask) await siteCrawlTask.catch(() => undefined)
         await persistProgress(status, error)
         if (activeRunId) {
+          if (pipelineMode) {
+            if (!disposed) setStatus('Filtering extracted emails before export...')
+            const filtered = await runStore.filterCrawlRunEmails(activeRunId)
+            const saved = await runStore.getCrawlRun(activeRunId)
+            if (!disposed && saved) setRows(saved.rows)
+            if (!disposed) setStatus(`Email filtering complete: ${filtered.kept} kept, ${filtered.removed} removed. Exporting CSV...`)
+          }
           const item = await runStore.exportCrawlRun(activeRunId)
           if (!disposed && item) { setLastExport(item); if (pipelineMode) onFinishedRef.current?.(item) }
         }
@@ -219,13 +228,13 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
           if (saveError) throw saveError
           siteCrawlActive.current = true
           setStatus('Crawling queued public websites...')
-          let result = await runStore.startPipelinePages(activeRunId)
+          let result = await (siteCrawlTask = runStore.startPipelinePages(activeRunId))
           while (result === 'paused' && pauseRequested.current && !stopRequested.current && !disposed) {
             setPhase('paused')
             setStatus('Website crawl paused. Resume to continue from the queued page.')
             await new Promise<void>((resolve) => { resumeWaiter.current = resolve })
             resumeWaiter.current = null
-            if (!stopRequested.current && !disposed) { setPhase('running'); result = await runStore.startPipelinePages(activeRunId) }
+            if (!stopRequested.current && !disposed) { setPhase('running'); result = await (siteCrawlTask = runStore.startPipelinePages(activeRunId)) }
           }
           if (result === 'paused') sitePaused = true
         } catch (failure) { sitePaused = true; setStatus(`Website crawl paused: ${String(failure)}`) }

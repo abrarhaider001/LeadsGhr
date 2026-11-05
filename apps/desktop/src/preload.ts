@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   listCrawlRuns: () => ipcRenderer.invoke('leadsghr:crawl-runs:list'),
   listCrawlExports: () => ipcRenderer.invoke('leadsghr:crawl-runs:exports'),
   saveCrawlRow: (input: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:row', crawlRunRowInputSchema.parse(input)),
+  filterCrawlRunEmails: (id: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:filter-emails', crawlRunIdSchema.parse(id)),
   enqueuePipelineWebsite: (input: unknown) => ipcRenderer.invoke('leadsghr:pipeline-pages:enqueue', crawlRunRowInputSchema.parse(input)),
   listPipelinePages: (id: unknown) => ipcRenderer.invoke('leadsghr:pipeline-pages:list', crawlRunIdSchema.parse(id)),
   startPipelinePages: (id: unknown) => ipcRenderer.invoke('leadsghr:pipeline-pages:start', crawlRunIdSchema.parse(id)),

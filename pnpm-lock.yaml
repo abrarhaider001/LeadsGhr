@@ -41,6 +41,9 @@ importers:
       '@leadsghr/platform':
         specifier: workspace:*
         version: link:../../packages/platform
+      '@leadsghr/quality':
+        specifier: workspace:*
+        version: link:../../packages/quality
       '@leadsghr/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
@@ -99,6 +102,9 @@ importers:
       '@leadsghr/extract':
         specifier: workspace:*
         version: link:../extract
+      '@leadsghr/quality':
+        specifier: workspace:*
+        version: link:../quality
       '@leadsghr/schemas':
         specifier: workspace:*
         version: link:../schemas

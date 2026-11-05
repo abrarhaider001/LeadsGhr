@@ -7,6 +7,7 @@ export type CrawlRunBridge = {
   listCrawlExports(): Promise<CrawlExport[]>
   deleteCrawlRun(id: string): Promise<boolean>
   saveCrawlRow(input: { id: string; row: CrawlRow }): Promise<unknown>
+  filterCrawlRunEmails(id: string): Promise<{ before: number; kept: number; removed: number }>
   enqueuePipelineWebsite(input: { id: string; row: CrawlRow }): Promise<boolean>
   listPipelinePages(id: string): Promise<PipelinePage[]>
   startPipelinePages(id: string): Promise<'completed' | 'paused'>

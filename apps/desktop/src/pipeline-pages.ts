@@ -179,6 +179,11 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
           return 'paused'
         }
       }
+      // The current page may discover links after the next-page lookup above.
+      if (!target && !signal.aborted) {
+        target = nextPage(id)
+        pending = target ? prepare(target) : null
+      }
     }
     if (signal.aborted) {
       db.prepare("UPDATE pipeline_pages SET status='queued' WHERE run_id=? AND status IN ('fetching','ready','crawling')").run(id)

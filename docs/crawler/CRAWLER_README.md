@@ -11,7 +11,7 @@ This guide describes the **current desktop implementation**. The Crawler tab is 
 | Fetch method | Direct HTTP or browser rendering preference | The fetch method saved with the run |
 | Email source | LeadsGhr extraction or Email Hunter-style matching | LeadsGhr extraction; the Email Hunter-style preference is **not applied** here yet |
 | Contact-only option | Homepage plus first contact-like homepage link; otherwise all unique homepage links | Homepage plus contact links; when off, links found on crawled pages may also enter the queue |
-| Results | Per-page email counts and details | Per-page statuses and emails merged into the saved business row |
+| Results | Per-page email counts and details | Per-page statuses and emails merged into the saved business row, then filtered |
 | Storage and export | No SQLite, Supabase, or CSV write | Local SQLite run data and CSV export |
 
 Business-listing search is a separate stage. Google Maps is currently the available automated Pipeline provider. The Crawler tab does not search Google Maps.
@@ -83,6 +83,8 @@ The Adams Homes homepage returns gzip-compressed HTML. An integration check ran 
 
 ## Pipeline: persistent website crawl
 
+The Pipeline overview shows five ordered cards: Find businesses, Build the URL queue, Crawl public pages, Filter emails, and Export results. The filtering card reflects the automatic cleanup between crawling and CSV creation.
+
 Pipeline discovery first saves public business rows. When a row has a website URL, [`packages/app/src/search-results-page.tsx`](../../packages/app/src/search-results-page.tsx) asks the main process to queue its homepage. Website crawling is in [`apps/desktop/src/pipeline-pages.ts`](../../apps/desktop/src/pipeline-pages.ts); runs and exports are in [`apps/desktop/src/crawl-runs.ts`](../../apps/desktop/src/crawl-runs.ts).
 
 1. SQLite `pipeline_pages` stores run ID, business row key, URL, page type, status, emails JSON, error, and timestamps. `(run_id, row_key, url)` prevents exact duplicates. URLs lose fragments and a trailing slash. A run allows up to **40 pages per business** and **5,000 pages total**.
@@ -91,9 +93,15 @@ Pipeline discovery first saves public business rows. When a row has a website UR
 4. The process starts fetching the next queued page while inspecting the current one. Browser mode loads a separate hidden, sandboxed Electron window and collects eight scroll snapshots; if rendering fails without a challenge, it uses the fetched HTML. Direct HTTP uses only fetched HTML.
 5. Each snapshot goes through `discoverPage` and `extractContacts`. Found emails merge with the business row's existing emails, are deduplicated, and are capped at **1,000 per business row**; per-page emails are stored in `pipeline_pages`. Contact-like links from the homepage are queued. With contact-only off, same-origin links found on crawled pages can enter the queue.
 6. On startup, pages left in `fetching`, `ready`, or `crawling` return to `queued` for resume. Pausing aborts the active process and requeues unfinished pages. Only one Pipeline website crawl runs at a time. Saved search position, business rows, page queue, and export history remain local; extracted data is not sent to Supabase.
-7. On stop or completion, saved business rows are exported to CSV under the user's `Documents/LeadsGhr/exports` folder. Export records include file name, path, size, entry count, time, and a CSV snapshot for re-export.
+7. After the website crawl finishes, or when a run stops with partial results, the main process filters every saved Pipeline business row's emails before exporting. The UI refreshes from the filtered saved rows. CSV files therefore contain kept addresses only. Saved business rows are exported under the user's `Documents/LeadsGhr/exports` folder. Export records include file name, path, size, entry count, time, and a CSV snapshot for re-export.
 
-**Current Pipeline limits:** `crawlerEmailSource` is not read by Pipeline website crawling; it always uses `extractContacts` plus public form-recipient clues. The current loop chooses the next queued page **before** the current page adds newly discovered links. If the queue was empty then, the newly added links remain queued until the Pipeline is resumed. Do not treat that run as having crawled every recursively discovered page.
+### Automatic email filtering before export
+
+The Pipeline uses the same local rules as the Email Filtering page, now shared through [`packages/quality/src/email-filter.ts`](../../packages/quality/src/email-filter.ts). For **each business row**, it normalizes case and surrounding punctuation, rejects malformed or overlong addresses, placeholders, a small known disposable-domain list, no-reply mailboxes, and unrecognized domain endings, then removes duplicates and Gmail aliases. Filtering per business preserves an address that legitimately appears on more than one business's site. This is a syntax and heuristic cleanup, **not** DNS, MX, SMTP, or mailbox verification.
+
+The filtering step runs after page extraction and before every automatic Pipeline CSV export, including partial exports after stop or a crawl error. Pausing and then resuming without stopping does not export in between. A local `pipeline_email_filters` SQLite table keeps each row's original email inputs and rejected values with reasons. On resume, the next filter pass combines those original inputs with any newly crawled addresses, so earlier rejected inputs are not silently lost. The audit remains on this computer; only kept addresses appear in saved business rows and CSV. Deleting a Pipeline also deletes its filter audit.
+
+**Current Pipeline limits:** `crawlerEmailSource` is not read by Pipeline website crawling; it always uses `extractContacts` plus public form-recipient clues. Filtering does not recover emails omitted by extraction, validate that a mailbox exists, or guarantee deliverability. The UI does not yet expose the saved rejected-address audit.
 
 ## Source map
 
@@ -103,4 +111,5 @@ Pipeline discovery first saves public business rows. When a row has a website UR
 - [`packages/extract/src/index.ts`](../../packages/extract/src/index.ts): email, phone, link, and form-clue parsing.
 - [`apps/desktop/src/pipeline-pages.ts`](../../apps/desktop/src/pipeline-pages.ts): persistent queue, robots-aware pacing, fetch/crawl overlap, and resume behavior.
 - [`apps/desktop/src/crawl-runs.ts`](../../apps/desktop/src/crawl-runs.ts): run rows, saved preferences, CSV exports, and re-export snapshots.
+- [`packages/quality/src/email-filter.ts`](../../packages/quality/src/email-filter.ts): shared local email normalization and rejection rules used by Pipeline and Email Filtering.
 - [`packages/schemas/src/index.ts`](../../packages/schemas/src/index.ts): URL, preference, run, and row validation.

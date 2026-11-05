@@ -975,7 +975,7 @@ a { color: var(--la-accent); }
 .la-pipeline-toolbar h2 { margin: 0 0 5px; font: inherit; font-size: 18px; font-weight: 700; letter-spacing: -.02em; }
 .la-pipeline-toolbar p { margin: 0; color: var(--la-muted); font-size: 12px; }
 .la-pipeline-toolbar .la-button { flex: none; }
-.la-pipeline-stage-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
+.la-pipeline-stage-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 13px; }
 .la-pipeline-stage { position: relative; min-height: 170px; padding: 18px; border: 1px solid var(--la-line); border-radius: 18px; background: #FFFFFF; }
 .la-pipeline-stage-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 11px; background: var(--la-primary); color: var(--la-accent); }
 .la-pipeline-stage-number { position: absolute; top: 19px; right: 18px; color: #B7A8CC; font: 12px 'Monaspace Neon', monospace; }

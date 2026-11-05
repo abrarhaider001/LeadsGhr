@@ -41,7 +41,7 @@ Snapshot: 2026-10-26. This compares the original feature guides with the active 
 | [D4: Lead Scoring](D4-Lead%20Scoring/FEATURES-D4-README.md) | Partial | A simple quickScore utility exists; the specified weighted lead scoring is not wired into the lead workflow. |
 | [D5: Source Tracking and Confidence](D5-Source%20Tracking%20and%20Confidence/FEATURES-D5-README.md) | Not implemented | No field-level source and confidence record. |
 | [E1: Live Excel Export](E1-Live%20Excel%20Export/FEATURES-E1-README.md) | Not implemented | No live Excel workbook output. |
-| [E2: Multi-format Export](E2-Multi-format%20Export/FEATURES-E2-README.md) | Partial | Crawl results automatically export to CSV; Dashboard and Exports can re-export saved rows. JSON, VCF, presets and broader column controls remain missing. |
+| [E2: Multi-format Export](E2-Multi-format%20Export/FEATURES-E2-README.md) | Partial | Pipeline emails are locally filtered before automatic CSV export; Dashboard and Exports can re-export saved rows. JSON, VCF, presets and broader column controls remain missing. |
 | [E3: Database and Run History](E3-Database%20and%20Run%20History/FEATURES-E3-README.md) | Partial | SQLite stores crawl criteria, query checkpoints, rows and export history for resume and re-export. Full provenance, run comparison and richer history remain missing. |
 | [E4: Excel Template Designer](E4-Excel%20Template%20Designer/FEATURES-E4-README.md) | Not implemented | No Excel template designer. |
 | [F1: Job Queue and Scheduler](F1-Job%20Queue%20and%20Scheduler/FEATURES-F1-README.md) | Partial | A local queue adapter can enqueue jobs; persistent scheduling and worker controls are missing. |
