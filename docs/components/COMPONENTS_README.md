@@ -1,5 +1,7 @@
 # Components and screens
 
+The desktop screens share the Pipeline overview's white surface treatment: light lavender borders, purple accents, and lavender icon or selected-state backgrounds. Dashboard, Pipeline setup, Niche Library, Profile, Email Filtering, and Email Spam Check use these shared colors while retaining their existing layouts. The Crawler and Latest pipelines table keep their open, container-free sections.
+
 The Discovery tools sidebar has separate Email Filtering, Email Validation, and Email Spam Check entries with distinct icons and active states. Email Validation and Email Spam Check open dedicated placeholder pages and do not claim to perform checks yet.
 
 ## Saved crawl runs and exports

@@ -23,7 +23,7 @@ import { TbFilterBolt } from 'react-icons/tb'
 import { FiSettings } from 'react-icons/fi'
 import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed } from './account-data'
 
-const sidebarWordmark = new URL('../../../public/leadsghr-logo-sidebar.svg', import.meta.url).href
+const sidebarWordmark = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 const mark = new URL('../../../public/logo-leadsghr.svg', import.meta.url).href
 const navigation: { label: string; icon: IconName | 'advancedSearch' | 'filterBolt' | 'gear' }[] = [
   { label: 'Dashboard', icon: 'dashboard' },
