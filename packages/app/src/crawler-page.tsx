@@ -58,6 +58,47 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
   const contactOnlyRef = useRef(true)
   const emailSourceRef = useRef<DesktopPreferences['crawlerEmailSource']>('leadsghr')
 
+  async function crawlHttpQueue(first: PreparedPage, current: number) {
+    let prepared: PreparedPage | null = first
+    let kind: PageResult['kind'] = 'Homepage'
+    while (prepared && runRef.current === current) {
+      const page = prepared
+      setPhase('crawling')
+      setRow(page.url, { status: 'Crawling' })
+      addActivity(`Crawling ${kind.toLowerCase()}...`, 'working')
+      collect(page.html, page.url, kind)
+      setRow(page.url, { status: 'Crawled' })
+      if (kind === 'Homepage') {
+        const contact = discoveredContactRef.current ?? contactLink(homepageLinksRef.current)
+        if (!contact) setDiscoveryMs(Math.round(performance.now() - discoveryStartedRef.current))
+        if (contact) enqueue(contact, 'Contact page')
+        if (!contactOnlyRef.current) for (const link of homepageLinksRef.current) enqueue(link, link === contact ? 'Contact page' : 'Page')
+      }
+      prepared = null
+      while (queueRef.current.length && runRef.current === current) {
+        const target = queueRef.current.shift()!
+        setRow(target.url, { status: 'Fetching' })
+        addActivity(`Fetching ${target.kind.toLowerCase()}...`, 'working')
+        try {
+          await wait(700)
+          const next = await desktop()!.prepareCrawlerTest({ url: target.url })
+          if (runRef.current !== current) return
+          if (next.url !== target.url) setUrlRows((items) => items.map((item) => item.url === target.url ? { ...item, url: next.url } : item))
+          kind = target.kind
+          prepared = next
+          break
+        } catch (error) {
+          setRow(target.url, { status: 'Skipped' })
+          addActivity(`Skipped ${target.url}: ${String(error)}`, 'error')
+        }
+      }
+    }
+    if (runRef.current !== current) return
+    const count = new Set([...foundRef.current, ...recipientsRef.current, ...possibleRecipientsRef.current]).size
+    addActivity(count ? `Crawl complete: ${count} unique email address(es)` : 'No email found on crawled pages', 'success')
+    setPhase('done')
+  }
+
   const addActivity = (text: string, kind: Activity['kind']) => {
     setActivity((items) => [...items, { id: ++sequenceRef.current, text, kind }])
   }
@@ -171,6 +212,10 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
       enqueue(prepared.url, 'Homepage')
       queueRef.current.shift()
       setRow(prepared.url, { status: 'Crawling' })
+      if (preferences.crawlerFetchMethod === 'http') {
+        await crawlHttpQueue(prepared, current)
+        return
+      }
       setPhase('loading')
       setPreview({ url: prepared.url, id: current, partition: `crawler-test-${crypto.randomUUID()}`, kind: 'Homepage' })
     } catch (error) {
@@ -289,14 +334,14 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
         </div>
       </form>
     </section>
-    <div className={`la-crawler-grid${preferences.showCrawlerPreview ? ' la-crawler-grid--preview-only' : ' la-crawler-grid--no-preview'}`}>
+    {preferences.crawlerFetchMethod === 'browser' && <div className={`la-crawler-grid${preferences.showCrawlerPreview ? ' la-crawler-grid--preview-only' : ' la-crawler-grid--no-preview'}`}>
       {preferences.showCrawlerPreview ? <section className="la-crawler-preview-section">
         <div className="la-crawler-section-heading"><div><h3>Webpage preview</h3><p>{preview?.url ?? 'Enter a URL to open a page here.'}</p></div><span className={working ? 'la-crawler-live' : 'la-crawler-idle'}>{working ? 'Working' : phase === 'done' ? 'Finished' : 'Preview'}</span></div>
         <div className="la-crawler-webview-frame">
           {webview ?? <div className="la-crawler-empty"><span className="la-crawler-empty-icon">?</span><strong>Webpage preview</strong><span>The page will appear here while the crawler scrolls through it.</span></div>}
         </div>
       </section> : webview && <div className="la-crawler-hidden-preview" aria-hidden="true">{webview}</div>}
-    </div>
+    </div>}
     <section className="la-crawler-links-section">
       <h3>URL queue <span>{urlRows.length} pages · {emailCount} unique emails</span></h3>
       <div className={`la-crawler-queue-activity la-crawler-event--${activity.at(-1)?.kind ?? 'working'}`} role="status" aria-live="polite"><span className="la-crawler-dot" /><span>{activity.at(-1)?.text ?? 'Ready to crawl'}</span></div>

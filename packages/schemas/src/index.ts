@@ -62,6 +62,7 @@ export const desktopPreferencesSchema = z.object({
   showCrawlerPreview: z.boolean(),
   crawlerContactOnly: z.boolean().default(true),
   crawlerEmailSource: z.enum(['leadsghr', 'email-hunter']).default('leadsghr'),
+  crawlerFetchMethod: z.enum(['browser', 'http']).default('browser'),
   showChromeDuringSearch: z.boolean(),
   searchGoogleMaps: z.boolean().default(true),
   useNicheKeywords: z.boolean().default(false),
@@ -78,6 +79,7 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   showCrawlerPreview: true,
   crawlerContactOnly: true,
   crawlerEmailSource: 'leadsghr',
+  crawlerFetchMethod: 'browser',
   showChromeDuringSearch: true,
   searchGoogleMaps: true,
   useNicheKeywords: false,
@@ -96,7 +98,7 @@ export const mapsScanSchema = z.object({ query: mapsQuerySchema, location: z.str
 
 export const preparedCrawlSearchSchema = z.object({ niche: z.string().trim().min(1).max(120), term: z.string().trim().min(1).max(120), place: z.string().trim().min(1).max(160), query: mapsQuerySchema })
 export type PreparedCrawlSearch = z.infer<typeof preparedCrawlSearchSchema>
-export const crawlRowSchema = z.object({ id: z.string().min(1).max(500), niche: z.string().max(120).optional(), name: z.string().max(500), website: z.string().max(2000), phone: z.string().max(200), location: z.string().max(200), address: z.string().max(1000), mapsUrl: z.string().max(2000), source: z.enum(['Maps', 'Website', 'Maps + website']), emails: z.array(z.string()).max(100), emailsScanned: z.boolean() })
+export const crawlRowSchema = z.object({ id: z.string().min(1).max(500), niche: z.string().max(120).optional(), name: z.string().max(500), website: z.string().max(2000), phone: z.string().max(200), location: z.string().max(200), address: z.string().max(1000), mapsUrl: z.string().max(2000), source: z.enum(['Maps', 'Website', 'Maps + website']), emails: z.array(z.string()).max(1000), emailsScanned: z.boolean() })
 export type CrawlRow = z.infer<typeof crawlRowSchema>
 export const pipelineProviderSchema = z.enum(['google-maps', 'google', 'facebook', 'linkedin'])
 export type PipelineProvider = z.infer<typeof pipelineProviderSchema>

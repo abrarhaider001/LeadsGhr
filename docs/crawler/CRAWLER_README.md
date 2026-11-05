@@ -1,27 +1,106 @@
-﻿# Crawler test page
+# Crawler backend and user flow
 
-The Crawler sidebar tab tests extraction from a user-entered public HTTP(S) homepage and a temporary page queue. It does not save leads, run history, or extraction data to SQLite or Supabase.
+This guide describes the **current desktop implementation**. The Crawler tab is an unsaved test of a URL supplied by the user. A Pipeline starts from public business listings, queues each business website, crawls its pages, and stores its results locally. Both use the same guarded HTTP adapter and HTML extraction functions, but their queues, extraction modes, and persistence differ.
 
-## Email source preference
+## Crawler test versus Pipeline
 
-In **Settings > Preferences > Crawler > Crawler email source**, choose one of two mutually exclusive modes:
+| Behavior | Crawler tab | Pipeline website stage |
+| --- | --- | --- |
+| Starting point | URL entered in Crawler | Website URL from a saved business listing |
+| Queue | React memory; discarded when the page or app closes | Local SQLite `pipeline_pages`; resumable |
+| Fetch method | Direct HTTP or browser rendering preference | The fetch method saved with the run |
+| Email source | LeadsGhr extraction or Email Hunter-style matching | LeadsGhr extraction; the Email Hunter-style preference is **not applied** here yet |
+| Contact-only option | Homepage plus first contact-like homepage link; otherwise all unique homepage links | Homepage plus contact links; when off, links found on crawled pages may also enter the queue |
+| Results | Per-page email counts and details | Per-page statuses and emails merged into the saved business row |
+| Storage and export | No SQLite, Supabase, or CSV write | Local SQLite run data and CSV export |
 
-- **Our behavior** (default): existing LeadsGhr extraction from visible text, `mailto:` links, and public form-recipient clues. The URL queue, robots checks, and page preview work as before.
-- **Email Hunter-style**: match email-shaped strings in each page's complete rendered HTML, including attributes and inline scripts. This can find dynamically loaded addresses that a raw HTTP response or visible-text extraction misses. It can also count placeholders, sample data, and malformed matches; the results are unverified.
+Business-listing search is a separate stage. Google Maps is currently the available automated Pipeline provider. The Crawler tab does not search Google Maps.
 
-The Email Hunter-style mode reproduces the installed extension's *page HTML matching*, not access to the extension's private storage or its Bing/DuckDuckGo search augmentation. Bing disallows crawling its search endpoint in robots.txt and DuckDuckGo may return a challenge. Therefore this mode does not promise the extension's exact count. Both modes use the existing temporary URL queue, respect each page's robots policy, never submit forms, and save no crawler-test results.
+## Preferences
 
-## Flow
+Open **Settings > Preferences > Crawler**. Preferences are validated with Zod, saved to the desktop user-data `preferences.json`, and defaulted when older files lack a newly added field. A Pipeline saves a copy of the preferences when created; later changes do not rewrite that run.
 
-1. Enter a public homepage URL and start a crawl. Electron checks robots.txt, fetches public HTML with size and time limits, blocks private/local targets, strips credentials, and checks redirects.
-2. The activity row changes from "Fetching webpage..." to "Webpage fetched". The crawler opens the approved page in a sandboxed Electron webview and scrolls it in steps.
-3. It extracts same-site URLs from homepage content. A contact-like path is matched with a regular expression to prioritize that URL in the queue.
-4. It queues the contact page first. With **Crawl homepage and contact page only** on, it stops after that page. With it off, every other unique same-site homepage URL enters the queue in discovered order. Duplicate URLs are not queued again.
-5. Each queued page is fetched and crawled one at a time. The URL table shows order, URL, type, status, an email-count chip, and an eye action. Select the eye action to open a right side panel with the page URL, type, crawl status, extraction mode, and the emails found on that page. The homepage panel also shows discovery metadata when available. Blocked or failed pages are marked Skipped.
-6. The table heading shows the unique email total across crawled pages. Publicly exposed form recipients may be included; possible script recipients are unconfirmed. Forms are never submitted.
+| Setting | Default | Effect |
+| --- | --- | --- |
+| Page fetch method: Browser rendering | On | Fetch HTML, then load the approved URL in an isolated Electron page and inspect scroll snapshots. Slower, but can see JavaScript-added content. |
+| Page fetch method: Direct HTTP | Off | Inspect only the server's HTML response. No browser page is opened for website extraction. |
+| Crawler email source: Our behavior | On | Read page text and `mailto:` addresses, plus separately inspect public form-recipient clues. |
+| Crawler email source: Email Hunter-style | Off | Scan the complete HTML string, including scripts and attributes, for email-shaped text. Applies to the **Crawler tab only**. |
+| Show webpage in Crawler | On | Show the test's webview in browser mode. Turning it off hides the view but leaves it mounted for extraction. Has no effect in Direct HTTP mode. |
+| Crawl homepage and contact page only | On | Limit the test to those two pages when a contact page exists. In Pipeline, turning it off permits same-site discovery from each crawled page. |
 
-Live activity shows one changing status line with a grey dot while working and a primary blue dot for successful results. Fetching text updates to fetched when successful. The preview shows the current page when enabled in Settings > Preferences > Crawler. Hiding it leaves the isolated webview mounted offscreen for crawling.
+“Email Hunter-style” is a local matcher. It does not invoke the installed Chrome extension, read its storage, query search engines, or verify deliverability. Both fetch methods can use it in the Crawler tab: browser mode scans fetched HTML and rendered snapshots; Direct HTTP scans fetched HTML only.
 
-The contact-only preference is on by default and stored locally. Crawls remain temporary. Each page must pass its own robots check; challenges pause the crawl and logins are never used.
+## Shared HTTP request path
 
-Implementation: `packages/app/src/crawler-page.tsx`, shared extraction in `packages/extract`, and guarded Electron IPC in `apps/desktop/src/crawler-test.ts`.
+The Electron main process owns network access. React calls a narrow preload IPC bridge. The HTTP implementation is [`apps/desktop/src/adapters.ts`](../../apps/desktop/src/adapters.ts).
+
+1. Parse the URL and accept only `http:` or `https:` without embedded credentials.
+2. Resolve the hostname. Reject private, loopback, link-local, and other blocked address ranges; pin the connection to the resolved public address. Repeat this check after redirects, allowing at most five redirects.
+3. Send the request with Electron's desktop browser User-Agent. Some sites return different public HTML to crawler-specific User-Agents. Robots checks and challenge handling still apply.
+4. Stream the body with a byte limit and timeout. Decode gzip, deflate, or Brotli when used, with a limit on decompressed output too. Crawler and Pipeline HTML pages allow **24,000,000 bytes**; `robots.txt` allows **250,000 bytes**. The adapter's default for other callers remains **2,000,000 bytes**.
+5. Return the final URL, HTTP status, content type, and decoded UTF-8 body. Non-HTML pages are not processed as website pages.
+
+The limits prevent unexpectedly large responses from exhausting memory. Raising a limit does not add content absent from the server response.
+
+## Crawler tab: backend flow
+
+The test orchestration is in [`packages/app/src/crawler-page.tsx`](../../packages/app/src/crawler-page.tsx); guarded IPC is in [`apps/desktop/src/crawler-test.ts`](../../apps/desktop/src/crawler-test.ts).
+
+```text
+User URL → validate IPC input → check robots.txt → fetch and decode HTML
+         → reject non-HTML/challenge → extract emails and links
+         → contact page first → other homepage links if enabled → finish
+```
+
+1. Starting a test clears its previous in-memory queue, results, links, and email sets. The URL passes the shared schema. The IPC handler accepts calls only from the app window.
+2. The handler fetches `/robots.txt` for the target origin. HTTP 200 is parsed; 404 is treated as an empty policy. Other statuses pause the test. A rule disallowing the page for `LeadsGhr/0.1 (public-data crawler)` stops the fetch. A cross-origin final URL receives its own robots check.
+3. The page must return HTTP 200 and `text/html`. A challenge phrase near the start of the response stops the test. The handler returns the approved final URL and decoded HTML.
+4. **Direct HTTP:** inspect that HTML immediately. **Browser rendering:** also open the approved URL in a sandboxed Electron webview, scroll in eight steps, and inspect DOM HTML after each step. A challenge in rendered content stops the test.
+5. `discoverPage` finds same-origin `<a href>` links, strips fragments, and excludes common asset file types. A path resembling contact, contact-us, get-in-touch, reach-us, enquiry, or inquiry is prioritized as the contact page. If contact-only is off, other unique **homepage** links are queued in discovered order. The test does **not** recursively enqueue links found on non-homepage pages.
+6. Each queued page repeats the guarded fetch. The test waits **700 ms** before each subsequent fetch, processes one page at a time, and marks failed pages Skipped. Queue keys use a lowercased URL without a trailing slash.
+7. Sets deduplicate addresses per page and across the test. The URL table shows page URL, type, status, email-count chip, and details action. The panel shows addresses found on that page; the heading counts unique addresses across pages. Results disappear when renderer state is discarded.
+
+The browser preview is restricted to the approved URL. It has Node integration off, context isolation and sandbox on, new windows and unrelated navigation blocked, permissions denied, private network requests blocked, and Cookie/Authorization headers removed. Direct HTTP does not create a webview.
+
+**Current test limits:** The test checks robots access but does not currently apply a robots `Crawl-delay` value. Its fixed 700 ms pause applies only between queued pages after the first fetch. A challenge on the first response stops the test; a later page error is marked Skipped. There is no persisted checkpoint or export.
+
+## HTML extraction
+
+Shared HTML-string functions are in [`packages/extract/src/index.ts`](../../packages/extract/src/index.ts). They use Cheerio and require no Node-only filesystem or network modules.
+
+| Function | Behavior |
+| --- | --- |
+| `extractContacts(html)` | Removes script, style, and noscript elements; scans remaining text and `mailto:` links; normalizes case and deduplicates. It also parses `tel:` links into valid phone numbers and collects some social URLs, although the Crawler table uses its emails. |
+| `extractRenderedHtmlEmails(html)` | Matches email-shaped text across the **whole supplied HTML**, including scripts and attributes. It lowercases, deduplicates, and excludes a few asset-like endings and system sender patterns. The name does not require browser rendering: Direct HTTP supplies raw response HTML. |
+| `discoverPage(html, url)` | Finds same-origin links and public form-recipient clues: `mailto:` form actions, selected `data-*` attributes, recipient-like input names, and recipient-like assignments in inline scripts when a form exists. |
+
+A public form address is a clue, not proof of the server's final recipient. Forms are never submitted, and a private server-side destination cannot be recovered from public HTML. Email-shaped matches are **unverified** and may include examples, stale data, or addresses unrelated to the company.
+
+### Adams Homes HTTP example
+
+The Adams Homes homepage returns gzip-compressed HTML. An integration check ran the real Electron HTTP adapter and `extractRenderedHtmlEmails` together against `https://www.adamshomes.com/`: HTTP 200, roughly **16.6 MB** decoded HTML, and **214 unique email-shaped matches**, including `sales@adamshomes.com`, at that time. The extension shown by the user reported 212. Filtering and site changes can alter the count; an exact future count is not guaranteed.
+
+## Pipeline: persistent website crawl
+
+Pipeline discovery first saves public business rows. When a row has a website URL, [`packages/app/src/search-results-page.tsx`](../../packages/app/src/search-results-page.tsx) asks the main process to queue its homepage. Website crawling is in [`apps/desktop/src/pipeline-pages.ts`](../../apps/desktop/src/pipeline-pages.ts); runs and exports are in [`apps/desktop/src/crawl-runs.ts`](../../apps/desktop/src/crawl-runs.ts).
+
+1. SQLite `pipeline_pages` stores run ID, business row key, URL, page type, status, emails JSON, error, and timestamps. `(run_id, row_key, url)` prevents exact duplicates. URLs lose fragments and a trailing slash. A run allows up to **40 pages per business** and **5,000 pages total**.
+2. The queue chooses Contact page before Homepage before other Page, then creation order. States are `queued`, `fetching`, `ready`, `crawling`, `crawled`, and `skipped`. UI events include the updated list and status text.
+3. Before a page fetch, the main process loads or reuses its origin's robots policy, checks permission for that URL, and reserves at least **2 seconds** between requests to that origin, or the robots crawl delay if longer. Cross-site redirects pause the crawl. A redirected origin is checked separately. HTTP 401, 403, 429, 503 and challenge text pause; non-HTML or other non-200 responses are skipped.
+4. The process starts fetching the next queued page while inspecting the current one. Browser mode loads a separate hidden, sandboxed Electron window and collects eight scroll snapshots; if rendering fails without a challenge, it uses the fetched HTML. Direct HTTP uses only fetched HTML.
+5. Each snapshot goes through `discoverPage` and `extractContacts`. Found emails merge with the business row's existing emails, are deduplicated, and are capped at **1,000 per business row**; per-page emails are stored in `pipeline_pages`. Contact-like links from the homepage are queued. With contact-only off, same-origin links found on crawled pages can enter the queue.
+6. On startup, pages left in `fetching`, `ready`, or `crawling` return to `queued` for resume. Pausing aborts the active process and requeues unfinished pages. Only one Pipeline website crawl runs at a time. Saved search position, business rows, page queue, and export history remain local; extracted data is not sent to Supabase.
+7. On stop or completion, saved business rows are exported to CSV under the user's `Documents/LeadsGhr/exports` folder. Export records include file name, path, size, entry count, time, and a CSV snapshot for re-export.
+
+**Current Pipeline limits:** `crawlerEmailSource` is not read by Pipeline website crawling; it always uses `extractContacts` plus public form-recipient clues. The current loop chooses the next queued page **before** the current page adds newly discovered links. If the queue was empty then, the newly added links remain queued until the Pipeline is resumed. Do not treat that run as having crawled every recursively discovered page.
+
+## Source map
+
+- [`apps/desktop/src/adapters.ts`](../../apps/desktop/src/adapters.ts): public HTTP requests, IP checks, redirects, decompression, limits, and User-Agent.
+- [`apps/desktop/src/crawler-test.ts`](../../apps/desktop/src/crawler-test.ts): test IPC, robots check, page approval, and webview restrictions.
+- [`packages/app/src/crawler-page.tsx`](../../packages/app/src/crawler-page.tsx): temporary queue, rendering flow, discovery, per-page results, and status UI.
+- [`packages/extract/src/index.ts`](../../packages/extract/src/index.ts): email, phone, link, and form-clue parsing.
+- [`apps/desktop/src/pipeline-pages.ts`](../../apps/desktop/src/pipeline-pages.ts): persistent queue, robots-aware pacing, fetch/crawl overlap, and resume behavior.
+- [`apps/desktop/src/crawl-runs.ts`](../../apps/desktop/src/crawl-runs.ts): run rows, saved preferences, CSV exports, and re-export snapshots.
+- [`packages/schemas/src/index.ts`](../../packages/schemas/src/index.ts): URL, preference, run, and row validation.

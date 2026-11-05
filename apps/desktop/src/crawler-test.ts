@@ -61,7 +61,7 @@ export function registerCrawlerTest(window: BrowserWindow, http: HttpAdapter) {
     const { url } = scanRequestSchema.parse(input)
     approvedUrl = null
     await checkRobots(url)
-    const response = await http.get(url, { maxBytes: 2_000_000, timeoutMs: 20000 })
+    const response = await http.get(url, { maxBytes: 24_000_000, timeoutMs: 20000 })
     if (new URL(response.url).origin !== new URL(url).origin) await checkRobots(response.url)
     if (response.status !== 200 || !response.contentType.includes('text/html')) throw new Error('Page did not return public HTML')
     if (challenge.test(response.body.slice(0, 10000))) throw new Error('Page presented a challenge; crawl paused')

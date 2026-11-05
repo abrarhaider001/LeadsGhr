@@ -72,7 +72,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     const delay = Math.max(2000, (robots.getCrawlDelay(AGENT) ?? 0) * 1000)
     await reserveFetch(origin, delay)
     if (signal.aborted) return null
-    const response = await http.get(target.url, { maxBytes: 2_000_000, timeoutMs: 20000 })
+    const response = await http.get(target.url, { maxBytes: 24_000_000, timeoutMs: 20000 })
     if (signal.aborted) return null
     const final = new URL(response.url)
     const requested = new URL(target.url)
@@ -91,9 +91,10 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     setStatus(id, target, 'ready')
     return { html: response.body, url: response.url }
   }
-  async function crawl(id: string, target: Page, html: string, pageUrl: string, contactOnly: boolean) {
+  async function crawl(id: string, target: Page, html: string, pageUrl: string, contactOnly: boolean, fetchMethod: 'browser' | 'http') {
     setStatus(id, target, 'crawling')
     const snapshots = [html]
+    if (fetchMethod === 'browser') {
     const preview = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, partition: `pipeline-${randomUUID()}` } })
     preview.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
     const allowNavigation = (url: string) => { try { const destination = new URL(url); return destination.origin === new URL(pageUrl).origin && (policies.get(destination.origin)?.isAllowed(url, AGENT) ?? false) } catch { return false } }
@@ -129,6 +130,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
       if (CHALLENGE.test(String(error))) throw error
       emit(id, `Rendered preview unavailable for ${target.url}; using public HTML.`)
     } finally { if (!preview.isDestroyed()) preview.destroy() }
+    }
     const links = new Set<string>()
     const emails = new Set<string>()
     for (const snapshot of snapshots) {
@@ -139,7 +141,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     const storedRow = db.prepare('SELECT payload FROM crawl_run_rows WHERE run_id=? AND row_key=?').get(id, target.rowKey) as { payload: string } | undefined
     if (storedRow) {
       const row = JSON.parse(storedRow.payload) as CrawlRow
-      store.saveRow({ id, row: { ...row, emails: [...new Set([...row.emails, ...emails])].slice(0, 100), emailsScanned: true, source: 'Maps + website' } })
+      store.saveRow({ id, row: { ...row, emails: [...new Set([...row.emails, ...emails])].slice(0, 1000), emailsScanned: true, source: 'Maps + website' } })
     }
     if (target.kind === 'Homepage') {
       const contact = [...links].find((link) => CONTACT.test(decodeURIComponent(new URL(link).pathname)))
@@ -152,6 +154,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     const run = store.get(id)
     if (!run) throw new Error('Pipeline not found')
     const contactOnly = run.preferences.crawlerContactOnly
+    const fetchMethod = run.preferences.crawlerFetchMethod
     const prepare = (target: Page) => prefetch(id, target, signal).then((result) => ({ result, error: null as unknown }), (error: unknown) => ({ result: null, error }))
     let target = nextPage(id)
     let pending = target ? prepare(target) : null
@@ -167,7 +170,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
       target = nextPage(id)
       pending = target ? prepare(target) : null // fetch N+1 while N is crawled
       if (prepared) {
-        try { await crawl(id, current, prepared.html, prepared.url, contactOnly) }
+        try { await crawl(id, current, prepared.html, prepared.url, contactOnly, fetchMethod) }
         catch (error) {
           active?.controller.abort()
           setStatus(id, current, 'queued', String(error))

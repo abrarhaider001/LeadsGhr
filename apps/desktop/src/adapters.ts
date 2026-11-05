@@ -5,6 +5,8 @@ import { isIP } from 'node:net'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join, basename } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { brotliDecompressSync, gunzipSync, inflateSync } from 'node:zlib'
+import { app } from 'electron'
 import { leadSchema } from '@leadsghr/schemas'
 import type { PlatformAdapters, HttpResponse } from '@leadsghr/platform'
 
@@ -35,7 +37,7 @@ async function getPublic(url: string, options: { maxBytes?: number; timeoutMs?: 
   try {
     const response = await request(target.toString(), {
       dispatcher, headersTimeout: options.timeoutMs ?? 15000, bodyTimeout: options.timeoutMs ?? 15000,
-      headers: { 'user-agent': 'LeadsGhr/0.1 (public-data crawler)', accept: 'text/html,text/plain;q=0.9,*/*;q=0.1' },
+      headers: { 'user-agent': app.userAgentFallback || 'Mozilla/5.0', accept: 'text/html,text/plain;q=0.9,*/*;q=0.1' },
     })
     if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
       await response.body.dump()
@@ -48,7 +50,14 @@ async function getPublic(url: string, options: { maxBytes?: number; timeoutMs?: 
       if (size > (options.maxBytes ?? 2_000_000)) throw new Error('Page exceeds size limit')
       chunks.push(chunk)
     }
-    return { url: target.toString(), status: response.statusCode, contentType: String(response.headers['content-type'] ?? ''), body: Buffer.concat(chunks).toString('utf8') }
+    const encoded = Buffer.concat(chunks)
+    const encoding = String(response.headers['content-encoding'] ?? '').toLowerCase().trim()
+    const limit = options.maxBytes ?? 2_000_000
+    const decoded = encoding === 'gzip' || encoding === 'x-gzip' ? gunzipSync(encoded, { maxOutputLength: limit })
+      : encoding === 'deflate' ? inflateSync(encoded, { maxOutputLength: limit })
+      : encoding === 'br' ? brotliDecompressSync(encoded, { maxOutputLength: limit })
+      : encoded
+    return { url: target.toString(), status: response.statusCode, contentType: String(response.headers['content-type'] ?? ''), body: decoded.toString('utf8') }
   } finally { await dispatcher.close() }
 }
 
