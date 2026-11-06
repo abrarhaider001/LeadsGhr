@@ -26,6 +26,7 @@ The token definitions and final component overrides live in `packages/ui/src/sty
 - Primary actions use purple with white labels. Secondary controls remain light. Play, Pause, and Stop retain their distinct functional colors.
 - Selected chips, custom dropdown options, tabs, and current pagination use lavender. Every dropdown uses the shared `CustomSelect` component.
 - Profile, Email Filtering, and Email Spam Check panels use white surfaces and lavender borders. Filtering statuses and reasons retain their semantic colors and text.
+- The Crawler worker-count setting uses the same full-width preference row as adjacent radio and checkbox settings, with its bounded number field aligned to the right.
 
 ## Typography and sizing
 

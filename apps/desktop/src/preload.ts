@@ -29,5 +29,6 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   loadSearchCriteria: () => ipcRenderer.invoke('leadsghr:search-criteria:load'),
   saveSearchCriteria: (input: unknown) => ipcRenderer.invoke('leadsghr:search-criteria:save', searchCriteriaSchema.parse(input)),
   prepareCrawlerTest: (input: unknown) => ipcRenderer.invoke('leadsghr:crawler-test:prepare', scanRequestSchema.parse(input)),
+  inspectCrawlerTest: (input: unknown) => ipcRenderer.invoke('leadsghr:crawler-test:inspect', scanRequestSchema.extend({ method: desktopPreferencesSchema.shape.crawlerFetchMethod }).parse(input)),
 })
 

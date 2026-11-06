@@ -1162,6 +1162,20 @@ a { color: var(--la-accent); }
 @media (max-width: 900px) { .la-email-filter-layout { grid-template-columns: 1fr; } .la-email-filter-panel { min-height: 0; } .la-email-filter-output { min-height: 360px; } }
 @media (max-width: 620px) { .la-email-filter-intro { flex-direction: column; } .la-email-filter-panel { padding: 16px; } }
 
+/* Concurrent crawl progress and per-page email provenance. */
+.la-profile-concurrency-option { cursor: default; }
+.la-profile-concurrency-option input[type='number'] { width: 72px; height: 36px; margin-left: auto; padding: 0 8px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; color: var(--la-text); font-size: 12px; font-weight: 600; text-align: center; cursor: text; }
+.la-crawler-table-wrap { min-height: clamp(420px, calc(100vh - 380px), 900px); max-height: none; }
+.la-crawler-table-wrap--empty .la-empty-table { min-height: clamp(380px, calc(100vh - 420px), 860px); }
+.la-crawler-status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.la-crawler-status-row .la-crawler-queue-activity { min-width: 0; margin: 0; }
+.la-crawler-progress-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 5px 0; margin-left: auto; color: var(--la-muted); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; text-align: right; }
+.la-crawler-progress-summary span + span::before { content: '·'; margin: 0 9px; color: var(--la-muted); }
+@media (max-width: 900px) { .la-crawler-status-row { align-items: flex-start; flex-direction: column; } .la-crawler-progress-summary { width: 100%; } }
+.la-crawler-detail-emails li { align-items: center; flex-wrap: wrap; }
+.la-crawler-detail-emails li > span:first-of-type { min-width: 0; overflow-wrap: anywhere; }
+.la-crawler-duplicate-chip { margin-left: auto; padding: 5px 8px; border: 1px solid var(--la-line); border-radius: 999px; background: var(--la-primary); color: var(--la-accent); font-size: 10px; font-weight: 650; white-space: nowrap; }
+
 /* Shared white surface treatment across desktop pages. */
 .la-card, .la-profile-account, .la-profile-option-list, .la-profile-tabs,
 .la-email-filter-panel, .la-spam-panel, .la-library-intro, .la-library-summary,

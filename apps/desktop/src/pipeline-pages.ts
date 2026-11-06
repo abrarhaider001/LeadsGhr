@@ -12,7 +12,7 @@ import { publicIp } from './adapters'
 const AGENT = 'LeadsGhr/0.1 (public-data crawler)'
 const CHALLENGE = /captcha|unusual traffic|verify you are human|sign in to continue/i
 const CONTACT = /(?:^|[\/_-])(?:contact(?:-us)?|get-in-touch|reach-us|enquir(?:y|ies)|inquir(?:y|ies))(?:$|[\/_-])/i
-const MAX_SITE_PAGES = 40
+const MAX_SITE_PAGES = 1000
 const MAX_RUN_PAGES = 5000
 type PageStatus = 'queued' | 'fetching' | 'ready' | 'crawling' | 'crawled' | 'skipped'
 type StoredPage = { run_id: string; row_key: string; url: string; kind: 'Homepage' | 'Contact page' | 'Page'; status: PageStatus; emails_json: string; error: string | null; created_at: string }
@@ -155,39 +155,36 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     if (!run) throw new Error('Pipeline not found')
     const contactOnly = run.preferences.crawlerContactOnly
     const fetchMethod = run.preferences.crawlerFetchMethod
-    const prepare = (target: Page) => prefetch(id, target, signal).then((result) => ({ result, error: null as unknown }), (error: unknown) => ({ result: null, error }))
-    let target = nextPage(id)
-    let pending = target ? prepare(target) : null
-    while (target && pending && !signal.aborted) {
-      const { result: prepared, error } = await pending
-      if (error) {
-        setStatus(id, target, 'queued', String(error))
-        emit(id, `Paused: ${String(error)}`)
-        return 'paused'
-      }
-      if (signal.aborted) break
-      const current = target
-      target = nextPage(id)
-      pending = target ? prepare(target) : null // fetch N+1 while N is crawled
-      if (prepared) {
-        try { await crawl(id, current, prepared.html, prepared.url, contactOnly, fetchMethod) }
-        catch (error) {
-          active?.controller.abort()
-          setStatus(id, current, 'queued', String(error))
-          db.prepare("UPDATE pipeline_pages SET status='queued' WHERE run_id=? AND status IN ('fetching','ready','crawling')").run(id)
-          emit(id, `Paused: ${String(error)}`)
-          return 'paused'
+    const workerCount = Math.max(1, Math.min(8, run.preferences.crawlerConcurrentPages))
+    let failure: unknown = null
+    let activeJobs = 0
+    const worker = async () => {
+      while (!signal.aborted) {
+        const target = nextPage(id)
+        if (!target) {
+          if (activeJobs === 0) return
+          await wait(50)
+          continue
         }
-      }
-      // The current page may discover links after the next-page lookup above.
-      if (!target && !signal.aborted) {
-        target = nextPage(id)
-        pending = target ? prepare(target) : null
+        // Claim synchronously before another worker selects a page.
+        setStatus(id, target, 'fetching')
+        activeJobs++
+        try {
+          const prepared = await prefetch(id, target, signal)
+          if (signal.aborted) return
+          if (prepared) await crawl(id, target, prepared.html, prepared.url, contactOnly, fetchMethod)
+        } catch (error) {
+          failure ??= error
+          setStatus(id, target, 'queued', String(error))
+          active?.controller.abort()
+          return
+        } finally { activeJobs-- }
       }
     }
-    if (signal.aborted) {
+    await Promise.all(Array.from({ length: workerCount }, () => worker()))
+    if (signal.aborted || failure) {
       db.prepare("UPDATE pipeline_pages SET status='queued' WHERE run_id=? AND status IN ('fetching','ready','crawling')").run(id)
-      emit(id, 'Pipeline paused')
+      emit(id, failure ? `Paused: ${String(failure)}` : 'Pipeline paused')
       return 'paused'
     }
     emit(id, 'Website crawl complete')
