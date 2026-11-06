@@ -1192,3 +1192,22 @@ a { color: var(--la-accent); }
 .la-pipeline-resume-list > div:hover { background: #FAF9FF; }
 .la-quick-action:not(.la-quick-action--primary):hover,
 .la-choice-chip:hover, .la-records-search:focus-within { border-color: #BDA9E6; }
+
+/* One focus border for editable controls; search groups draw it on their outer edge. */
+:is(input:not([type='checkbox']):not([type='radio']):not([type='file']), textarea):focus,
+.la-select-trigger:focus,
+.la-select-trigger[aria-expanded='true'] {
+  border-color: #1D1D1F !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+:is(.la-sidebar-search, .la-global-search, .la-library-search, .la-records-search):focus-within {
+  border-color: #1D1D1F !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+:is(.la-sidebar-search, .la-global-search, .la-library-search, .la-records-search) input:focus {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
