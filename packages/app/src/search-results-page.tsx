@@ -311,8 +311,11 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
       else if (index >= searches.length) { setPhase('completed'); setStatus('Search complete. Saving CSV...'); if (await finishRun('completed') && !disposed) setStatus(`Completed all ${searches.length} searches. Results exported.`) }
       else { setPhase('stopped'); setStatus('Search stopped. Saving CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Search stopped. Results saved and exported.') }
     }
-    void runQueue()
+    // StrictMode replays mount effects in development. Defer the database write
+    // until after that replay, so its first cleanup cancels the duplicate start.
+    const startTimer = window.setTimeout(() => { void runQueue() }, 0)
     return () => {
+      window.clearTimeout(startTimer)
       disposed = true
       stopRequested.current = true
       pauseRequested.current = false
