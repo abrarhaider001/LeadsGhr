@@ -1,6 +1,7 @@
 type QueueStatus = 'queued' | 'fetching' | 'ready' | 'crawling' | 'crawled' | 'skipped'
+export const CRAWL_QUEUE_VISIBLE_ROWS = 20
 
-export function crawlQueueWindow<T>(items: T[], statusOf: (item: T) => QueueStatus, limit = 20): { item: T; index: number }[] {
+export function crawlQueueWindow<T>(items: T[], statusOf: (item: T) => QueueStatus, limit = CRAWL_QUEUE_VISIBLE_ROWS): { item: T; index: number }[] {
   const indexed = items.map((item, index) => ({ item, index }))
   const completed = indexed.filter(({ item }) => ['crawled', 'skipped'].includes(statusOf(item)))
   const active = indexed.filter(({ item }) => ['fetching', 'ready', 'crawling'].includes(statusOf(item)))

@@ -1181,6 +1181,11 @@ a { color: var(--la-accent); }
 .la-profile-concurrency-option input[type='number'] { width: 72px; height: 36px; margin-left: auto; padding: 0 8px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; color: var(--la-text); font-size: 12px; font-weight: 600; text-align: center; cursor: text; }
 .la-crawler-table-wrap { min-height: clamp(420px, calc(100vh - 380px), 900px); max-height: none; }
 .la-crawler-table-wrap--empty .la-empty-table { min-height: clamp(380px, calc(100vh - 420px), 860px); }
+.la-crawl-table-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.la-crawl-table-heading > span { flex: none; color: var(--la-muted); font-size: 11px; }
+.la-crawler-table-wrap:not(.la-crawler-table-wrap--empty), .la-pipeline-queue-table:not(.la-pipeline-queue-table--empty) { min-height: 0; max-height: none; overflow-x: auto; overflow-y: visible; }
+.la-crawler-table tbody tr, .la-pipeline-queue-table tbody tr { height: 44px; }
+.la-crawler-table tbody td, .la-pipeline-queue-table tbody td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .la-crawler-status-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .la-crawler-status-row .la-crawler-queue-activity { min-width: 0; margin: 0; }
 .la-crawler-progress-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 5px 0; margin-left: auto; color: var(--la-muted); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; text-align: right; }

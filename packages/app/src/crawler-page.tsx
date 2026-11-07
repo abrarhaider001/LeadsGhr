@@ -3,7 +3,7 @@ import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leads
 import { Button, EmptyTable } from '@leadsghr/ui'
 import { MdOutlineVisibility } from 'react-icons/md'
 import type { DesktopPreferences } from '@leadsghr/schemas'
-import { crawlQueueWindow } from './crawl-queue-window'
+import { CRAWL_QUEUE_VISIBLE_ROWS, crawlQueueWindow } from './crawl-queue-window'
 
 type GuestView = HTMLElement & {
   executeJavaScript(code: string): Promise<string>
@@ -23,7 +23,6 @@ function contactLink(links: string[]): string | null {
 
 const desktop = () => (window as Window & { leadsGhrDesktop?: DesktopCrawlerBridge }).leadsGhrDesktop
 const MAX_CRAWLER_PAGES = 1000
-const CRAWLER_PAGE_SIZE = 20
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 const formatProcessingTime = (elapsedMs: number) => {
   const totalSeconds = Math.floor(elapsedMs / 1000)
@@ -348,7 +347,7 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
   const homepageEmails = new Set(pageResults.find((page) => page.url === homepageUrl)?.emails.map((email) => email.toLowerCase()) ?? [])
   const processed = urlRows.filter((row) => row.status === 'Crawled' || row.status === 'Skipped').length
   const inQueue = urlRows.filter((row) => row.status === 'Queued').length
-  const visibleUrlRows = crawlQueueWindow(urlRows, (row) => row.status.toLowerCase() as Lowercase<UrlRow['status']>, CRAWLER_PAGE_SIZE)
+  const visibleUrlRows = crawlQueueWindow(urlRows, (row) => row.status.toLowerCase() as Lowercase<UrlRow['status']>)
   const webview = preview ? createElement('webview', { key: preview.partition, ref: (node: HTMLElement | null) => { viewRef.current = node as GuestView | null }, partition: preview.partition, className: 'la-crawler-webview', 'aria-label': 'Crawled webpage preview' }) : null
   return <div className="la-crawler">
     <div className="la-crawler-heading"><h2>Crawl public pages</h2><span className="la-crawler-badge">TEST MODE - NO SAVING</span></div>
@@ -370,7 +369,7 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
       </section> : webview && <div className="la-crawler-hidden-preview" aria-hidden="true">{webview}</div>}
     </div>}
     <section className="la-crawler-links-section">
-      <h3>URL queue</h3>
+      <div className="la-crawl-table-heading"><h3>URL queue</h3><span>Showing {visibleUrlRows.length} of {urlRows.length} pages · {CRAWL_QUEUE_VISIBLE_ROWS} row limit</span></div>
       <div className="la-crawler-status-row">
         <div className={`la-crawler-queue-activity la-crawler-event--${activity.at(-1)?.kind ?? 'working'}`} role="status" aria-live="polite"><span className="la-crawler-dot" /><span>{activity.at(-1)?.text ?? 'Ready to crawl'}</span></div>
         <div className="la-crawler-progress-summary" aria-label="Crawl progress">
