@@ -112,3 +112,20 @@ export const crawlRunRowInputSchema = z.object({ id: crawlRunIdSchema, row: craw
 export type CrawlRunSummary = { id: string; name: string; provider: PipelineProvider; kind: 'pipeline' | 'search'; niches: string[]; states: string[]; stateStartNumber: number; stateEndNumber: number; startedAt: string; finishedAt: string | null; status: 'running' | 'stopped' | 'completed' | 'failed'; nextQueryIndex: number; totalQueries: number; entryCount: number; latestFileName: string | null; latestFileSize: number | null; latestFilePath: string | null }
 export type CrawlExport = { id: string; runId: string; fileName: string; filePath: string; fileSize: number; entryCount: number; exportedAt: string }
 export type CrawlRunDetail = CrawlRunSummary & { criteria: SearchCriteria; preferences: DesktopPreferences; searches: PreparedCrawlSearch[]; rows: CrawlRow[] }
+
+/** Desktop Email Validation (SMTP RCPT TO probe). Caps keep probing polite and incomplete by design. */
+export const emailVerifyStatusSchema = z.enum(['valid', 'risky', 'invalid', 'unknown'])
+export type EmailVerifyStatus = z.infer<typeof emailVerifyStatusSchema>
+export const emailVerifyRequestSchema = z.object({
+  emails: z.array(z.string().trim().min(1).max(320)).min(1).max(50),
+})
+export type EmailVerifyRequest = z.infer<typeof emailVerifyRequestSchema>
+export const emailVerifyResultSchema = z.object({
+  email: z.string().min(1).max(320),
+  status: emailVerifyStatusSchema,
+  reason: z.string().max(500),
+  mxHost: z.string().max(255).optional(),
+  smtpCode: z.number().int().optional(),
+})
+export type EmailVerifyResult = z.infer<typeof emailVerifyResultSchema>
+export const emailVerifyJobIdSchema = z.string().uuid()

@@ -9,6 +9,7 @@ apps/desktop/
   src/main.ts       Electron lifecycle, validated IPC and local scan orchestration
   src/preload.ts    Narrow renderer bridge
   src/adapters.ts   SQLite, public HTTP, local queue and disk adapters
+  src/email-verify.ts Local SMTP RCPT TO probes for Email Validation
   src/renderer.tsx  Shared React app
 packages/
   app/              Desktop pages, splash, niche and location JSON data
@@ -20,7 +21,7 @@ supabase/migrations/ Account/profile-only schema with RLS
 docs/              Current guides plus historical specification archive
 ```
 
-All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. The legacy web/API/worker/extension folders are inactive and excluded from pnpm workspaces.
+All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation classification helpers live in `packages/quality`; DNS and SMTP sockets stay in `apps/desktop/src/email-verify.ts`. The legacy web/API/worker/extension folders are inactive and excluded from pnpm workspaces.
 
 The New Search page has a niche/state step and a separate location step with numbered chips and inclusive page and location-number range controls. It reads `packages/app/data/niches.json` and `packages/app/data/us-states-locations.json`. Electron main validates and stores custom niches and selections in a local `search-criteria.json` file under the app user-data directory.
 

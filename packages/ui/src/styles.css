@@ -859,7 +859,18 @@ body { background: var(--la-canvas); }
 .la-email-filter-rejected > div > div { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-top: 1px solid var(--la-line); overflow-wrap: anywhere; }
 .la-email-filter-rejected small { color: #777B82; text-align: right; }
 .la-email-filter-message { margin: 0; color: var(--la-text); font-size: 12px; }
-@media (max-width: 1050px) { .la-email-filter-layout { grid-template-columns: 1fr; } .la-email-filter-direction { transform: rotate(90deg); } .la-email-filter-panel { min-height: 0; } }
+.la-email-verify-progress { margin: 0; color: #777B82; font-size: 12px; }
+.la-email-verify-stop { background: #FFFFFF !important; color: var(--la-text) !important; border-color: var(--la-line) !important; }
+.la-email-verify-stats { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.la-email-verify-stats button { display: grid; gap: 3px; padding: 12px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; text-align: left; cursor: pointer; }
+.la-email-verify-stats button strong { font-size: 18px; }
+.la-email-verify-stats button span { color: #777B82; font-size: 11px; }
+.la-email-verify-stats button.is-active { border-color: var(--la-accent); background: #F7F4FF; }
+.la-email-verify-valid { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #E8F1FF; color: #1D4ED8; font-size: 10px; font-weight: 650; }
+.la-email-verify-risky { display: inline-block; padding: 4px 8px; border-radius: 6px; border: 1px solid #C4C7CE; color: #60646B; font-size: 10px; font-weight: 650; }
+.la-email-verify-invalid { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #F4F4F5; color: #111827; font-size: 10px; font-weight: 650; }
+.la-email-verify-unknown { display: inline-block; padding: 4px 8px; border-radius: 6px; background: #F4F4F5; color: #9CA3AF; font-size: 10px; font-weight: 650; }
+@media (max-width: 1050px) { .la-email-filter-layout { grid-template-columns: 1fr; } .la-email-filter-direction { transform: rotate(90deg); } .la-email-filter-panel { min-height: 0; } .la-email-verify-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* LeadsGhr purple and cyan desktop theme, adapted from the supplied reference. */
 :root {

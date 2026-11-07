@@ -1,12 +1,12 @@
 # Feature implementation status
 
-Snapshot: 2026-10-26. This compares the original feature guides with the active Electron desktop source. A partial status means a usable slice exists, but the guide is not fully met. A1 is implemented for the current desktop local-search flow; its historical account-sync and named-profile integrations remain with A5/G6. The Chrome extension is planned as a separate future product.
+Snapshot: 2026-11-07. This compares the original feature guides with the active Electron desktop source. A partial status means a usable slice exists, but the guide is not fully met. A1 is implemented for the current desktop local-search flow; its historical account-sync and named-profile integrations remain with A5/G6. The Chrome extension is planned as a separate future product.
 
 | Status | Count |
 | --- | ---: |
 | Implemented for desktop local flow | 1 |
-| Partially implemented on desktop | 22 |
-| Not implemented on desktop | 21 |
+| Partially implemented on desktop | 23 |
+| Not implemented on desktop | 20 |
 | Deferred to a separate Chrome extension | 10 |
 
 ## Desktop features
@@ -36,7 +36,7 @@ Snapshot: 2026-10-26. This compares the original feature guides with the active 
 | [C7: Company Profile Builder](C7-Company%20Profile%20Builder/FEATURES-C7-README.md) | Not implemented | No company profile synthesis. |
 | [C8: Structured Data Reader](C8-Structured%20Data%20Reader/FEATURES-C8-README.md) | Not implemented | No JSON-LD, microdata or RDFa reader. |
 | [D1: Deduplication and Entity Resolution](D1-Deduplication%20and%20Entity%20Resolution/FEATURES-D1-README.md) | Partial | A simple deduplication key utility exists; fuzzy company resolution and review are missing. |
-| [D2: Email Verifier](D2-Email%20Verifier/FEATURES-D2-README.md) | Not implemented | No domain/MX, disposable, catch-all or SMTP verification workflow. |
+| [D2: Email Verifier](D2-Email%20Verifier/FEATURES-D2-README.md) | Partial | Email Validation runs local SMTP RCPT TO probes after MX/A lookup with Valid/Risky/Invalid/Unknown statuses. Disposable screening and catch-all testing are still missing. |
 | [D3: Phone Validator](D3-Phone%20Validator/FEATURES-D3-README.md) | Partial | Telephone parsing validates extracted tel links; a full number-validation workflow and flags are missing. |
 | [D4: Lead Scoring](D4-Lead%20Scoring/FEATURES-D4-README.md) | Partial | A simple quickScore utility exists; the specified weighted lead scoring is not wired into the lead workflow. |
 | [D5: Source Tracking and Confidence](D5-Source%20Tracking%20and%20Confidence/FEATURES-D5-README.md) | Not implemented | No field-level source and confidence record. |

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, createCrawlRunSchema, crawlRunIdSchema, crawlRunRowInputSchema, crawlRunProgressSchema } from '@leadsghr/schemas'
+import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, createCrawlRunSchema, crawlRunIdSchema, crawlRunRowInputSchema, crawlRunProgressSchema, emailVerifyRequestSchema, emailVerifyJobIdSchema } from '@leadsghr/schemas'
 
 contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   scan: (input: unknown) => ipcRenderer.invoke('leadsghr:scan', scanRequestSchema.parse(input)),
@@ -30,5 +30,8 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   saveSearchCriteria: (input: unknown) => ipcRenderer.invoke('leadsghr:search-criteria:save', searchCriteriaSchema.parse(input)),
   prepareCrawlerTest: (input: unknown) => ipcRenderer.invoke('leadsghr:crawler-test:prepare', scanRequestSchema.parse(input)),
   inspectCrawlerTest: (input: unknown) => ipcRenderer.invoke('leadsghr:crawler-test:inspect', scanRequestSchema.extend({ method: desktopPreferencesSchema.shape.crawlerFetchMethod }).parse(input)),
+  startEmailVerify: (input: unknown) => ipcRenderer.invoke('leadsghr:email-verify:start', emailVerifyRequestSchema.parse(input)),
+  stopEmailVerify: (id: unknown) => ipcRenderer.invoke('leadsghr:email-verify:stop', emailVerifyJobIdSchema.parse(id)),
+  onEmailVerifyEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:email-verify:event', listener); return () => ipcRenderer.removeListener('leadsghr:email-verify:event', listener) },
 })
 

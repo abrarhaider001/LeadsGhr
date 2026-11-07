@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "electron-vite dev",
         "build": "electron-vite build && electron-builder",
+        "rebuild:native": "electron-rebuild -f -o better-sqlite3",
         "typecheck": "tsc --noEmit",
         "lint": "tsc --noEmit"
     },
@@ -32,6 +33,7 @@
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^5.0.0",
+        "@electron/rebuild": "^4.2.1",
         "electron": "^38.0.0",
         "electron-builder": "^26.0.0",
         "electron-vite": "^4.0.0"

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SplashScreen } from './splash-screen'
 import { CrawlerPage } from './crawler-page'
 import { EmailFilteringPage } from './email-filtering-page'
+import { EmailValidationPage } from './email-validation-page'
 import { EmailSpamEnginePage } from './email-spam-engine-page'
 import { DashboardPage } from './dashboard-page'
 import { NicheLibraryPage } from './niche-library-page'
@@ -52,7 +53,7 @@ const descriptions: Record<string, string> = {
   'New Search': 'Choose contractor niches and U.S. locations for a local search draft.',
   'Niche Library': 'Browse and edit local business keyword packs for your searches.',
   'Email Filtering': 'Import Excel or CSV files, remove noisy addresses, and review a clean email list.',
-  'Email Validation': 'Review email address validity before using a contact list.',
+  'Email Validation': 'Check mailbox acceptance with a local SMTP RCPT TO probe.',
   'Email Spam Check': 'Review email content for signals that may affect delivery.',
   'Email Sending': 'Prepare and send email campaigns from your workspace.',
   'Email Tracking': 'Review delivery and engagement for sent emails.',
@@ -201,7 +202,7 @@ export function LeadsGhrApp() {
         {page === 'Dashboard' ? <DashboardPage onNavigate={(next) => void showPage(next)} crawlRuns={crawlRuns} exportCount={crawlExports.length} onExport={(id) => void exportCrawl(id)} />
           : page === 'Crawler' ? <CrawlerPage preferences={preferences} />
           : page === 'Email Filtering' ? <EmailFilteringPage />
-          : page === 'Email Validation' ? <Card className="la-local-page"><h2>Email Validation</h2><p>This page is ready in the sidebar. Address validation is not implemented yet; Email Filtering currently handles formatting, duplicates, and disposable-domain screening.</p></Card>
+          : page === 'Email Validation' ? <EmailValidationPage />
           : page === 'Email Spam Check' ? <EmailSpamEnginePage />
           : page === 'Email Sending' ? <Card className="la-local-page"><h2>Email Sending</h2><p>Planned feature. Email campaigns and sending are not available in the desktop app yet.</p></Card>
           : page === 'Email Tracking' ? <Card className="la-local-page"><h2>Email Tracking</h2><p>Planned feature. Delivery and engagement tracking are not available in the desktop app yet.</p></Card>

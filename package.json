@@ -5,6 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@10.33.0",
   "scripts": {
+    "postinstall": "pnpm --filter @leadsghr/desktop run rebuild:native",
     "dev": "pnpm --filter @leadsghr/desktop dev",
     "dev:desktop": "pnpm --filter @leadsghr/desktop dev",
     "build": "pnpm --filter @leadsghr/desktop build",
