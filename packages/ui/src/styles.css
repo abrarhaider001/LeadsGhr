@@ -579,6 +579,7 @@ body { background: var(--la-canvas); }
 .la-crawler-queue-status { font-size: 11px; color: #777B82; }
 .la-crawler-queue-status--crawling, .la-crawler-queue-status--fetching { color: var(--la-accent); }
 .la-crawler-queue-status--crawled { color: var(--la-text); }
+.la-table tbody tr.la-crawl-row--active td { background: var(--la-primary); }
 .la-crawler-page-emails { padding: 10px 0; border-top: 1px solid var(--la-line); }
 .la-crawler-page-emails p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .la-crawler-grid--preview-only { grid-template-columns: minmax(0, 1fr); }
@@ -978,6 +979,8 @@ a { color: var(--la-accent); }
 .la-pipeline-home .la-table, .la-pipeline-queue .la-table { min-width: 900px; }
 .la-pipeline-queue { margin-top: 22px; }
 .la-pipeline-queue .la-result-ellipsis { display: block; max-width: 420px; }
+.la-pipeline-queue-table { min-height: clamp(420px, calc(100vh - 380px), 900px); max-height: none; }
+.la-pipeline-queue-table--empty .la-empty-table { min-height: clamp(380px, calc(100vh - 420px), 860px); }
 .la-pipeline-export { display: grid; justify-items: start; gap: 14px; max-width: 720px; margin: 6vh auto; padding: 34px; border: 1px solid var(--la-line); border-radius: 20px; background: var(--la-card); }
 .la-pipeline-export-mark { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 14px; background: var(--la-primary); color: var(--la-accent); }
 .la-pipeline-export h2 { margin: 0; font-size: 24px; }

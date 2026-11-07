@@ -3,6 +3,7 @@ import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leads
 import { Button, EmptyTable } from '@leadsghr/ui'
 import { MdOutlineVisibility } from 'react-icons/md'
 import type { DesktopPreferences } from '@leadsghr/schemas'
+import { crawlQueueWindow } from './crawl-queue-window'
 
 type GuestView = HTMLElement & {
   executeJavaScript(code: string): Promise<string>
@@ -347,10 +348,7 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
   const homepageEmails = new Set(pageResults.find((page) => page.url === homepageUrl)?.emails.map((email) => email.toLowerCase()) ?? [])
   const processed = urlRows.filter((row) => row.status === 'Crawled' || row.status === 'Skipped').length
   const inQueue = urlRows.filter((row) => row.status === 'Queued').length
-  const indexedUrlRows = urlRows.map((row, index) => ({ row, index }))
-  const visibleUrlRows = phase === 'done'
-    ? indexedUrlRows.slice(-CRAWLER_PAGE_SIZE)
-    : indexedUrlRows.filter(({ row }) => row.status !== 'Crawled' && row.status !== 'Skipped').slice(0, CRAWLER_PAGE_SIZE)
+  const visibleUrlRows = crawlQueueWindow(urlRows, (row) => row.status.toLowerCase() as Lowercase<UrlRow['status']>, CRAWLER_PAGE_SIZE)
   const webview = preview ? createElement('webview', { key: preview.partition, ref: (node: HTMLElement | null) => { viewRef.current = node as GuestView | null }, partition: preview.partition, className: 'la-crawler-webview', 'aria-label': 'Crawled webpage preview' }) : null
   return <div className="la-crawler">
     <div className="la-crawler-heading"><h2>Crawl public pages</h2><span className="la-crawler-badge">TEST MODE - NO SAVING</span></div>
@@ -382,7 +380,7 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
       <div className={`la-crawler-table-wrap${visibleUrlRows.length ? '' : ' la-crawler-table-wrap--empty'}`}>
         <table className="la-table la-crawler-table">
           <thead><tr><th>#</th><th>Page URL</th><th>Type</th><th>Status</th><th>Emails found</th><th>Actions</th></tr></thead>
-          <tbody>{visibleUrlRows.map(({ row, index }) => <tr key={row.url}>
+          <tbody>{visibleUrlRows.map(({ item: row, index }) => <tr key={row.url} className={row.status === 'Fetching' || row.status === 'Crawling' ? 'la-crawl-row--active' : undefined}>
             <td>{index + 1}</td>
             <td title={row.url}><a href={row.url} target="_blank" rel="noreferrer">{row.url}</a></td>
             <td>{row.kind}</td>

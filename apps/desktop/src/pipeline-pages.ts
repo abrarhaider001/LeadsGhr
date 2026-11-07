@@ -3,7 +3,7 @@ import type Database from 'better-sqlite3'
 import robotsParser from 'robots-parser'
 import { randomUUID } from 'node:crypto'
 import { lookup } from 'node:dns/promises'
-import { discoverPage, extractContacts } from '@leadsghr/extract'
+import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leadsghr/extract'
 import type { HttpAdapter } from '@leadsghr/platform'
 import { crawlRunIdSchema, crawlRunRowInputSchema, type CrawlRow } from '@leadsghr/schemas'
 import type { createCrawlRunStore } from './crawl-runs'
@@ -29,7 +29,16 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
   const page = (stored: StoredPage): Page => ({ rowKey: stored.row_key, url: stored.url, kind: stored.kind, status: stored.status, emails: JSON.parse(stored.emails_json), error: stored.error })
   const redirectAliases = new Map<string, string>()
   const list = (id: string): Page[] => (db.prepare('SELECT * FROM pipeline_pages WHERE run_id=? ORDER BY created_at,rowid').all(id) as StoredPage[]).map(page)
-  const emit = (id: string, text: string) => { if (!window.isDestroyed()) window.webContents.send('leadsghr:pipeline-pages:event', { id, text, pages: list(id) }) }
+  const pendingEvents = new Map<string, { text: string; timer: ReturnType<typeof setTimeout> }>()
+  const emit = (id: string, text: string) => {
+    const pending = pendingEvents.get(id)
+    if (pending) { pending.text = text; return }
+    const event = { text, timer: setTimeout(() => {
+      pendingEvents.delete(id)
+      if (!window.isDestroyed()) window.webContents.send('leadsghr:pipeline-pages:event', { id, text: event.text, pages: list(id) })
+    }, 100) }
+    pendingEvents.set(id, event)
+  }
   const setStatus = (id: string, target: Page, status: PageStatus, error?: string, emails?: string[]) => {
     db.prepare('UPDATE pipeline_pages SET status=?,error=?,emails_json=COALESCE(?,emails_json),updated_at=? WHERE run_id=? AND row_key=? AND url=?')
       .run(status, error ?? null, emails ? JSON.stringify(emails) : null, new Date().toISOString(), id, target.rowKey, target.url)
@@ -91,7 +100,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     setStatus(id, target, 'ready')
     return { html: response.body, url: response.url }
   }
-  async function crawl(id: string, target: Page, html: string, pageUrl: string, contactOnly: boolean, fetchMethod: 'browser' | 'http') {
+  async function crawl(id: string, target: Page, html: string, pageUrl: string, contactOnly: boolean, fetchMethod: 'browser' | 'http', emailSource: 'leadsghr' | 'email-hunter') {
     setStatus(id, target, 'crawling')
     const snapshots = [html]
     if (fetchMethod === 'browser') {
@@ -131,23 +140,23 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
       emit(id, `Rendered preview unavailable for ${target.url}; using public HTML.`)
     } finally { if (!preview.isDestroyed()) preview.destroy() }
     }
-    const links = new Set<string>()
     const emails = new Set<string>()
     for (const snapshot of snapshots) {
       const discovery = discoverPage(snapshot, pageUrl)
-      for (const link of discovery.links) links.add(link)
-      for (const email of [...extractContacts(snapshot).emails, ...discovery.formRecipientEmails]) emails.add(email)
+      // Enqueue discovered links before email extraction finishes. Other
+      // workers can claim them while this page is still being inspected.
+      if (target.kind === 'Homepage') {
+        const contact = discovery.links.find((link) => CONTACT.test(decodeURIComponent(new URL(link).pathname)))
+        if (contact) enqueue(id, target.rowKey, contact, 'Contact page')
+      }
+      if (!contactOnly) for (const link of discovery.links) enqueue(id, target.rowKey, link, CONTACT.test(decodeURIComponent(new URL(link).pathname)) ? 'Contact page' : 'Page')
+      for (const email of [...(emailSource === 'email-hunter' ? extractRenderedHtmlEmails(snapshot) : extractContacts(snapshot).emails), ...discovery.formRecipientEmails]) emails.add(email)
     }
     const storedRow = db.prepare('SELECT payload FROM crawl_run_rows WHERE run_id=? AND row_key=?').get(id, target.rowKey) as { payload: string } | undefined
     if (storedRow) {
       const row = JSON.parse(storedRow.payload) as CrawlRow
       store.saveRow({ id, row: { ...row, emails: [...new Set([...row.emails, ...emails])].slice(0, 1000), emailsScanned: true, source: 'Maps + website' } })
     }
-    if (target.kind === 'Homepage') {
-      const contact = [...links].find((link) => CONTACT.test(decodeURIComponent(new URL(link).pathname)))
-      if (contact) enqueue(id, target.rowKey, contact, 'Contact page')
-    }
-    if (!contactOnly) for (const link of links) enqueue(id, target.rowKey, link, CONTACT.test(decodeURIComponent(new URL(link).pathname)) ? 'Contact page' : 'Page')
     setStatus(id, target, 'crawled', undefined, [...emails])
   }
   async function process(id: string, signal: AbortSignal) {
@@ -155,14 +164,20 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     if (!run) throw new Error('Pipeline not found')
     const contactOnly = run.preferences.crawlerContactOnly
     const fetchMethod = run.preferences.crawlerFetchMethod
+    const emailSource = run.preferences.crawlerEmailSource
     const workerCount = Math.max(1, Math.min(8, run.preferences.crawlerConcurrentPages))
+    const searchCursor = db.prepare('SELECT next_query_index FROM crawl_runs WHERE id=?')
     let failure: unknown = null
     let activeJobs = 0
     const worker = async () => {
       while (!signal.aborted) {
         const target = nextPage(id)
         if (!target) {
-          if (activeJobs === 0) return
+          // Searches can enqueue another business homepage while workers are idle.
+          // Exit only after the saved search cursor reaches the final query and
+          // every in-flight page has finished discovering its own links.
+          const cursor = searchCursor.get(id) as { next_query_index: number } | undefined
+          if (!cursor || (cursor.next_query_index >= run.totalQueries && activeJobs === 0)) return
           await wait(50)
           continue
         }
@@ -172,7 +187,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
         try {
           const prepared = await prefetch(id, target, signal)
           if (signal.aborted) return
-          if (prepared) await crawl(id, target, prepared.html, prepared.url, contactOnly, fetchMethod)
+          if (prepared) await crawl(id, target, prepared.html, prepared.url, contactOnly, fetchMethod, emailSource)
         } catch (error) {
           failure ??= error
           setStatus(id, target, 'queued', String(error))
@@ -209,5 +224,5 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     finally { if (active?.controller === controller) active = null }
   })
   ipcMain.handle('leadsghr:pipeline-pages:pause', (event, rawId: unknown) => { requireOwner(event); const id = crawlRunIdSchema.parse(rawId); if (active?.id === id) { active.controller.abort(); active.paused = true } return true })
-  window.on('closed', () => active?.controller.abort())
+  window.on('closed', () => { active?.controller.abort(); for (const event of pendingEvents.values()) clearTimeout(event.timer); pendingEvents.clear() })
 }
