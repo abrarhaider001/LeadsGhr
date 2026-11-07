@@ -109,6 +109,8 @@ The filtering step runs after page extraction and before every automatic Pipelin
 
 ## Source map
 
+To reset all saved Pipeline and legacy scan history, close the desktop app and run `pnpm clear:crawl-history` from the repository root. [`scripts/clear-local-crawl-history.mjs`](../../scripts/clear-local-crawl-history.mjs) first creates a timestamped SQLite backup beside the live database, then deletes the run, queue, row, filter-audit, and export-history records in one transaction. It preserves preferences, search selections, leads, and CSV files already written to disk. The Crawler test has no saved history to clear.
+
 - [`apps/desktop/src/adapters.ts`](../../apps/desktop/src/adapters.ts): public HTTP requests, IP checks, redirects, decompression, limits, and User-Agent.
 - [`apps/desktop/src/crawler-test.ts`](../../apps/desktop/src/crawler-test.ts): test IPC, robots check, page approval, and webview restrictions.
 - [`packages/app/src/crawler-page.tsx`](../../packages/app/src/crawler-page.tsx): temporary queue, rendering flow, discovery, per-page results, and status UI.
