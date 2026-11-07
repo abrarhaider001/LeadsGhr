@@ -34,6 +34,8 @@ const navigation: { label: string; icon: IconName | 'advancedSearch' | 'filterBo
   { label: 'Email Filtering', icon: 'filterBolt' },
   { label: 'Email Validation', icon: 'mailCheck' },
   { label: 'Email Spam Check', icon: 'spamCheck' },
+  { label: 'Email Sending', icon: 'mailSend' },
+  { label: 'Email Tracking', icon: 'mailTracking' },
   { label: 'Leads', icon: 'leads' },
   { label: 'Runs', icon: 'runs' },
   { label: 'Profiles', icon: 'profiles' },
@@ -52,6 +54,8 @@ const descriptions: Record<string, string> = {
   'Email Filtering': 'Import Excel or CSV files, remove noisy addresses, and review a clean email list.',
   'Email Validation': 'Review email address validity before using a contact list.',
   'Email Spam Check': 'Review email content for signals that may affect delivery.',
+  'Email Sending': 'Prepare and send email campaigns from your workspace.',
+  'Email Tracking': 'Review delivery and engagement for sent emails.',
   'Crawl Results': 'Review businesses found across the selected niche and locations.',
   Leads: 'Review businesses and contacts saved on this computer.',
   Runs: 'Review crawl progress, saved results, and selected state ranges.',
@@ -199,6 +203,8 @@ export function LeadsGhrApp() {
           : page === 'Email Filtering' ? <EmailFilteringPage />
           : page === 'Email Validation' ? <Card className="la-local-page"><h2>Email Validation</h2><p>This page is ready in the sidebar. Address validation is not implemented yet; Email Filtering currently handles formatting, duplicates, and disposable-domain screening.</p></Card>
           : page === 'Email Spam Check' ? <EmailSpamEnginePage />
+          : page === 'Email Sending' ? <Card className="la-local-page"><h2>Email Sending</h2><p>Planned feature. Email campaigns and sending are not available in the desktop app yet.</p></Card>
+          : page === 'Email Tracking' ? <Card className="la-local-page"><h2>Email Tracking</h2><p>Planned feature. Delivery and engagement tracking are not available in the desktop app yet.</p></Card>
           : page === 'Niche Library' ? <NicheLibraryPage useNicheKeywords={preferences.useNicheKeywords} onStartSearch={() => void showPage('New Search')} />
           : page === 'Pipeline' ? <PipelineOverviewPage runs={crawlRuns} onCreate={(draft, start) => { setSearchOrigin('Pipeline'); setPipelineDraft(draft); setPipelineDetails({ name: draft.name, provider: draft.provider }); setRunDetail(null); setSearchCriteria(draft.criteria); setPage(start ? 'Crawl Results' : 'New Pipeline') }} onResume={(id) => void resumeCrawl(id)} onDelete={(id) => void deletePipeline(id)} />
           : page === 'New Pipeline' || page === 'New Search' ? <SearchSetupPage iconActions pipelineMode={page === 'New Pipeline'} pipelineDraft={page === 'New Pipeline' ? pipelineDraft : null} onSearch={(criteria, details) => { setRunDetail(null); setSearchOrigin(page === 'New Pipeline' ? 'Pipeline' : 'New Search'); setPipelineDetails(details ?? null); setSearchCriteria(criteria); setPage('Crawl Results') }} />

@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react'
 
-export type IconName = 'selectAll' | 'clear' | 'add' | 'pipeline' | 'dashboard' | 'search' | 'spider' | 'leads' | 'runs' | 'profiles' | 'exports' | 'shield' | 'settings' | 'arrow' | 'download' | 'mail' | 'mailCheck' | 'spamCheck' | 'bell' | 'chevron' | 'info' | 'library' | 'back' | 'play' | 'pause' | 'resume' | 'stop'
+export type IconName = 'selectAll' | 'clear' | 'add' | 'pipeline' | 'dashboard' | 'search' | 'spider' | 'leads' | 'runs' | 'profiles' | 'exports' | 'shield' | 'settings' | 'arrow' | 'download' | 'mail' | 'mailSend' | 'mailTracking' | 'mailCheck' | 'spamCheck' | 'bell' | 'chevron' | 'info' | 'library' | 'back' | 'play' | 'pause' | 'resume' | 'stop'
 const paths: Record<IconName, ReactNode> = {
   selectAll: <><path d="m2 12 4 4L16 6M8 12l4 4L22 6"/></>,
   clear: <><path d="M3.5 4.5 10 11M10 4.5 3.5 11M13 5h8M13 10h8M3 15h18M3 20h18"/></>,
@@ -18,6 +18,8 @@ const paths: Record<IconName, ReactNode> = {
   arrow: <path d="M4 12h16m-6-6 6 6-6 6"/>,
   download: <><path d="M12 3v12m-4-4 4 4 4-4"/><path d="M4 19h16"/></>,
   mail: <><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></>,
+  mailSend: <><path d="m3 11 17-8-5 18-3-7-9-3Z"/><path d="m12 14 8-11"/></>,
+  mailTracking: <><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/><path d="M8 17h8"/></>,
   mailCheck: <><path d="M20 10V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8M4 7l8 6 7-5"/><path d="m16 17 2 2 4-4"/></>,
   spamCheck: <><path d="M6 3h12l4 5v8l-4 5H6l-4-5V8z"/><path d="M12 7v6m0 4h.01"/></>,
   bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Z"/><path d="M10 21h4"/></>,
