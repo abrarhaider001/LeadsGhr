@@ -67,8 +67,16 @@ export function createCrawlRunStore(db: Database.Database) {
       const { id, row } = crawlRunRowInputSchema.parse(input)
       if (!stored(id)) throw new Error('Crawl run not found')
       const key = row.mapsUrl.trim().toLowerCase() || row.website.trim().toLowerCase().replace(/\/$/, '') || `${row.name.trim().toLowerCase()}|${row.address.trim().toLowerCase()}`
+      const existing = db.prepare('SELECT payload FROM crawl_run_rows WHERE run_id=? AND row_key=?').get(id, key) as { payload: string } | undefined
+      const previous = existing ? JSON.parse(existing.payload) as CrawlRow : null
+      const merged: CrawlRow = previous ? {
+        ...row,
+        emails: [...new Set([...previous.emails, ...row.emails])].slice(0, 1000),
+        emailsScanned: previous.emailsScanned || row.emailsScanned,
+        source: previous.emailsScanned ? previous.source : row.source,
+      } : row
       db.prepare('INSERT INTO crawl_run_rows (run_id,row_key,payload,first_seen_at) VALUES (?,?,?,?) ON CONFLICT(run_id,row_key) DO UPDATE SET payload=excluded.payload')
-        .run(id, key, JSON.stringify(row), new Date().toISOString())
+        .run(id, key, JSON.stringify(merged), new Date().toISOString())
       return true
     },
     filterRunEmails(id: string) {

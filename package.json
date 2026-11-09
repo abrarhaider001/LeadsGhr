@@ -8,6 +8,7 @@
     "postinstall": "pnpm --filter @leadsghr/desktop run rebuild:native",
     "dev": "pnpm --filter @leadsghr/desktop dev",
     "dev:desktop": "pnpm --filter @leadsghr/desktop dev",
+    "clear:crawl-history": "node scripts/clear-local-crawl-history.mjs",
     "build": "pnpm --filter @leadsghr/desktop build",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint"

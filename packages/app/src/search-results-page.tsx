@@ -6,7 +6,9 @@ import locationData from '../data/us-states-locations.json'
 import { CustomSelect } from './custom-select'
 import { EmptyTable, Icon } from '@leadsghr/ui'
 import { FaPause, FaPlay, FaStop } from 'react-icons/fa'
+import { MdOutlineVisibility } from 'react-icons/md'
 import { PipelineTimeline } from './pipeline-timeline'
+import { CRAWL_QUEUE_VISIBLE_ROWS, crawlQueueWindow } from './crawl-queue-window'
 
 type MapsRow = CrawlRow
 type ScanUpdate = { type: 'status'; text: string } | { type: 'row'; row: MapsRow } | { type: 'done'; count: number } | { type: 'error'; text: string }
@@ -28,11 +30,17 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
   const [crawlRunId, setCrawlRunId] = useState<string | null>(initialRun?.id ?? null)
   const [lastExport, setLastExport] = useState<CrawlExport | null>(null)
   const [sitePages, setSitePages] = useState<PipelinePage[]>([])
-  const [queuePage, setQueuePage] = useState(1)
-  const [queuePerPage, setQueuePerPage] = useState(50)
+  const [websiteCrawlFinished, setWebsiteCrawlFinished] = useState(false)
+  const [selectedSitePageKey, setSelectedSitePageKey] = useState<string | null>(null)
+  const [siteCrawlStartedAt, setSiteCrawlStartedAt] = useState<number | null>(null)
+  const [siteCrawlElapsedMs, setSiteCrawlElapsedMs] = useState(0)
+  const detailTriggerRef = useRef<HTMLButtonElement | null>(null)
+  const detailCloseRef = useRef<HTMLButtonElement | null>(null)
   const stopRequested = useRef(false)
   const pauseRequested = useRef(false)
+  const sitePauseRequested = useRef(false)
   const resumeWaiter = useRef<(() => void) | null>(null)
+  const siteResumeWaiter = useRef<(() => void) | null>(null)
   const nextQueryIndex = useRef(initialRun?.nextQueryIndex ?? 0)
   const pendingRows = useRef(new Set<Promise<unknown>>())
   const siteCrawlActive = useRef(false)
@@ -62,14 +70,31 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
   const visibleRows = rows.slice(pageStart, pageStart + perPage)
   const firstPageButton = Math.max(1, Math.min(currentPage - 2, pageCount - 4))
   const pageButtons = Array.from({ length: Math.min(5, pageCount) }, (_, index) => firstPageButton + index)
-  const queuePageCount = Math.max(1, Math.ceil(sitePages.length / queuePerPage))
-  const currentQueuePage = Math.min(queuePage, queuePageCount)
-  const queuePageStart = (currentQueuePage - 1) * queuePerPage
-  const visibleSitePages = sitePages.slice(queuePageStart, queuePageStart + queuePerPage)
-  const firstQueuePageButton = Math.max(1, Math.min(currentQueuePage - 2, queuePageCount - 4))
-  const queuePageButtons = Array.from({ length: Math.min(5, queuePageCount) }, (_, index) => firstQueuePageButton + index)
+  const sitePageKey = (item: PipelinePage) => `${item.rowKey}|${item.url}`
+  const visibleSitePages = crawlQueueWindow(sitePages, (item) => item.status)
+  const processedSitePages = sitePages.filter((item) => item.status === 'crawled' || item.status === 'skipped').length
+  const queuedSitePages = sitePages.filter((item) => item.status === 'queued').length
+  const uniqueSiteEmails = new Set(sitePages.flatMap((item) => item.emails.map((email) => email.toLowerCase()))).size
+  const selectedSitePage = sitePages.find((item) => sitePageKey(item) === selectedSitePageKey)
+  const homepageEmails = new Set(sitePages.filter((item) => item.rowKey === selectedSitePage?.rowKey && item.kind === 'Homepage').flatMap((item) => item.emails.map((email) => email.toLowerCase())))
   const isActive = phase === 'running' || phase === 'pausing'
   const hasVisibleFields = preferences.includeCompanyName || preferences.includeWebsite || preferences.includePhone || preferences.includeAddress || preferences.includeLocation
+
+  useEffect(() => {
+    if (siteCrawlStartedAt === null || websiteCrawlFinished || phase === 'stopped' || phase === 'error') return
+    const timer = window.setInterval(() => setSiteCrawlElapsedMs(Date.now() - siteCrawlStartedAt), 1000)
+    return () => window.clearInterval(timer)
+  }, [siteCrawlStartedAt, websiteCrawlFinished, phase])
+  useEffect(() => {
+    if (!selectedSitePageKey) return
+    detailCloseRef.current?.focus()
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setSelectedSitePageKey(null) }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [selectedSitePageKey])
+  const closeSiteDetails = () => { setSelectedSitePageKey(null); detailTriggerRef.current?.focus() }
+  const siteElapsedSeconds = Math.floor(siteCrawlElapsedMs / 1000)
+  const siteElapsed = `${Math.floor(siteElapsedSeconds / 3600)}:${String(Math.floor(siteElapsedSeconds / 60) % 60).padStart(2, '0')}:${String(siteElapsedSeconds % 60).padStart(2, '0')}`
 
   useEffect(() => {
     const bridge = mapsBridge()
@@ -84,26 +109,33 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
     let disposed = false
     let currentId: string | null = null
     let activeRunId: string | null = null
-    let siteCrawlTask: Promise<'completed' | 'paused'> | null = null
+    let siteCrawlTask: Promise<void> | null = null
+    let sitePaused = false
     let finalized = false
     let saveError: unknown = null
     let unsubscribe: (() => void) | undefined
     const unsubscribePages = pipelineMode ? runStore.onPipelinePagesEvent((message) => {
       if (message.id !== activeRunId || disposed) return
       setSitePages(message.pages)
-      if (siteCrawlActive.current) setStatus(message.text)
+      if (siteCrawlActive.current && nextQueryIndex.current >= searches.length) setStatus(message.text)
       if (message.text.includes(': crawled ')) void runStore.getCrawlRun(message.id).then((saved) => { if (!disposed && saved) setRows(saved.rows) })
     }) : undefined
     let finishCurrent: ((result: 'done' | 'error' | 'stopped') => void) | undefined
     stopRequested.current = false
     pauseRequested.current = false
+    sitePauseRequested.current = false
     resumeWaiter.current = null
+    siteResumeWaiter.current = null
     setRows(retry === 0 ? initialRun?.rows ?? [] : [])
     setPage(1)
     setRunId(null)
     setPhase('running')
     setLastExport(null)
     setSitePages([])
+    setWebsiteCrawlFinished(false)
+    setSelectedSitePageKey(null)
+    setSiteCrawlStartedAt(null)
+    setSiteCrawlElapsedMs(0)
     siteCrawlActive.current = false
     nextQueryIndex.current = retry === 0 ? initialRun?.nextQueryIndex ?? 0 : 0
 
@@ -140,6 +172,37 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
       }
     }
 
+    const crawlWebsites = async (id: string, startedAt: number) => {
+      while (!disposed && !stopRequested.current) {
+        if (pauseRequested.current) {
+          setPhase('paused')
+          await new Promise<void>((resolve) => { siteResumeWaiter.current = resolve })
+          siteResumeWaiter.current = null
+          if (disposed || stopRequested.current) return
+        }
+        siteCrawlActive.current = true
+        let result: 'completed' | 'paused'
+        try { result = await runStore.startPipelinePages(id) }
+        catch (failure) { sitePaused = true; stopRequested.current = true; setStatus(`Website crawl paused: ${String(failure)}`); if (currentId) void bridge.stopMapsScan(currentId); return }
+        finally { siteCrawlActive.current = false }
+        if (result === 'completed') {
+          if (!disposed) { setWebsiteCrawlFinished(true); setSiteCrawlElapsedMs(Date.now() - startedAt) }
+          return
+        }
+        if (!sitePauseRequested.current || stopRequested.current || disposed) {
+          if (!stopRequested.current && !disposed) { sitePaused = true; stopRequested.current = true; setStatus('Website crawl paused. Resume this pipeline to continue.'); if (currentId) void bridge.stopMapsScan(currentId) }
+          return
+        }
+        sitePauseRequested.current = false
+        if (pauseRequested.current) {
+          setPhase('paused')
+          setStatus('Pipeline paused. Resume to continue searching and crawling.')
+          await new Promise<void>((resolve) => { siteResumeWaiter.current = resolve })
+          siteResumeWaiter.current = null
+        }
+      }
+    }
+
     const runQueue = async () => {
       try {
         if (retry === 0 && initialRun) {
@@ -153,7 +216,12 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
         }
         if (disposed) { await finishRun('stopped'); return }
         setCrawlRunId(activeRunId)
-        if (pipelineMode) setSitePages(await runStore.listPipelinePages(activeRunId))
+        if (pipelineMode) {
+          setSitePages(await runStore.listPipelinePages(activeRunId))
+          const startedAt = Date.now()
+          setSiteCrawlStartedAt(startedAt)
+          siteCrawlTask = crawlWebsites(activeRunId, startedAt)
+        }
       } catch (failure) { if (!disposed) { setPhase('error'); setStatus(`Could not create crawl run: ${String(failure)}`) } return }
       let index = nextQueryIndex.current
       let outcome: 'done' | 'error' | 'stopped' = 'done'
@@ -229,39 +297,32 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
         if (index < searches.length) await new Promise((resolve) => window.setTimeout(resolve, 1500))
       }
       if (disposed) return
-      let sitePaused = false
-      if (!stopRequested.current && outcome !== 'error' && index >= searches.length && pipelineMode && activeRunId) {
-        try {
-          await Promise.allSettled([...pendingRows.current])
-          if (saveError) throw saveError
-          siteCrawlActive.current = true
-          setStatus('Crawling queued public websites...')
-          let result = await (siteCrawlTask = runStore.startPipelinePages(activeRunId))
-          while (result === 'paused' && pauseRequested.current && !stopRequested.current && !disposed) {
-            setPhase('paused')
-            setStatus('Website crawl paused. Resume to continue from the queued page.')
-            await new Promise<void>((resolve) => { resumeWaiter.current = resolve })
-            resumeWaiter.current = null
-            if (!stopRequested.current && !disposed) { setPhase('running'); result = await (siteCrawlTask = runStore.startPipelinePages(activeRunId)) }
-          }
-          if (result === 'paused') sitePaused = true
-        } catch (failure) { sitePaused = true; setStatus(`Website crawl paused: ${String(failure)}`) }
-        finally { siteCrawlActive.current = false }
+      if (siteCrawlTask) {
+        if (stopRequested.current || outcome === 'error' || index < searches.length || sitePaused) {
+          if (activeRunId && siteCrawlActive.current) await runStore.pausePipelinePages(activeRunId)
+          siteResumeWaiter.current?.()
+        }
+        await siteCrawlTask
       }
       if (disposed) return
-      if (stopRequested.current) { setPhase('stopped'); setStatus('Search stopped. Saving CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Search stopped. Results saved and exported.') }
-      else if (sitePaused) { setPhase('stopped'); setStatus('Website crawl paused. Saving partial CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Website crawl paused. Resume this pipeline to continue.') }
+      if (sitePaused) { setPhase('stopped'); setStatus('Website crawl paused. Saving partial CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Website crawl paused. Resume this pipeline to continue.') }
+      else if (stopRequested.current) { setPhase('stopped'); setStatus('Search stopped. Saving CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Search stopped. Results saved and exported.') }
       else if (outcome === 'error') { setPhase('error'); await finishRun('failed', 'Search ended with an error.') }
       else if (index >= searches.length) { setPhase('completed'); setStatus('Search complete. Saving CSV...'); if (await finishRun('completed') && !disposed) setStatus(`Completed all ${searches.length} searches. Results exported.`) }
       else { setPhase('stopped'); setStatus('Search stopped. Saving CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Search stopped. Results saved and exported.') }
     }
-    void runQueue()
+    // StrictMode replays mount effects in development. Defer the database write
+    // until after that replay, so its first cleanup cancels the duplicate start.
+    const startTimer = window.setTimeout(() => { void runQueue() }, 0)
     return () => {
+      window.clearTimeout(startTimer)
       disposed = true
       stopRequested.current = true
       pauseRequested.current = false
       resumeWaiter.current?.()
       resumeWaiter.current = null
+      siteResumeWaiter.current?.()
+      siteResumeWaiter.current = null
       if (currentId) void bridge.stopMapsScan(currentId)
       if (siteCrawlActive.current && activeRunId) void runStore.pausePipelinePages(activeRunId)
       finishCurrent?.('stopped')
@@ -274,6 +335,7 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
   function pause() {
     if (phase !== 'running') return
     pauseRequested.current = true
+    sitePauseRequested.current = true
     setPhase('pausing')
     setStatus('Pausing current search...')
     if (runId) void mapsBridge()?.stopMapsScan(runId)
@@ -286,6 +348,8 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
     setStatus('Resuming search...')
     resumeWaiter.current?.()
     resumeWaiter.current = null
+    siteResumeWaiter.current?.()
+    siteResumeWaiter.current = null
   }
   function stop() {
     if (!isActive && phase !== 'paused') return
@@ -293,6 +357,8 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
     pauseRequested.current = false
     resumeWaiter.current?.()
     resumeWaiter.current = null
+    siteResumeWaiter.current?.()
+    siteResumeWaiter.current = null
     if (runId) void mapsBridge()?.stopMapsScan(runId)
     if (siteCrawlActive.current && crawlRunId) void crawlRunBridge()?.pausePipelinePages(crawlRunId)
     setPhase('stopped')
@@ -311,7 +377,7 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
     {pipelineMode && <PipelineTimeline current={4}/>} 
     <div className="la-results-heading"><button type="button" className="la-result-back" aria-label="Back to choices" title="Back to choices" onClick={onBack}><Icon name="back" size={18}/></button></div>
     <section className="la-maps-results">
-      <div className="la-maps-results-heading"><h2>Crawled businesses</h2><div className="la-result-controls" role="group" aria-label="Crawl controls">
+      <div className="la-maps-results-heading"><h2>{pipelineMode ? 'Pipeline crawl' : 'Crawled businesses'}</h2><div className="la-result-controls" role="group" aria-label="Crawl controls">
         <button type="button" className="la-result-control la-result-control--play" aria-label="Play search from the beginning" title="Play from beginning" disabled={isActive || phase === 'paused'} onClick={() => setRetry((value) => value + 1)}><FaPlay size={14}/></button>
         <button type="button" className="la-result-control la-result-control--pause" aria-label="Pause search" title="Pause current search" disabled={phase !== 'running'} onClick={pause}><FaPause size={14}/></button>
         <button type="button" className="la-result-control la-result-control--resume" aria-label="Resume search" title="Resume paused search" disabled={phase !== 'paused'} onClick={resume}><Icon name="resume" size={17}/></button>
@@ -319,14 +385,39 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
       </div></div>
       <p className="la-maps-scan-status" aria-live="polite">{isActive && <span className="la-crawler-dot" />}{status}</p>
       {lastExport && <div className="la-crawl-export-note"><span title={lastExport.filePath}>CSV saved: {lastExport.fileName} · {lastExport.entryCount.toLocaleString()} entries</span><button type="button" onClick={() => void exportAgain()}><Icon name="exports" size={15} /> Export again</button></div>}
-      {hasVisibleFields ? <>
+      {!pipelineMode && (hasVisibleFields ? <>
         <div className="la-result-table-toolbar"><span>{rows.length.toLocaleString()} {rows.length === 1 ? 'result' : 'results'}</span><nav className="la-result-pagination" aria-label="Search result pages"><span>{rows.length ? `${pageStart + 1}-${Math.min(pageStart + perPage, rows.length)} of ${rows.length.toLocaleString()}` : '0 results'}</span><button type="button" className="la-result-page-prev" aria-label="Previous result page" title="Previous page" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}><Icon name="chevron" size={14}/></button>{pageButtons.map((number) => <button type="button" key={number} aria-label={`Result page ${number}`} aria-current={number === currentPage ? 'page' : undefined} onClick={() => setPage(number)}>{number}</button>)}<button type="button" aria-label="Next result page" title="Next page" disabled={currentPage === pageCount} onClick={() => setPage(currentPage + 1)}><Icon name="chevron" size={14}/></button><CustomSelect label="Results per page" value={String(perPage)} onChange={(value) => { setPerPage(Number(value)); setPage(1) }} options={[{ value: '25', label: '25 / page' }, { value: '50', label: '50 / page' }, { value: '100', label: '100 / page' }]} /></nav></div>
         <div className="la-table-scroll"><table className="la-table la-maps-table"><thead><tr><th>#</th>{preferences.includeCompanyName && <th>Business</th>}{preferences.includeWebsite && <th>Website URL</th>}{preferences.includePhone && <th>Phone</th>}{preferences.includeLocation && <th>Location</th>}{preferences.includeAddress && <th>Address</th>}</tr></thead><tbody>{visibleRows.map((row, index) => <tr key={row.id}><td>{pageStart + index + 1}</td>{preferences.includeCompanyName && <td><strong className="la-result-ellipsis" title={row.name}>{row.name || 'Not shown'}</strong></td>}{preferences.includeWebsite && <td className="la-maps-url">{row.website ? <a className="la-result-ellipsis" title={row.website} href={row.website} onClick={(event) => { event.preventDefault(); void mapsBridge()?.openWebsite(row.website) }}>{row.website}</a> : 'Not shown'}</td>}{preferences.includePhone && <td>{row.phone || 'Not shown'}</td>}{preferences.includeLocation && <td><span className="la-result-ellipsis" title={row.location}>{row.location || 'Not shown'}</span></td>}{preferences.includeAddress && <td><span className="la-result-ellipsis" title={row.address}>{row.address || 'Not shown'}</span></td>}</tr>)}</tbody></table>{!rows.length && <EmptyTable title={isActive ? 'Searching for businesses' : 'No results found'} description={isActive ? 'Public result cards will appear here as they load.' : 'Try another niche or location to find public business listings.'} />}</div>
-      </> : <p className="la-records-empty">All result fields are hidden. Enable at least one field in Profile preferences.</p>}
-      {pipelineMode && <section className="la-pipeline-queue"><div className="la-section-heading"><div><h2>Website URL queue</h2><p>Pages are processed by the configured worker pool. Unfinished URLs resume after a pause or restart.</p></div><span>{sitePages.filter((item) => item.status === 'crawled').length}/{sitePages.length} crawled</span></div>
-        <div className="la-result-table-toolbar"><span>{sitePages.length.toLocaleString()} queued pages</span><nav className="la-result-pagination" aria-label="Website URL queue pages"><span>{sitePages.length ? `${queuePageStart + 1}-${Math.min(queuePageStart + queuePerPage, sitePages.length)} of ${sitePages.length.toLocaleString()}` : '0 pages'}</span><button type="button" className="la-result-page-prev" aria-label="Previous queue page" title="Previous page" disabled={currentQueuePage === 1} onClick={() => setQueuePage(currentQueuePage - 1)}><Icon name="chevron" size={14}/></button>{queuePageButtons.map((number) => <button type="button" key={number} aria-label={`Queue page ${number}`} aria-current={number === currentQueuePage ? 'page' : undefined} onClick={() => setQueuePage(number)}>{number}</button>)}<button type="button" aria-label="Next queue page" title="Next page" disabled={currentQueuePage === queuePageCount} onClick={() => setQueuePage(currentQueuePage + 1)}><Icon name="chevron" size={14}/></button><CustomSelect label="Queue rows per page" value={String(queuePerPage)} onChange={(value) => { setQueuePerPage(Number(value)); setQueuePage(1) }} options={[{ value: '25', label: '25 / page' }, { value: '50', label: '50 / page' }, { value: '100', label: '100 / page' }]} /></nav></div>
-        <div className="la-table-scroll"><table className="la-table"><thead><tr><th>#</th><th>Page URL</th><th>Type</th><th>Status</th><th>Emails</th></tr></thead><tbody>{visibleSitePages.map((item, index) => <tr key={`${item.rowKey}:${item.url}`}><td>{queuePageStart + index + 1}</td><td title={item.url}><span className="la-result-ellipsis">{item.url}</span></td><td>{item.kind}</td><td>{item.status}{item.error ? ` · ${item.error}` : ''}</td><td>{item.emails.join(', ') || '—'}</td></tr>)}</tbody></table>{!sitePages.length && <EmptyTable title="No websites queued" description="Websites from public business results will enter the queue as they appear." />}</div></section>}
+      </> : <p className="la-records-empty">All result fields are hidden. Enable at least one field in Profile preferences.</p>)}
+      {pipelineMode && <section className="la-pipeline-queue">
+        <div className="la-section-heading la-crawl-table-heading"><div><h2>Website URL queue</h2><p>Business websites and links found on crawled pages enter the same saved queue. Workers extract emails as URLs arrive.</p></div><span>Showing {visibleSitePages.length} of {sitePages.length} pages · {CRAWL_QUEUE_VISIBLE_ROWS} row limit</span></div>
+        <div className="la-crawler-status-row">
+          <div className="la-crawler-queue-activity" role="status" aria-live="polite"><span className="la-crawler-dot" /><span>{phase === 'paused' ? 'Pipeline paused' : websiteCrawlFinished ? 'Website crawl complete' : siteCrawlActive.current ? 'Searching and crawling websites...' : 'Waiting for website crawl'}</span></div>
+          <div className="la-crawler-progress-summary" aria-label="Website crawl progress"><span>{sitePages.length} pages</span><span>{uniqueSiteEmails} unique emails</span><span>Processing time {siteElapsed}</span><span>Results found {uniqueSiteEmails}</span><span>Processed {processedSitePages}</span><span>In queue {queuedSitePages}</span></div>
+        </div>
+        <div className={`la-table-scroll la-pipeline-queue-table${visibleSitePages.length ? '' : ' la-pipeline-queue-table--empty'}`}>
+          <table className="la-table"><thead><tr><th>#</th><th>Page URL</th><th>Type</th><th>Status</th><th>Emails found</th><th>Actions</th></tr></thead>
+            <tbody>{visibleSitePages.map(({ item, index }) => <tr key={sitePageKey(item)} className={['fetching', 'ready', 'crawling'].includes(item.status) ? 'la-crawl-row--active' : undefined}>
+              <td>{index + 1}</td>
+              <td title={item.url}><span className="la-result-ellipsis">{item.url}</span></td>
+              <td>{item.kind}</td>
+              <td title={item.error ?? undefined}><span className={`la-crawler-queue-status la-crawler-queue-status--${item.status}`}>{item.status}</span></td>
+              <td><span className="la-crawler-email-chip" aria-label={`${item.emails.length} emails found`}>{item.emails.length}</span></td>
+              <td><button type="button" className="la-crawler-view-button" title="View page emails" aria-label={`View emails and details for ${item.url}`} onClick={(event) => { detailTriggerRef.current = event.currentTarget; setSelectedSitePageKey(sitePageKey(item)) }}><MdOutlineVisibility aria-hidden="true" /></button></td>
+            </tr>)}</tbody>
+          </table>
+          {!visibleSitePages.length && <EmptyTable title={sitePages.length ? 'No pages waiting' : 'No websites queued'} description={sitePages.length ? 'All queued pages have been processed.' : 'Websites from public business results will enter the queue as they appear.'} />}
+        </div>
+      </section>}
     </section>
-    <p className="la-results-note">Results are saved locally with their run and exported to Documents/LeadsGhr/exports when the crawl stops or completes. Maps loads up to 200 visible listings per location. Public website email scanning is planned for later.</p>
+    {selectedSitePage && <div className="la-niche-panel-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeSiteDetails() }}>
+      <aside className="la-niche-panel la-crawler-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="pipeline-page-detail-title">
+        <div className="la-niche-panel-heading"><div><h2 id="pipeline-page-detail-title">Page emails</h2><p>Addresses found while crawling this business website.</p></div><button ref={detailCloseRef} type="button" className="la-niche-panel-close" aria-label="Close page details" onClick={closeSiteDetails}>&times;</button></div>
+        <dl className="la-crawler-detail-meta"><div><dt>Page URL</dt><dd><a href={selectedSitePage.url} target="_blank" rel="noreferrer">{selectedSitePage.url}</a></dd></div><div><dt>Page type</dt><dd>{selectedSitePage.kind}</dd></div><div><dt>Crawl status</dt><dd>{selectedSitePage.status}</dd></div><div><dt>Email source</dt><dd>{(initialRun?.preferences.crawlerEmailSource ?? preferences.crawlerEmailSource) === 'email-hunter' ? 'Email Hunter-style HTML scan' : 'LeadsGhr extraction'}</dd></div>{selectedSitePage.error && <div><dt>Detail</dt><dd>{selectedSitePage.error}</dd></div>}</dl>
+        <div className="la-crawler-detail-emails-heading"><h3>Emails found</h3><span className="la-crawler-email-chip">{selectedSitePage.emails.length}</span></div>
+        {selectedSitePage.emails.length ? <ol className="la-crawler-detail-emails">{selectedSitePage.emails.map((email) => <li key={email}><span>{email}</span>{selectedSitePage.kind === 'Contact page' && homepageEmails.has(email.toLowerCase()) && <span className="la-crawler-duplicate-chip">Also found on homepage</span>}</li>)}</ol> : <p className="la-crawler-detail-empty">{selectedSitePage.status === 'crawled' ? 'No emails found on this page.' : 'No emails found yet.'}</p>}
+      </aside>
+    </div>}
+    <p className="la-results-note">Search results supply website URLs. Pipeline crawls those sites, filters extracted emails, and exports the saved results to Documents/LeadsGhr/exports.</p>
   </div>
 }
