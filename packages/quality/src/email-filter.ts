@@ -1,9 +1,10 @@
+import { isDisposableDomain } from './disposable-domains.ts'
+
 export type FilteredEmail = { email: string; source: string; reason: string }
 export type RejectedEmail = { value: string; reason: string; source: string }
 export type FilterResult = { kept: FilteredEmail[]; rejected: RejectedEmail[]; duplicates: number; total: number }
 
 const STRICT_EMAIL = /^[a-z0-9](?:[a-z0-9.!#$%&'*+/=?^_`{|}~-]*[a-z0-9])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i
-const DISPOSABLE = new Set(['mailinator.com', 'guerrillamail.com', '10minutemail.com', 'tempmail.com', 'temp-mail.org', 'yopmail.com', 'trashmail.com', 'sharklasers.com', 'getnada.com', 'dispostable.com'])
 const PLACEHOLDER_DOMAINS = new Set(['example.com', 'example.org', 'example.net', 'test.com', 'test.org', 'invalid', 'localhost', 'domain.com', 'yourdomain.com'])
 const PLACEHOLDER_LOCAL = /^(?:test|testing|example|sample|name|yourname|username|user|email|someone|abc|xxx|foo|bar)(?:\d+)?$/i
 const NO_REPLY = /^(?:no[._-]?reply|do[._-]?not[._-]?reply)$/i
@@ -29,7 +30,7 @@ export function filterEmails(inputs: { value: string; source: string }[]): Filte
       if (local.length > 64 || local.includes('..') || domain.includes('..')) reason = 'Invalid email structure'
       else if (/^(?:gmail|googlemail|yahoo|outlook|hotmail|icloud|aol)\.(?:com|co\.uk|fr|de|net)[a-z]{2,}$/.test(domain)) reason = 'Extra text attached to a mail domain'
       else if (PLACEHOLDER_DOMAINS.has(domain) || domain.endsWith('.invalid') || PLACEHOLDER_LOCAL.test(local)) reason = 'Placeholder address'
-      else if (DISPOSABLE.has(domain)) reason = 'Known disposable email domain'
+      else if (isDisposableDomain(domain)) reason = 'Known disposable email domain'
       else if (NO_REPLY.test(local)) reason = 'No-reply mailbox'
       else if (!COMMON_TLDS.has(tld)) reason = 'Unrecognized domain ending; review manually'
     }

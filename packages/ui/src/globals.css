@@ -1,0 +1,53 @@
+/* Tailwind without Preflight so the existing LeadsGhr layout keeps its look. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+@source "../../app/src/**/*.{ts,tsx}";
+@source "./**/*.{ts,tsx}";
+
+@theme {
+  --color-background: #FFFFFF;
+  --color-foreground: #190B2D;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #190B2D;
+  --color-primary: #5B12C9;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #FFFFFF;
+  --color-secondary-foreground: #190B2D;
+  --color-muted: #ECE9FA;
+  --color-muted-foreground: #675E76;
+  --color-accent: #ECE9FA;
+  --color-accent-foreground: #190B2D;
+  --color-destructive: #B42318;
+  --color-border: #DFD9EC;
+  --color-input: #DFD9EC;
+  --color-ring: #29CBEA;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --font-sans: "Instrument Sans", Arial, sans-serif;
+  --font-mono: "Monaspace Neon", monospace;
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #190B2D;
+  --card: #FFFFFF;
+  --card-foreground: #190B2D;
+  --primary: #5B12C9;
+  --primary-foreground: #FFFFFF;
+  --secondary: #FFFFFF;
+  --secondary-foreground: #190B2D;
+  --muted: #ECE9FA;
+  --muted-foreground: #675E76;
+  --accent: #ECE9FA;
+  --accent-foreground: #190B2D;
+  --destructive: #B42318;
+  --border: #DFD9EC;
+  --input: #DFD9EC;
+  --ring: #29CBEA;
+  --radius: 12px;
+}
+
+/* Legacy screen layout classes. The desktop renderer no longer imports styles.css directly. */
+@import "./styles.css";

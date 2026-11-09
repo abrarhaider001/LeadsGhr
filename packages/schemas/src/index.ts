@@ -74,6 +74,10 @@ export const desktopPreferencesSchema = z.object({
   includePhone: z.boolean(),
   includeAddress: z.boolean(),
   includeLocation: z.boolean(),
+  emailVerifyMailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
+  emailVerifyEhlo: z.string().trim().min(1).max(255).default('verify.example.com'),
+  emailVerifyPerSession: z.number().int().min(1).max(40).default(8),
+  emailVerifyPaceMs: z.number().int().min(0).max(5000).default(400),
 })
 export type DesktopPreferences = z.infer<typeof desktopPreferencesSchema>
 export const defaultDesktopPreferences: DesktopPreferences = {
@@ -92,6 +96,10 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   includePhone: true,
   includeAddress: true,
   includeLocation: true,
+  emailVerifyMailFrom: 'verify@example.com',
+  emailVerifyEhlo: 'verify.example.com',
+  emailVerifyPerSession: 8,
+  emailVerifyPaceMs: 400,
 }
 
 export const mapsQuerySchema = z.string().trim().min(2).max(260)
@@ -113,17 +121,37 @@ export type CrawlRunSummary = { id: string; name: string; provider: PipelineProv
 export type CrawlExport = { id: string; runId: string; fileName: string; filePath: string; fileSize: number; entryCount: number; exportedAt: string }
 export type CrawlRunDetail = CrawlRunSummary & { criteria: SearchCriteria; preferences: DesktopPreferences; searches: PreparedCrawlSearch[]; rows: CrawlRow[] }
 
-/** Desktop Email Validation (SMTP RCPT TO probe). Caps keep probing polite and incomplete by design. */
 export const emailVerifyStatusSchema = z.enum(['valid', 'risky', 'invalid', 'unknown'])
 export type EmailVerifyStatus = z.infer<typeof emailVerifyStatusSchema>
+export const EMAIL_VERIFY_CONCURRENCY_MIN = 1
+export const EMAIL_VERIFY_CONCURRENCY_MAX = 20
+export const EMAIL_VERIFY_CONCURRENCY_DEFAULT = 5
 export const emailVerifyRequestSchema = z.object({
-  emails: z.array(z.string().trim().min(1).max(320)).min(1).max(50),
+  emails: z.array(z.string().trim().min(1).max(320)).min(1).max(500),
+  concurrency: z.number().int().min(EMAIL_VERIFY_CONCURRENCY_MIN).max(EMAIL_VERIFY_CONCURRENCY_MAX).default(EMAIL_VERIFY_CONCURRENCY_DEFAULT),
+  mailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
+  ehlo: z.string().trim().min(1).max(255).default('verify.example.com'),
+  perSession: z.number().int().min(1).max(40).default(8),
+  paceMs: z.number().int().min(0).max(5000).default(400),
 })
 export type EmailVerifyRequest = z.infer<typeof emailVerifyRequestSchema>
+export const emailVerifyChecksSchema = z.object({
+  syntax: z.boolean(),
+  domain: z.boolean(),
+  mx: z.boolean(),
+  smtp: z.enum(['accepted', 'rejected', 'temp', 'blocked', 'skipped', 'unverifiable']),
+  disposable: z.boolean(),
+  roleBased: z.boolean(),
+  catchAll: z.boolean(),
+})
+export type EmailVerifyChecks = z.infer<typeof emailVerifyChecksSchema>
 export const emailVerifyResultSchema = z.object({
   email: z.string().min(1).max(320),
   status: emailVerifyStatusSchema,
   reason: z.string().max(500),
+  code: z.string().max(40).optional(),
+  confidence: z.number().int().min(0).max(100),
+  checks: emailVerifyChecksSchema,
   mxHost: z.string().max(255).optional(),
   smtpCode: z.number().int().optional(),
 })

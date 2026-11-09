@@ -36,7 +36,7 @@ Snapshot: 2026-11-07. This compares the original feature guides with the active 
 | [C7: Company Profile Builder](C7-Company%20Profile%20Builder/FEATURES-C7-README.md) | Not implemented | No company profile synthesis. |
 | [C8: Structured Data Reader](C8-Structured%20Data%20Reader/FEATURES-C8-README.md) | Not implemented | No JSON-LD, microdata or RDFa reader. |
 | [D1: Deduplication and Entity Resolution](D1-Deduplication%20and%20Entity%20Resolution/FEATURES-D1-README.md) | Partial | A simple deduplication key utility exists; fuzzy company resolution and review are missing. |
-| [D2: Email Verifier](D2-Email%20Verifier/FEATURES-D2-README.md) | Partial | Email Validation runs local SMTP RCPT TO probes after MX/A lookup with Valid/Risky/Invalid/Unknown statuses. Disposable screening and catch-all testing are still missing. |
+| [D2: Email Verifier](D2-Email%20Verifier/FEATURES-D2-README.md) | Partial | Local pipeline covers syntax, DNS, MX, SMTP, disposable, role-based, and catch-all with confidence scores. Ownership OTP and paid API fallback remain out of scope. |
 | [D3: Phone Validator](D3-Phone%20Validator/FEATURES-D3-README.md) | Partial | Telephone parsing validates extracted tel links; a full number-validation workflow and flags are missing. |
 | [D4: Lead Scoring](D4-Lead%20Scoring/FEATURES-D4-README.md) | Partial | A simple quickScore utility exists; the specified weighted lead scoring is not wired into the lead workflow. |
 | [D5: Source Tracking and Confidence](D5-Source%20Tracking%20and%20Confidence/FEATURES-D5-README.md) | Not implemented | No field-level source and confidence record. |
@@ -56,7 +56,7 @@ Snapshot: 2026-11-07. This compares the original feature guides with the active 
 | [G4: Outreach Segments and Templates](G4-Outreach%20Segments%20and%20Templates/FEATURES-G4-README.md) | Not implemented | No outreach segmentation or template workflow. |
 | [G5: Compliance Center](G5-Compliance%20Center/FEATURES-G5-README.md) | Not implemented | No compliance center or suppression controls. |
 | [G6: Accounts, Billing and Plans](G6-Accounts%2C%20Billing%20and%20Plans/FEATURES-G6-README.md) | Partial | Local editable profile exists; Supabase account flow, billing, seats and password reset are missing. |
-| [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist; team, roles and broader organisation settings are missing. |
+| [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist for Crawler, Search, and Email Validation; team, roles and broader organisation settings are missing. |
 
 ## Separate future Chrome extension
 

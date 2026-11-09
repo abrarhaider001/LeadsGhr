@@ -6,45 +6,65 @@
 
 **Status:** Partial (desktop).
 
-**Current coverage:** Email Validation runs a local SMTP RCPT TO probe (Method 4) after MX/A lookup. Syntax failures and missing MX are marked Invalid. Accepted RCPT replies are Valid; greylist/temporary replies are Unknown; some limit replies are Risky. Disposable screening, dedicated catch-all testing, and MX-only product modes are not claimed yet.
+**Current coverage:** Email Validation runs a local multi-step pipeline: syntax, domain DNS, MX (including null MX), disposable detection, role-based detection, catch-all probing, and SMTP RCPT TO. Work is parallelized across DNS lookups and primary MX hosts. Results include per-check flags and a confidence score. Valid/Invalid cache locally for 7 days. Ownership OTP, Redis/PostgreSQL bulk SaaS workers, and paid provider APIs are out of scope for the desktop app.
 
 **Minimum plan:** Starter  
 **Priority:** P0  
 **Estimated effort:** 7 developer days  
-**Active modules:** `packages/quality/src/email-verify.ts` (reply classification), `apps/desktop/src/email-verify.ts` (DNS + SMTP + IPC), `packages/app/src/email-validation-page.tsx`
+**Active modules:** `packages/quality/src/email-verify/`, `packages/quality/src/disposable-domains.ts`, `apps/desktop/src/email-verify.ts`, `apps/desktop/src/email-verify/`, `packages/app/src/email-validation-page.tsx`
 
 ## Purpose
 
-Checks whether a receiving mail server appears to accept a recipient address, without sending mail. Produces a status: Valid, Risky, Invalid or Unknown. Full historical D2 also asked for disposable and catch-all workflows; those remain future work.
+Checks whether an address appears technically deliverable without sending mail. Returns Valid, Risky, Invalid, or Unknown, plus individual check results and a heuristic confidence score.
 
 ## How it works (current desktop)
 
-1. Import or paste addresses on Email Validation (same local file helpers as Email Filtering).
-2. Electron main resolves MX records (A / OS lookup fallback) for the domain. If the local stub resolver refuses Node DNS queries, it retries against public resolvers (8.8.8.8 / 1.1.1.1).
-3. Connects to the receiving host on port 25, issues EHLO/HELO, `MAIL FROM` with a fixed non-sending identity, then `RCPT TO` for the address, then `QUIT` (no DATA).
-4. Classifies the SMTP reply into Valid / Risky / Invalid / Unknown and streams results to the UI.
-5. Caps a run at 50 addresses with a polite delay between checks. Stop cancels the active job.
+1. Import or paste addresses on Email Validation.
+2. Preflight outbound port 25; stop immediately if blocked.
+3. Normalize syntax; resolve domain and MX in parallel across domains.
+4. Flag disposable and role-based addresses from local lists.
+5. Group remaining work by primary MX host; one SMTP connection per host with proactive STARTTLS when advertised, pacing, and a connect breaker.
+6. Probe catch-all once per domain; if a random mailbox is accepted, remaining addresses on that domain are marked Risky without extra RCPT noise. Classify status from verification signals first, then clamp a heuristic deliverability score into that status band. Unroutable MAIL FROM identities fail fast with a Preferences hint.
+7. Stream results to the UI. Click a row for the check breakdown. Retry Unknown re-runs greylist/timeout/unreachable/needs_tls rows.
+
+## Status and score
+
+Status is a business decision from signals; the score never reclassifies it.
+
+| Condition | Status |
+| --- | --- |
+| Syntax, domain, or MX failed | Invalid |
+| SMTP rejected | Invalid |
+| Disposable domain | Risky |
+| Catch-all domain | Risky |
+| Mailbox full | Risky |
+| SMTP accepted with no disposable/catch-all flags | Valid |
+| SMTP temporary, blocked, unverifiable, or skipped | Unknown |
+
+Role-based addresses keep their SMTP-driven status and only apply a score penalty; they are not auto-Risky or Invalid. Accepted RCPT TO is not proof of inbox ownership or final delivery—especially on catch-all domains.
+
+Score weights: base 45; SMTP accepted +40, temporary +10, unverifiable/skipped +8, blocked +5, rejected capped at 15; disposable −40, catch-all −40, role-based −15. After status is set, the score is clamped: Valid 85–100, Risky 25–60, Unknown 10–55, Invalid 0–20. Those ranges overlap on purpose and are clamps, not classifiers.
 
 ## Dependencies and requirements
 
-node:dns/promises, node:net (SMTP handshake) in Electron main; Zod IPC contracts in `@leadsghr/schemas`; pure classification helpers in `@leadsghr/quality`
+node:dns/promises, node:net, node:tls in Electron main; Zod IPC contracts in `@leadsghr/schemas`; pure pipeline helpers in `@leadsghr/quality`
 
 ## Interface behavior
 
-Email Validation reuses the Email Filtering two-panel layout. Result statuses: Valid (blue), Risky (grey outline), Invalid (dark), Unknown (light grey). Copy and CSV export cover the visible filter.
+Two-panel layout with parallel mail servers control, status filters, score column, modal check detail for a selected row, copy/CSV, and Retry Unknown.
 
 ## User value
 
-- Cuts obvious bounce risk before outreach when SMTP probing is allowed on the network.
-- Runs on the user's computer with no per-check fee.
-- Status labels are easy to filter.
+- Multi-signal verification instead of a single SMTP answer.
+- Policy blocks and hidden providers stay Unknown instead of deleting good leads.
+- Catch-all and disposable addresses surface as Risky; role-based is flagged in checks without forcing status.
 
 ## Edge cases and limits
 
-- Many mail hosts block SMTP probes, and many networks block outbound port 25; those checks stay Unknown and say so.
-- Accepted RCPT TO is not a delivery guarantee and does not prove the mailbox is monitored.
-- Catch-all domains can make Invalid rare; catch-all detection is not implemented yet.
-- Frequent probing can hurt IP reputation; defaults stay low-rate and small-batch.
+- Port 25 is often blocked on home/office networks; preflight reports that once.
+- Accepted RCPT TO is not proof of inbox ownership or final delivery.
+- Outlook, Yahoo, and some gateways stay Unknown / provider_unverifiable.
+- Confidence is a local heuristic, not a statistical guarantee.
 
 ## Related requirements
 

@@ -1,6 +1,6 @@
 import { createElement, useEffect, useRef, useState } from 'react'
 import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leadsghr/extract'
-import { Button, EmptyTable } from '@leadsghr/ui'
+import { Button, EmptyTable, Input, Label } from '@leadsghr/ui'
 import { MdOutlineVisibility } from 'react-icons/md'
 import type { DesktopPreferences } from '@leadsghr/schemas'
 
@@ -356,9 +356,9 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
     <div className="la-crawler-heading"><h2>Crawl public pages</h2><span className="la-crawler-badge">TEST MODE - NO SAVING</span></div>
     <section className="la-crawler-form-section">
       <form className="la-crawler-form" onSubmit={(event) => void start(event)}>
-        <label htmlFor="crawler-url">Homepage URL</label>
+        <Label htmlFor="crawler-url">Homepage URL</Label>
         <div className="la-crawler-form-row">
-          <input id="crawler-url" type="url" required placeholder="https://company.com" value={url} onChange={(event) => setUrl(event.target.value)} disabled={working} />
+          <Input id="crawler-url" type="url" required placeholder="https://company.com" value={url} onChange={(event) => setUrl(event.target.value)} disabled={working} />
           <Button type="submit" disabled={working}>{working ? 'Crawling…' : 'Crawl page'}</Button>
         </div>
       </form>
