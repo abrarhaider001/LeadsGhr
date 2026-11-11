@@ -2,9 +2,9 @@
 
 **Pick a niche. Get the leads.**
 
-LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase is reserved for user authentication and account/profile data; it does not store extracted leads.
+LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase holds account/profile data and, when deployed, opaque email-tracking pixel tokens and image-load counts; it does not store extracted leads.
 
-A separate Chrome extension may be built later for sending emails and manually extracting emails from an opened page. It is not part of this application.
+A companion Gmail mail extension is available as a downloadable MV3 ZIP from the desktop Email Sending and Email Tracking pages. It can send templated CSV ranges through the user's Gmail session and optionally track image loads when a public HTTPS pixel endpoint is configured. Manual email extraction in the extension remains planned.
 
 [Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
 
@@ -35,19 +35,24 @@ Collect public data only. Respect robots.txt and polite delays, pause on challen
 - TypeScript, React, Node.js, pnpm workspaces, Turborepo.
 - Electron and electron-vite for the desktop UI; context isolation, disabled Node integration, Zod-validated IPC, electron-builder and electron-updater.
 - Local SQLite through better-sqlite3 for leads, scan history and queued jobs. Exports are files on disk.
-- Supabase Auth and an RLS-protected user profile table for account data only.
+- Supabase Auth and an RLS-protected user profile table for account data; an optional Edge Function stores opaque mail-tracking tokens and image-load counts.
 - Shared packages: core, extract, crawler, quality, export, schemas, ui, app and platform. Extractors accept HTML strings and use Cheerio and libphonenumber-js.
 
 ## Repository
 
 ```text
 apps/desktop/  Electron main, preload and React renderer
+apps/extension/  Gmail mail Chrome MV3 extension (sending + tracking) and downloadable ZIP
 packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
-supabase/     Account/profile-only migration
+supabase/     Account/profile schema and optional mail-tracking function/migration
 docs/         Current desktop guides and preserved original specification
 ```
 
-Legacy web, API, worker and extension source folders remain in the repository as inactive reference code. They are excluded from the pnpm workspace and all active scripts.
+Legacy web, API, and worker folders remain inactive reference code. `apps/extension` is an active Gmail mail build in the pnpm workspace.
+
+## Gmail mail extension
+
+Open **Email Sending** or **Email Tracking → Get Chrome extension** in the desktop app to save the ZIP and view Chrome installation steps. The source build is `pnpm --filter @leadsghr/extension build`. The Sending tab loads a template, imports a CSV, takes an inclusive recipient range, and sends one message at a time through the open Gmail tab. The Tracking tab still adds compose tracking controls and sent-row image-load indicators; real recipient-side loads require the public HTTPS tracking function. See [Email Sending](docs/EMAIL_SENDING_README.md) and [Email Tracking](docs/EMAIL_TRACKING_README.md).
 
 ## Run the desktop app
 

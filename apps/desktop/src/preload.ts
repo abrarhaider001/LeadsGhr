@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, createCrawlRunSchema, crawlRunIdSchema, crawlRunRowInputSchema, crawlRunProgressSchema, emailVerifyRequestSchema, emailVerifyJobIdSchema } from '@leadsghr/schemas'
+import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, createCrawlRunSchema, crawlRunIdSchema, crawlRunRowInputSchema, crawlRunProgressSchema, emailVerifyRequestSchema, emailVerifyJobIdSchema, localTrackingCreateSchema, localTrackingIdSchema } from '@leadsghr/schemas'
 
 contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   scan: (input: unknown) => ipcRenderer.invoke('leadsghr:scan', scanRequestSchema.parse(input)),
@@ -33,5 +33,10 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   startEmailVerify: (input: unknown) => ipcRenderer.invoke('leadsghr:email-verify:start', emailVerifyRequestSchema.parse(input)),
   stopEmailVerify: (id: unknown) => ipcRenderer.invoke('leadsghr:email-verify:stop', emailVerifyJobIdSchema.parse(id)),
   onEmailVerifyEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:email-verify:event', listener); return () => ipcRenderer.removeListener('leadsghr:email-verify:event', listener) },
+  createLocalTracking: (input: unknown) => ipcRenderer.invoke('leadsghr:tracking:create', localTrackingCreateSchema.parse(input)),
+  listLocalTracking: () => ipcRenderer.invoke('leadsghr:tracking:list'),
+  openLocalTrackingPreview: (id: unknown) => ipcRenderer.invoke('leadsghr:tracking:preview', localTrackingIdSchema.parse(id)),
+  deleteLocalTracking: (id: unknown) => ipcRenderer.invoke('leadsghr:tracking:delete', localTrackingIdSchema.parse(id)),
+  downloadTrackingExtension: () => ipcRenderer.invoke('leadsghr:tracking:download-extension'),
 })
 

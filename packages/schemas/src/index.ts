@@ -157,3 +157,19 @@ export const emailVerifyResultSchema = z.object({
 })
 export type EmailVerifyResult = z.infer<typeof emailVerifyResultSchema>
 export const emailVerifyJobIdSchema = z.string().uuid()
+
+/** Local-only email open tracking demo. These records are not sent messages. */
+export const localTrackingCreateSchema = z.object({
+  recipient: z.email().max(320),
+  subject: z.string().trim().min(1).max(200),
+})
+export const localTrackingIdSchema = z.uuid()
+export type LocalTrackingRecord = {
+  id: string
+  recipient: string
+  subject: string
+  createdAt: string
+  firstOpenedAt: string | null
+  lastOpenedAt: string | null
+  openCount: number
+}

@@ -1,11 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "LeadsGhr Lite",
-  "version": "0.1.0",
-  "description": "User-directed public business site scans and local lead export.",
-  "permissions": ["activeTab", "sidePanel", "storage", "offscreen", "alarms", "downloads"],
-  "optional_host_permissions": ["https://*/*", "http://*/*"],
+  "name": "LeadsGhr Mail",
+  "version": "0.2.1",
+  "description": "Send templated Gmail campaigns from a CSV range and track image loads on sent messages.",
+  "permissions": ["storage", "alarms", "tabs", "scripting"],
+  "host_permissions": ["https://mail.google.com/*"],
+  "web_accessible_resources": [{ "resources": ["icon.svg"], "matches": ["https://mail.google.com/*"] }],
+  "optional_host_permissions": ["https://*/*"],
   "background": { "service_worker": "background.js", "type": "module" },
-  "side_panel": { "default_path": "sidepanel.html" },
-  "action": { "default_title": "LeadsGhr Lite" }
+  "content_scripts": [{ "matches": ["https://mail.google.com/*"], "js": ["gmail.js"], "run_at": "document_idle" }],
+  "options_page": "sidepanel.html",
+  "icons": { "16": "icon.png", "32": "icon.png", "128": "icon.png" },
+  "action": { "default_title": "LeadsGhr Mail" }
 }

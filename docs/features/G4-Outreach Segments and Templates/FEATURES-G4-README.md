@@ -4,9 +4,9 @@
 
 > **Current platform/stack override:** This is the product requirement for G4. The active implementation uses TypeScript/React/Node, pnpm/Turborepo, shared Zod schemas and platform adapters. Any older module path, vendor, color or two-product assumption below is historical and is superseded by [architecture](../../structure/STRUCTURE_README.md), [theme](../../theme/THEME_README.md) and [platform coverage](../../platforms/PLATFORMS_README.md). Feature intent and public-data rules remain in force.
 
-**Status:** Not implemented (desktop).
+**Status:** Partial.
 
-**Current coverage:** No outreach segmentation or template workflow.
+**Current coverage:** Desktop segment builder and mail-merge export remain unimplemented. The Gmail extension Sending tab supports template load, CSV recipients, inclusive ranges, and paced Gmail sends; see [Email Sending](../../EMAIL_SENDING_README.md).
 
 **Minimum plan:** Professional  
 **Priority:** P2  

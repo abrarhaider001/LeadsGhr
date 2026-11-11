@@ -11,6 +11,7 @@ apps/desktop/
   src/adapters.ts   SQLite, public HTTP, local queue and disk adapters
   src/email-verify.ts Email Validation IPC and job control
   src/email-verify/ Pipeline, DNS, SMTP client, and Valid/Invalid SQLite cache
+  src/local-email-tracking.ts Local loopback pixel and tracking records
   src/renderer.tsx  Shared React app
 packages/
   app/              Desktop pages, splash, niche and location JSON data
@@ -18,11 +19,13 @@ packages/
   schemas/          Zod contracts
   core/ extract/ crawler/ quality/ export/  Reusable product logic
   platform/         Adapter interfaces
-supabase/migrations/ Account/profile-only schema with RLS
+supabase/migrations/ Account/profile schema, plus optional opaque mail-tracking tokens
+apps/extension/     Active MV3 Gmail mail companion (sending + tracking)
+  src/email-sending/ Modular campaign CSV, template, range, queue, and compose helpers
 docs/              Current guides plus historical specification archive
 ```
 
-All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker/extension folders are inactive and excluded from pnpm workspaces.
+All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data; the optional mail-tracking function stores opaque pixel tokens and image-load counts only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker folders are inactive. `apps/extension` is an active MV3 Gmail mail build in the pnpm workspace. Campaign recipients and bodies stay in Chrome storage only.
 
 The New Search page has a niche/state step and a separate location step with numbered chips and inclusive page and location-number range controls. It reads `packages/app/data/niches.json` and `packages/app/data/us-states-locations.json`. Electron main validates and stores custom niches and selections in a local `search-criteria.json` file under the app user-data directory.
 

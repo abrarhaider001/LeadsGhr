@@ -8,10 +8,11 @@ Rules for coding agents working in this repository. LeadsGhr is a desktop applic
 | --- | --- | --- | --- |
 | Desktop app | `apps/desktop/` | Electron on the user's computer and IP | Local SQLite, user-data files, CSV exports |
 | React UI and shared logic | `packages/app/`, `packages/ui/`, other `packages/*` | Electron renderer or reusable TypeScript | No direct database or filesystem access from shared code |
-| Account backend | `supabase/migrations/` | Supabase when account features are connected | Authentication and user/profile data only |
+| Gmail mail extension | `apps/extension/` | Chrome Manifest V3 | Sending campaigns and tracking metadata in Chrome storage; opaque pixel counts in optional public service |
+| Account and tracking backend | `supabase/migrations/`, `supabase/functions/` | Supabase when deployed | Identity/profile data and opaque mail-tracking tokens/counts |
 | Product documentation | `docs/` | Repository files | Current guides, feature status, and archived specification |
 
-The pnpm workspace includes `apps/desktop` and `packages/*`. `apps/web`, `apps/api`, `apps/worker`, and `apps/extension` remain inactive reference code. The future Chrome extension is a separate product, not a second active app in this repository. The feature specification describes intended behavior; `docs/features/FEATURE_STATUS_README.md` distinguishes that from implemented behavior.
+The pnpm workspace includes `apps/desktop`, `apps/extension`, and `packages/*`. `apps/web`, `apps/api`, and `apps/worker` remain inactive reference code. The Gmail extension is a mail companion for templated sending and open tracking; original extension feature requirements remain separate. The feature specification describes intended behavior; `docs/features/FEATURE_STATUS_README.md` distinguishes that from implemented behavior. Campaign recipients and bodies stay in Chrome storage only.
 
 ## 2. Environments
 
@@ -19,7 +20,7 @@ The pnpm workspace includes `apps/desktop` and `packages/*`. `apps/web`, `apps/a
 | --- | --- | --- |
 | Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences, SQLite, and local exports |
 | Packaged desktop build | `pnpm.cmd build` when packaging is needed | Runs on the user's PC; generated output is not source and stays ignored |
-| Supabase | Account authentication and profile schema, when connected | Never store extracted leads, crawl observations, queues, or exports |
+| Supabase | Account profile schema and optional mail tracking endpoint | Never store extracted leads, crawl observations, queues, exports, message recipients, or subjects |
 | GitHub | `abrarhaider001/LeadsGhr`, with `main` as the owner's branch | Agents do not commit, push, release, or deploy |
 
 There is no active web deployment, staging site, extension release, or automated production database workflow in this repository. Do not infer one from the historical specification or inactive app folders.
@@ -31,7 +32,7 @@ There is no active web deployment, staging site, extension release, or automated
 3. **Do not stage by default.** Stage only if the owner specifically asks to review a staged diff. Do not discard, reset, stash, or overwrite the owner's changes.
 4. **Do not expose secrets.** Keep `.env`, tokens, credentials, local databases, exports, and generated builds out of tracked files and tool output. Use names of environment variables in docs, never their values.
 5. **Public data only.** Respect `robots.txt`, polite delays, and site challenges. Do not bypass captchas, log in to target sites, submit contact forms, or scrape private endpoints. Do not add external data APIs or tools; hosting, a domain, and an email sender are the allowed external services.
-6. **Keep extraction local.** Extraction data, run history, and exported files belong in local SQLite or files. Supabase is for user identity and account/profile data only.
+6. **Keep extraction local.** Extraction data, run history, and exported files belong in local SQLite or files. Supabase may hold identity/profile data and opaque mail-tracking tokens and image-load counts; never send extracted leads, recipients, subjects, or message content there.
 7. **No unrequested service writes.** Do not apply Supabase migrations, change a live account, send emails, or publish artifacts as part of ordinary feature work. Prepare reviewable source changes and report the action the owner must take.
 8. **Use prefixed commit messages.** Every commit message must start with a lowercase type followed by a colon and a space: `feat:`, `fix:`, `chore:`, `docs:`, `update:`, `refactor:`, `test:`, `build:`, or `ci:`. Use a short imperative description after the prefix, such as `fix: prevent duplicate pipeline runs`. Choose the prefix that best describes the change; this formatting rule does not authorize a commit or push.
 
@@ -56,7 +57,7 @@ Do not silently rewrite the product to match an old specification. Explain any c
 - `packages/app` owns React screens and UI flow. `packages/ui` owns shared components, fonts, tokens, and styles. `packages/schemas` owns shared contracts. `packages/extract` accepts HTML strings and must remain usable without Node-only modules.
 - The Crawler tab is a temporary, unsaved test. Pipeline runs and their URL queue are persisted locally and resumable. Do not conflate their state or promise that an extracted email is verified.
 - Use the existing light-only theme: Instrument Sans, Monaspace Neon, the tokens in `packages/ui/src/styles.css`, and the brand assets in `public/`. Use the custom dropdown component for dropdowns. Consult `docs/theme/THEME_README.md` before changing visual behavior.
-- Treat inactive web/API/worker/extension folders as reference code. Do not wire them into builds or move active behavior there without an explicit product change.
+- Treat inactive web/API/worker folders as reference code. The user explicitly activated `apps/extension` for Gmail open tracking and email sending. Keep campaign and tracking metadata in Chrome storage and the public pixel store limited to opaque tokens and image-load counts.
 
 ## 6. Where context lives
 

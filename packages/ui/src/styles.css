@@ -193,6 +193,53 @@ body { font-size: 13px; }
 .la-local-page ul { list-style: none; padding: 0; margin: 0; }
 .la-local-page li { display: flex; justify-content: space-between; gap: 14px; padding: 12px 0; border-top: 1px solid var(--la-line); }
 .la-local-page li span { color: color-mix(in srgb, var(--la-text) 65%, var(--la-muted)); }
+.la-local-tracking { display: grid; gap: 18px; }
+.la-local-tracking-heading h2 { margin: 0 0 5px; font-size: 19px; }
+.la-local-tracking-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.la-local-tracking-heading > button { flex: none; }
+.la-local-tracking-heading p, .la-local-tracking-note { margin: 0; color: var(--la-muted); font-size: 12px; }
+.la-local-tracking-form { display: flex; align-items: end; flex-wrap: wrap; gap: 12px; }
+.la-local-tracking-form label { display: grid; gap: 6px; flex: 1 1 240px; font-size: 12px; font-weight: 600; }
+.la-local-tracking-form input { width: 100%; box-sizing: border-box; min-height: 40px; padding: 9px 12px; border: 1px solid var(--la-line); border-radius: 10px; background: var(--la-bg); color: var(--la-text); font: inherit; }
+.la-local-tracking-form input:focus { outline: 1px solid var(--la-text); }
+.la-local-tracking-form button, .la-local-tracking td button, .la-local-tracking-heading button, .la-local-tracking > button { min-height: 40px; padding: 0 14px; border: 1px solid var(--la-accent); border-radius: 10px; background: var(--la-accent); color: #fff; cursor: pointer; font: inherit; }
+.la-local-tracking-form button:disabled { opacity: .55; cursor: wait; }
+.la-local-tracking-actions { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.la-local-tracking .la-local-tracking-actions button { display: inline-grid; place-items: center; width: 36px; height: 36px; min-height: 36px; padding: 0; border: 1px solid var(--la-line); border-radius: 9px; background: #fff; color: var(--la-text); }
+.la-local-tracking .la-local-tracking-actions button:hover { border-color: var(--la-accent); color: var(--la-accent); }
+.la-local-tracking .la-local-tracking-actions button:disabled { opacity: .45; cursor: wait; }
+@media (max-width: 620px) { .la-local-tracking-heading { flex-wrap: wrap; } }
+.la-local-tracking-message { margin: 0; font-size: 12px; }
+.la-extension-install { display: flex; flex-direction: column; gap: 22px; min-height: calc(100vh - 65px); color: var(--la-text); }
+.la-extension-install-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.la-extension-back { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 13px; border: 1px solid var(--la-line); border-radius: 10px; background: #fff; color: var(--la-text); font: inherit; font-size: 12px; cursor: pointer; }
+.la-extension-back:hover { border-color: var(--la-accent); color: var(--la-accent); }
+.la-extension-version, .la-extension-eyebrow, .la-extension-step-number { color: var(--la-accent); font-size: 11px; font-weight: 700; letter-spacing: .09em; }
+.la-extension-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 30px; padding: 30px; border: 1px solid var(--la-line); border-radius: 18px; background: #fff; }
+.la-extension-hero-copy { display: grid; justify-items: start; gap: 14px; }
+.la-extension-hero-copy h2 { margin: 0; max-width: 480px; font-size: clamp(25px, 2.5vw, 38px); line-height: 1.12; letter-spacing: -.035em; }
+.la-extension-hero-copy > p { margin: 0; max-width: 450px; color: var(--la-muted); font-size: 14px; line-height: 1.55; }
+.la-extension-hero-copy > small { color: var(--la-muted); font-size: 11px; }
+.la-extension-hero-action { display: flex; justify-content: flex-end; }
+.la-extension-download { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; margin-top: 6px; padding: 0 18px; border: 1px solid var(--la-accent); border-radius: 10px; background: var(--la-accent); color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.la-extension-download:hover { filter: brightness(.92); }
+.la-extension-status { overflow-wrap: anywhere; font-size: 12px !important; }
+.la-extension-steps-heading { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.la-extension-steps-heading h3 { margin: 0 0 4px; font-size: 18px; }
+.la-extension-steps-heading p, .la-extension-steps-heading > span { margin: 0; color: var(--la-muted); font-size: 12px; }
+.la-extension-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.la-extension-step { min-width: 0; padding: 20px; border: 1px solid var(--la-line); border-radius: 16px; background: #fff; }
+.la-extension-step-top { display: flex; align-items: start; justify-content: space-between; margin-bottom: 16px; }
+.la-extension-step-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #eee8fa; color: var(--la-accent); }
+.la-extension-step h4 { margin: 0 0 8px; font-size: 15px; }
+.la-extension-step p { margin: 0; color: var(--la-muted); font-size: 12px; line-height: 1.6; }
+.la-extension-step code { padding: 1px 4px; border-radius: 4px; background: #f3f0fa; color: var(--la-text); }
+.la-extension-requirement { display: flex; align-items: flex-start; gap: 12px; margin-top: auto; padding: 16px 18px; border: 1px solid var(--la-line); border-radius: 12px; background: #faf8ff; }
+.la-extension-requirement svg { flex: none; color: var(--la-accent); }
+.la-extension-requirement p { margin: 0; color: var(--la-muted); font-size: 12px; line-height: 1.55; }
+.la-extension-requirement strong { color: var(--la-text); }
+@media (max-width: 1050px) { .la-extension-hero { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .la-extension-steps { grid-template-columns: 1fr; } .la-extension-hero { padding: 20px; } .la-extension-version { display: none; } .la-extension-hero-action { justify-content: flex-start; } }
 .la-crawler-intro h2 { font-size: 24px; }
 .la-crawler-count { font-size: 46px; }
 @media (max-width: 1180px) {

@@ -1,0 +1,8 @@
+Subject: Quick hello from LeadsGhr
+
+Hi {{email}},
+
+Hope you're doing well. This is a test outreach message from LeadsGhr Mail.
+
+Thanks,
+LeadsGhr
