@@ -21,7 +21,7 @@ supabase/migrations/ Account/profile-only schema with RLS
 docs/              Current guides plus historical specification archive
 ```
 
-All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation classification helpers live in `packages/quality`; DNS and SMTP sockets stay in `apps/desktop/src/email-verify.ts`. The legacy web/API/worker/extension folders are inactive and excluded from pnpm workspaces.
+All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data; the optional mail-tracking function stores opaque pixel tokens and image-load counts only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation classification helpers live in `packages/quality`; DNS and SMTP sockets stay in `apps/desktop/src/email-verify.ts`. The legacy web/API/worker folders are inactive. `apps/extension` is an active MV3 Gmail tracking build in the pnpm workspace.
 
 The New Search page has a niche/state step and a separate location step with numbered chips and inclusive page and location-number range controls. It reads `packages/app/data/niches.json` and `packages/app/data/us-states-locations.json`. Electron main validates and stores custom niches and selections in a local `search-criteria.json` file under the app user-data directory.
 

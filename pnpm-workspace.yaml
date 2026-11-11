@@ -1,5 +1,6 @@
 packages:
   - apps/desktop
+  - apps/extension
   - packages/*
 onlyBuiltDependencies:
   - better-sqlite3

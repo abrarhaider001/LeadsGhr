@@ -1,6 +1,8 @@
 # Feature implementation status
 
-Snapshot: 2026-11-07. This compares the original feature guides with the active Electron desktop source. A partial status means a usable slice exists, but the guide is not fully met. A1 is implemented for the current desktop local-search flow; its historical account-sync and named-profile integrations remain with A5/G6. The Chrome extension is planned as a separate future product.
+Snapshot: 2026-11-09. This compares the original feature guides with the active Electron desktop source. A partial status means a usable slice exists, but the guide is not fully met. A1 is implemented for the current desktop local-search flow; its historical account-sync and named-profile integrations remain with A5/G6. A separate Gmail tracking extension is built, while the original extension feature set remains largely planned.
+
+Email Tracking has a local pixel demo and a Gmail extension documented in [Email Tracking](../EMAIL_TRACKING_README.md). Real recipient-side image-load detection requires deployment of the included public HTTPS function; this has not been manually verified against Gmail.
 
 | Status | Count |
 | --- | ---: |
