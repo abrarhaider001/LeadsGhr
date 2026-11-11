@@ -1,4 +1,4 @@
-type TrackingRecord = { id: string; recipient: string; subject: string; sentAt: number; loads: number; lastLoad: string | null }
+type TrackingRecord = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; loads: number; lastLoad: string | null }
 type Settings = { endpoint: string; registrationKey: string; enabled: boolean }
 const defaults: Settings = { endpoint: '', registrationKey: '', enabled: true }
 
@@ -20,7 +20,6 @@ async function requestEndpoint(url: URL, init?: RequestInit): Promise<Response> 
   return response
 }
 
-chrome.action.onClicked.addListener(() => { void chrome.runtime.openOptionsPage() })
 chrome.runtime.onInstalled.addListener(() => { void chrome.alarms.create('tracking-refresh', { periodInMinutes: 1 }) })
 chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === 'tracking-refresh') void refresh() })
 
@@ -46,7 +45,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
   if (message.kind === 'tracking:refresh') { void refresh().then(() => respond({ ok: true }), error => respond({ error: String(error) })); return true }
   if (message.kind === 'tracking:arm' && 'id' in message && typeof message.id === 'string') {
     const id = message.id
-    void (async () => { const config = await settings(); const url = endpointUrl(config.endpoint); url.searchParams.set('id', id); url.searchParams.set('arm', '1'); await requestEndpoint(url, { method: 'POST', headers: { 'X-LeadsGhr-Key': config.registrationKey } }); return { ok: true } })().then(respond, error => respond({ error: String(error) }))
+    void (async () => { const config = await settings(); const url = endpointUrl(config.endpoint); url.searchParams.set('id', id); url.searchParams.set('arm', '1'); await requestEndpoint(url, { method: 'POST', headers: { 'X-LeadsGhr-Key': config.registrationKey } }); const { records = [] } = await chrome.storage.local.get('records') as { records?: TrackingRecord[] }; await chrome.storage.local.set({ records: records.map(record => record.id === id ? { ...record, sent: true, sentAt: Date.now() } : record) }); return { ok: true } })().then(respond, error => respond({ error: String(error) }))
     return true
   }
   if (message.kind !== 'tracking:register' || !('recipient' in message) || !('subject' in message)) return
@@ -60,7 +59,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
     const url = endpointUrl(config.endpoint)
     await requestEndpoint(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-LeadsGhr-Key': config.registrationKey }, body: JSON.stringify({ id }) })
     const { records = [] } = await chrome.storage.local.get('records') as { records?: TrackingRecord[] }
-    await chrome.storage.local.set({ records: [{ id, recipient, subject, sentAt: Date.now(), loads: 0, lastLoad: null }, ...records].slice(0, 500) })
+    await chrome.storage.local.set({ records: [{ id, recipient, subject, sentAt: Date.now(), sent: false, loads: 0, lastLoad: null }, ...records].slice(0, 500) })
     url.searchParams.set('id', id)
     url.searchParams.set('pixel', '1')
     return { pixelUrl: url.toString(), id }

@@ -1,5 +1,9 @@
 # Components and screens
 
+The Chrome extension toolbar opens a compact white popup with Tracking report and Settings tabs. It uses the project purple accent, lavender surfaces, local image-load counters, a default-tracking switch, and a link to full settings. Only working tracking controls are shown; the wider product menu in the visual reference is not part of the extension.
+
+Inside Gmail, the LeadsGhr logo control is placed beside the top-right Settings control. The left navigation has no injected LeadsGhr button. With tracking enabled, Sent rows show two gray ticks by default. A confirmed tracked send colors the first tick purple; an observed image load colors the second tick purple and shows the count. Untracked rows keep both ticks gray.
+
 The extension install view places a direct ZIP download button beside the introduction, followed by custom SVG step icons and responsive setup cards. Its final note explains the public endpoint needed for recipient-side tracking.
 
 The Email Tracking desktop page includes a local pixel test and a separate extension download/instructions view. **Get Chrome extension** sits at the page header's right edge. The test-record table has an Actions column with icon-only launch and delete controls, each with a tooltip and accessible name; delete confirms before removing the SQLite record. Its Create test record action uses the purple primary button color. The Chrome MV3 companion adds a LeadsGhr control to Gmail, a compose tracking toggle, and gray/purple double ticks with image-load counts for matched sent messages. The extension settings page holds its public HTTPS endpoint configuration and tracked-message list; remote recipient image loads require the optional deployed service described in [Email Tracking](../EMAIL_TRACKING_README.md).
