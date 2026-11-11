@@ -8,7 +8,7 @@ export {
 } from '@leadsghr/schemas'
 export { isRetryable } from '@leadsghr/quality'
 
-export const EMAIL_VERIFY_MAX = 500
+export const EMAIL_VERIFY_MAX = 5000
 
 export function statusLabel(status: string): string {
   switch (status) {

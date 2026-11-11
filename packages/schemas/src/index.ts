@@ -127,7 +127,7 @@ export const EMAIL_VERIFY_CONCURRENCY_MIN = 1
 export const EMAIL_VERIFY_CONCURRENCY_MAX = 20
 export const EMAIL_VERIFY_CONCURRENCY_DEFAULT = 5
 export const emailVerifyRequestSchema = z.object({
-  emails: z.array(z.string().trim().min(1).max(320)).min(1).max(500),
+  emails: z.array(z.string().trim().min(1).max(320)).min(1).max(5000),
   concurrency: z.number().int().min(EMAIL_VERIFY_CONCURRENCY_MIN).max(EMAIL_VERIFY_CONCURRENCY_MAX).default(EMAIL_VERIFY_CONCURRENCY_DEFAULT),
   mailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
   ehlo: z.string().trim().min(1).max(255).default('verify.example.com'),
