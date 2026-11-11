@@ -16,7 +16,7 @@ The Niche Library turns a simple business name into a reusable set of public-sea
 - Editable search and negative term chips. Removing a bundled term stores a user override; adding a term stores a user addition. **Reset pack edits** restores the bundled pack without deleting the underlying data. Custom niches can be deleted.
 - A combined preview of all selected packs: unique keyword count, unique search-query term count per location, negative-term count, and the merged chips. Matching is case-insensitive and retains readable display text.
 - Local persistence through validated Electron IPC in the app user-data `search-criteria.json` file. The built-in JSON is never rewritten by personal edits.
-- Profile > Preferences provides **Use Niche Library search terms**. It defaults off: Search Results prepares one query for each selected niche name and location. When on, it prepares one query for every distinct pack search term and location, deduplicates identical term/location pairs, and applies the pack negative terms to matching business names. Both modes merge repeated businesses in the temporary result list.
+- Settings > Preferences > Search provides **Use Niche Library search terms**. It defaults off: Search Results prepares one query for each selected niche name and location. When on, it prepares one query for every distinct pack search term and location, deduplicates identical term/location pairs, and applies the pack negative terms to matching business names. Both modes merge repeated businesses in the temporary result list.
 
 ## User flow
 
@@ -25,7 +25,7 @@ The Niche Library turns a simple business name into a reusable set of public-sea
 3. Add or remove terms if the bundled wording does not fit the target market. Enter multiple terms separated by commas. Use **Reset pack edits** to return to the shipped pack.
 4. For a business type not in the starter list, click **Add niche** and enter one or more names. The new niches are selected automatically. Add useful alternate search terms in the pack details.
 5. Click **Continue to search**. On **New Search**, confirm niches, select U.S. states, then select locations. Click **Search contractors**.
-6. With the preference off, Search Results runs the selected niche name once per location. Turn it on in **Profile > Preferences > Search breadth** to run every distinct pack search term per location, one query at a time. A company returned under several terms appears once in the table. Results on that page remain temporary; the library settings remain local across launches.
+6. With the preference off, Search Results runs the selected niche name once per location. Turn it on in **Settings > Preferences > Search > Search breadth** to run every distinct pack search term per location, one query at a time. A company returned under several terms appears once in the table. Results on that page remain temporary; the library settings remain local across launches.
 
 Example: with one HVAC niche and two locations, fast mode makes 2 queries using `HVAC Contractors`. Expanded mode makes up to 6 queries using `HVAC Contractors`, `HVAC contractor`, and `heating and cooling contractor` in each location. Selecting another pack with the same term does not repeat that exact term/location query.
 

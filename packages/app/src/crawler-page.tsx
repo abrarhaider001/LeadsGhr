@@ -1,7 +1,9 @@
 import { createElement, useEffect, useRef, useState } from 'react'
 import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leadsghr/extract'
-import { Button, EmptyTable } from '@leadsghr/ui'
+import { Button, EmptyTable, Input, Label } from '@leadsghr/ui'
+import { MdOutlineVisibility } from 'react-icons/md'
 import type { DesktopPreferences } from '@leadsghr/schemas'
+import { CRAWL_QUEUE_VISIBLE_ROWS, crawlQueueWindow } from './crawl-queue-window'
 
 type GuestView = HTMLElement & {
   executeJavaScript(code: string): Promise<string>
@@ -9,6 +11,7 @@ type GuestView = HTMLElement & {
 type PreparedPage = { url: string; html: string }
 type DesktopCrawlerBridge = {
   prepareCrawlerTest(input: { url: string }): Promise<PreparedPage>
+  inspectCrawlerTest(input: { url: string; method: DesktopPreferences['crawlerFetchMethod'] }): Promise<{ url: string; snapshots: string[] }>
 }
 type Activity = { id: number; text: string; kind: 'working' | 'success' | 'email' | 'error' }
 type PageResult = { url: string; kind: 'Homepage' | 'Contact page' | 'Page'; emails: string[] }
@@ -19,7 +22,15 @@ function contactLink(links: string[]): string | null {
 }
 
 const desktop = () => (window as Window & { leadsGhrDesktop?: DesktopCrawlerBridge }).leadsGhrDesktop
+const MAX_CRAWLER_PAGES = 1000
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+const formatProcessingTime = (elapsedMs: number) => {
+  const totalSeconds = Math.floor(elapsedMs / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
 
 export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }) {
   const [url, setUrl] = useState('')
@@ -33,11 +44,15 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
   const [pageResults, setPageResults] = useState<PageResult[]>([])
   const [homepageUrl, setHomepageUrl] = useState('')
   const [urlRows, setUrlRows] = useState<UrlRow[]>([])
+  const [selectedUrl, setSelectedUrl] = useState<string | null>(null)
   const [formRecipients, setFormRecipients] = useState<string[]>([])
   const [possibleRecipients, setPossibleRecipients] = useState<string[]>([])
   const [formCount, setFormCount] = useState(0)
   const [activity, setActivity] = useState<Activity[]>([])
+  const [elapsedMs, setElapsedMs] = useState(0)
   const viewRef = useRef<GuestView | null>(null)
+  const detailCloseRef = useRef<HTMLButtonElement | null>(null)
+  const detailTriggerRef = useRef<HTMLButtonElement | null>(null)
   const runRef = useRef(0)
   const foundRef = useRef(new Set<string>())
   const linksRef = useRef(new Set<string>())
@@ -51,8 +66,68 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
   const queuedRef = useRef(new Set<string>())
   const pageEmailRef = useRef(new Map<string, Set<string>>())
   const homepageLinksRef = useRef<string[]>([])
+  const homepageOriginRef = useRef('')
   const contactOnlyRef = useRef(true)
   const emailSourceRef = useRef<DesktopPreferences['crawlerEmailSource']>('leadsghr')
+  const startedRef = useRef(0)
+
+  useEffect(() => {
+    if (!['fetching', 'loading', 'crawling'].includes(phase)) return
+    const timer = window.setInterval(() => setElapsedMs(performance.now() - startedRef.current), 1000)
+    return () => window.clearInterval(timer)
+  }, [phase])
+
+  async function runWorkers(current: number, method: DesktopPreferences['crawlerFetchMethod'], count: number) {
+    let active = 0
+    let fatal: unknown = null
+    const worker = async () => {
+      while (runRef.current === current && !fatal) {
+        const target = queueRef.current.shift()
+        if (!target) {
+          if (active === 0) return
+          await wait(50)
+          continue
+        }
+        active++
+        setRow(target.url, { status: 'Fetching' })
+        addActivity(`Fetching ${target.kind.toLowerCase()}...`, 'working')
+        try {
+          const page = await desktop()!.inspectCrawlerTest({ url: target.url, method })
+          if (runRef.current !== current || fatal) return
+          setRow(target.url, { status: 'Crawling' })
+          addActivity(`${target.kind} fetched; crawling...`, 'working')
+          for (const snapshot of page.snapshots) collect(snapshot, target.url, target.kind)
+          setRow(target.url, { status: 'Crawled' })
+          addActivity(`${target.kind} crawled`, 'success')
+        } catch (error) {
+          if (runRef.current !== current) return
+          if (/challenge|captcha|robots policy unavailable/i.test(String(error))) fatal = error
+          setRow(target.url, { status: 'Skipped' })
+          addActivity(`Skipped ${target.url}: ${String(error)}`, 'error')
+        } finally { active-- }
+      }
+    }
+    await Promise.all(Array.from({ length: count }, () => worker()))
+    if (runRef.current !== current) return
+    setElapsedMs(performance.now() - startedRef.current)
+    if (fatal) { setPhase('error'); addActivity(`Crawl paused: ${String(fatal)}`, 'error'); return }
+    const total = new Set([...foundRef.current, ...recipientsRef.current, ...possibleRecipientsRef.current]).size
+    addActivity(total ? `Crawl complete: ${total} unique email address(es)` : 'No email found on crawled pages', 'success')
+    setPhase('done')
+  }
+
+  async function crawlHttpQueue(first: PreparedPage, current: number) {
+    setPhase('crawling')
+    addActivity('Crawling homepage...', 'working')
+    collect(first.html, first.url, 'Homepage')
+    setRow(first.url, { status: 'Crawled' })
+    if (runRef.current !== current) return
+    const contact = discoveredContactRef.current ?? contactLink(homepageLinksRef.current)
+    if (!contact) setDiscoveryMs(Math.round(performance.now() - discoveryStartedRef.current))
+    if (contact) enqueue(contact, 'Contact page')
+    if (!contactOnlyRef.current) for (const link of homepageLinksRef.current) enqueue(link, link === contact ? 'Contact page' : 'Page')
+    await runWorkers(current, 'http', preferences.crawlerConcurrentPages)
+  }
 
   const addActivity = (text: string, kind: Activity['kind']) => {
     setActivity((items) => [...items, { id: ++sequenceRef.current, text, kind }])
@@ -70,10 +145,15 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
     })
   }
   const enqueue = (pageUrl: string, kind: PageResult['kind']) => {
-    const key = new URL(pageUrl).href.replace(/\/$/, '').toLowerCase()
-    if (queuedRef.current.has(key)) return
+    const parsed = new URL(pageUrl)
+    if (homepageOriginRef.current && parsed.origin !== homepageOriginRef.current) return
+    parsed.hash = ''
+    parsed.pathname = parsed.pathname.replace(/\/$/, '') || '/'
+    const key = parsed.href.toLowerCase()
+    if (queuedRef.current.has(key) || queuedRef.current.size >= MAX_CRAWLER_PAGES) return
     queuedRef.current.add(key)
-    queueRef.current.push({ url: pageUrl, kind })
+    if (kind === 'Contact page') queueRef.current.unshift({ url: pageUrl, kind })
+    else queueRef.current.push({ url: pageUrl, kind })
     setUrlRows((items) => [...items, { url: pageUrl, kind, status: 'Queued', emails: 0 }])
   }
   const collect = (html: string, pageUrl: string, pageKind: PageResult['kind']) => {
@@ -93,6 +173,9 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
       if (linksRef.current.has(link)) continue
       linksRef.current.add(link)
       setLinks([...linksRef.current])
+    }
+    if (pageKind !== 'Homepage' && !contactOnlyRef.current) {
+      for (const link of discovery.links) enqueue(link, contactLink([link]) ? 'Contact page' : 'Page')
     }
     for (const address of discovery.formRecipientEmails) {
       addPageEmail(pageUrl, pageKind, address)
@@ -123,6 +206,8 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
     event.preventDefault()
     const current = ++runRef.current
     setActivity([])
+    startedRef.current = performance.now()
+    setElapsedMs(0)
     setEmails([])
     setLinks([])
     setHomepageLinks([])
@@ -131,6 +216,7 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
     setPageResults([])
     setHomepageUrl('')
     setUrlRows([])
+    setSelectedUrl(null)
     setFormRecipients([])
     setPossibleRecipients([])
     setFormCount(0)
@@ -147,6 +233,7 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
     queuedRef.current = new Set()
     pageEmailRef.current = new Map()
     homepageLinksRef.current = []
+    homepageOriginRef.current = ''
     contactOnlyRef.current = preferences.crawlerContactOnly
     emailSourceRef.current = preferences.crawlerEmailSource
     if (!desktop()) {
@@ -162,14 +249,20 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
       setActivity((items) => items.map((item) => item.id === 1 ? { ...item, text: 'Webpage fetched', kind: 'success' } : item))
       htmlRef.current = prepared.html
       setHomepageUrl(prepared.url)
+      homepageOriginRef.current = new URL(prepared.url).origin
       discoveryStartedRef.current = performance.now()
       enqueue(prepared.url, 'Homepage')
       queueRef.current.shift()
       setRow(prepared.url, { status: 'Crawling' })
+      if (preferences.crawlerFetchMethod === 'http') {
+        await crawlHttpQueue(prepared, current)
+        return
+      }
       setPhase('loading')
       setPreview({ url: prepared.url, id: current, partition: `crawler-test-${crypto.randomUUID()}`, kind: 'Homepage' })
     } catch (error) {
       if (runRef.current !== current) return
+      setElapsedMs(performance.now() - startedRef.current)
       setPhase('error')
       addActivity(String(error), 'error')
     }
@@ -207,38 +300,17 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
           if (next) enqueue(next, 'Contact page')
           if (!contactOnlyRef.current) for (const link of homepageLinksRef.current) enqueue(link, link === next ? 'Contact page' : 'Page')
         }
-        while (queueRef.current.length) {
-          const target = queueRef.current.shift()!
-          if (runRef.current !== current) return
-          setRow(target.url, { status: 'Fetching' })
-          const entryId = ++sequenceRef.current
-          setActivity((items) => [...items, { id: entryId, text: `Fetching ${target.kind.toLowerCase()}...`, kind: 'working' }])
-          try {
-            await wait(700)
-            const prepared = await desktop()!.prepareCrawlerTest({ url: target.url })
-            if (runRef.current !== current) return
-            if (prepared.url !== target.url) setUrlRows((items) => items.map((item) => item.url === target.url ? { ...item, url: prepared.url } : item))
-            htmlRef.current = prepared.html
-            setActivity((items) => items.map((item) => item.id === entryId ? { ...item, text: `${target.kind} fetched`, kind: 'success' } : item))
-            setPhase('loading')
-            setPreview({ url: prepared.url, id: current, partition: `crawler-test-${crypto.randomUUID()}`, kind: target.kind })
-            return
-          } catch (error) {
-            setRow(target.url, { status: 'Skipped' })
-            setActivity((items) => items.map((item) => item.id === entryId ? { ...item, text: `Skipped ${target.url}: ${String(error)}`, kind: 'error' } : item))
-          }
-        }
-        if (foundRef.current.size === 0 && recipientsRef.current.size === 0 && possibleRecipientsRef.current.size === 0) addActivity('No email found on crawled pages', 'success')
-        else addActivity(`Crawl complete: ${new Set([...foundRef.current, ...recipientsRef.current, ...possibleRecipientsRef.current]).size} unique email address(es)`, 'success')
-        setPhase('done')
+        await runWorkers(current, 'browser', preferences.crawlerConcurrentPages)
       } catch (error) {
         if (runRef.current !== current) return
+        setElapsedMs(performance.now() - startedRef.current)
         setPhase('error')
         addActivity(`Could not inspect the page preview: ${String(error)}`, 'error')
       }
     }
     const onFailed = () => {
       if (runRef.current !== current) return
+      setElapsedMs(performance.now() - startedRef.current)
       setPhase('error')
       addActivity('The webpage preview could not load', 'error')
     }
@@ -253,29 +325,86 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
 
   useEffect(() => () => { runRef.current++ }, [])
 
+  useEffect(() => {
+    if (!selectedUrl) return
+    detailCloseRef.current?.focus()
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeDetails()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedUrl])
+
+  const closeDetails = () => {
+    setSelectedUrl(null)
+    requestAnimationFrame(() => detailTriggerRef.current?.focus())
+  }
+
   const working = phase === 'fetching' || phase === 'loading' || phase === 'crawling'
   const emailCount = new Set([...emails, ...formRecipients, ...possibleRecipients]).size
+  const selectedRow = urlRows.find((row) => row.url === selectedUrl)
+  const selectedEmails = pageResults.find((page) => page.url === selectedUrl)?.emails ?? []
+  const homepageEmails = new Set(pageResults.find((page) => page.url === homepageUrl)?.emails.map((email) => email.toLowerCase()) ?? [])
+  const processed = urlRows.filter((row) => row.status === 'Crawled' || row.status === 'Skipped').length
+  const inQueue = urlRows.filter((row) => row.status === 'Queued').length
+  const visibleUrlRows = crawlQueueWindow(urlRows, (row) => row.status.toLowerCase() as Lowercase<UrlRow['status']>)
   const webview = preview ? createElement('webview', { key: preview.partition, ref: (node: HTMLElement | null) => { viewRef.current = node as GuestView | null }, partition: preview.partition, className: 'la-crawler-webview', 'aria-label': 'Crawled webpage preview' }) : null
   return <div className="la-crawler">
     <div className="la-crawler-heading"><h2>Crawl public pages</h2><span className="la-crawler-badge">TEST MODE - NO SAVING</span></div>
     <section className="la-crawler-form-section">
       <form className="la-crawler-form" onSubmit={(event) => void start(event)}>
-        <label htmlFor="crawler-url">Homepage URL</label>
+        <Label htmlFor="crawler-url">Homepage URL</Label>
         <div className="la-crawler-form-row">
-          <input id="crawler-url" type="url" required placeholder="https://company.com" value={url} onChange={(event) => setUrl(event.target.value)} disabled={working} />
+          <Input id="crawler-url" type="url" required placeholder="https://company.com" value={url} onChange={(event) => setUrl(event.target.value)} disabled={working} />
           <Button type="submit" disabled={working}>{working ? 'Crawling…' : 'Crawl page'}</Button>
         </div>
       </form>
     </section>
-    <div className={`la-crawler-grid${preferences.showCrawlerPreview ? ' la-crawler-grid--preview-only' : ' la-crawler-grid--no-preview'}`}>
+    {preferences.crawlerFetchMethod === 'browser' && <div className={`la-crawler-grid${preferences.showCrawlerPreview ? ' la-crawler-grid--preview-only' : ' la-crawler-grid--no-preview'}`}>
       {preferences.showCrawlerPreview ? <section className="la-crawler-preview-section">
-        <div className="la-crawler-section-heading"><div><h3>Webpage preview</h3><p>{preview?.url ?? 'Enter a URL to open a page here.'}</p></div><span className={working ? 'la-crawler-live' : 'la-crawler-idle'}>{working ? 'Working' : phase === 'done' ? 'Finished' : 'Preview'}</span></div>
+        <div className="la-crawler-section-heading"><div><h3>Homepage preview</h3><p>{preview?.url ?? 'Enter a URL to open a page here.'}</p></div><span className={working ? 'la-crawler-live' : 'la-crawler-idle'}>{working ? 'Working' : phase === 'done' ? 'Finished' : 'Preview'}</span></div>
         <div className="la-crawler-webview-frame">
           {webview ?? <div className="la-crawler-empty"><span className="la-crawler-empty-icon">?</span><strong>Webpage preview</strong><span>The page will appear here while the crawler scrolls through it.</span></div>}
         </div>
       </section> : webview && <div className="la-crawler-hidden-preview" aria-hidden="true">{webview}</div>}
-    </div>
-    <section className="la-crawler-links-section"><h3>URL queue <span>{urlRows.length} pages · {emailCount} unique emails</span></h3><div className={`la-crawler-queue-activity la-crawler-event--${activity.at(-1)?.kind ?? 'working'}`} role="status" aria-live="polite"><span className="la-crawler-dot" /><span>{activity.at(-1)?.text ?? 'Ready to crawl'}</span></div><div className={`la-crawler-table-wrap${urlRows.length ? '' : ' la-crawler-table-wrap--empty'}`}><table className="la-table la-crawler-table"><thead><tr><th>#</th><th>Page URL</th><th>Type</th><th>Status</th><th>Emails found</th></tr></thead><tbody>{urlRows.map((row, index) => { const found = pageResults.find((item) => item.url === row.url)?.emails ?? []; return <tr key={row.url}><td>{index + 1}</td><td title={row.url}><a href={row.url} target="_blank" rel="noreferrer">{row.url}</a></td><td>{row.kind}</td><td><span className={`la-crawler-queue-status la-crawler-queue-status--${row.status.toLowerCase()}`}>{row.status}</span></td><td>{found.length ? <div className="la-crawler-table-emails">{found.map((email) => <span key={email}>{email}</span>)}</div> : row.status === 'Crawled' ? 'None found' : '—'}</td></tr> })}</tbody></table>{!urlRows.length && <EmptyTable title="No pages queued" description="Enter a public homepage URL to discover pages and their email addresses." />}</div></section>
+    </div>}
+    <section className="la-crawler-links-section">
+      <div className="la-crawl-table-heading"><h3>URL queue</h3><span>Showing {visibleUrlRows.length} of {urlRows.length} pages · {CRAWL_QUEUE_VISIBLE_ROWS} row limit</span></div>
+      <div className="la-crawler-status-row">
+        <div className={`la-crawler-queue-activity la-crawler-event--${activity.at(-1)?.kind ?? 'working'}`} role="status" aria-live="polite"><span className="la-crawler-dot" /><span>{activity.at(-1)?.text ?? 'Ready to crawl'}</span></div>
+        <div className="la-crawler-progress-summary" aria-label="Crawl progress">
+          <span>{urlRows.length} pages</span><span>{emailCount} unique emails</span><span>Processing time {formatProcessingTime(elapsedMs)}</span><span>Results found {emailCount}</span><span>Processed {processed}</span><span>In queue {inQueue}</span>
+        </div>
+      </div>
+      <div className={`la-crawler-table-wrap${visibleUrlRows.length ? '' : ' la-crawler-table-wrap--empty'}`}>
+        <table className="la-table la-crawler-table">
+          <thead><tr><th>#</th><th>Page URL</th><th>Type</th><th>Status</th><th>Emails found</th><th>Actions</th></tr></thead>
+          <tbody>{visibleUrlRows.map(({ item: row, index }) => <tr key={row.url} className={row.status === 'Fetching' || row.status === 'Crawling' ? 'la-crawl-row--active' : undefined}>
+            <td>{index + 1}</td>
+            <td title={row.url}><a href={row.url} target="_blank" rel="noreferrer">{row.url}</a></td>
+            <td>{row.kind}</td>
+            <td><span className={`la-crawler-queue-status la-crawler-queue-status--${row.status.toLowerCase()}`}>{row.status}</span></td>
+            <td><span className="la-crawler-email-chip" aria-label={`${row.emails} emails found`}>{row.emails}</span></td>
+            <td><button type="button" className="la-crawler-view-button" title="View page emails" aria-label={`View emails and details for ${row.url}`} onClick={(event) => { detailTriggerRef.current = event.currentTarget; setSelectedUrl(row.url) }}><MdOutlineVisibility aria-hidden="true" /></button></td>
+          </tr>)}</tbody>
+        </table>
+        {!visibleUrlRows.length && <EmptyTable title="No pages waiting" description={urlRows.length ? 'All queued pages have been processed.' : 'Enter a public homepage URL to discover pages and their email addresses.'} />}
+      </div>
+    </section>
+    {selectedRow && <div className="la-niche-panel-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDetails() }}>
+      <aside className="la-niche-panel la-crawler-detail-drawer" role="dialog" aria-modal="true" aria-labelledby="crawler-detail-title">
+        <div className="la-niche-panel-heading"><div><h2 id="crawler-detail-title">Page emails</h2><p>Addresses found while crawling this public page.</p></div><button ref={detailCloseRef} type="button" className="la-niche-panel-close" aria-label="Close page details" onClick={closeDetails}>&times;</button></div>
+        <dl className="la-crawler-detail-meta">
+          <div><dt>Page URL</dt><dd><a href={selectedRow.url} target="_blank" rel="noreferrer">{selectedRow.url}</a></dd></div>
+          <div><dt>Page type</dt><dd>{selectedRow.kind}</dd></div>
+          <div><dt>Crawl status</dt><dd>{selectedRow.status}</dd></div>
+          <div><dt>Email source</dt><dd>{emailSourceRef.current === 'email-hunter' ? 'Email Hunter-style rendered HTML' : 'LeadsGhr extraction'}</dd></div>
+          {selectedRow.kind === 'Homepage' && <><div><dt>Links discovered</dt><dd>{homepageLinks.length}</dd></div>{discoveryMs !== null && <div><dt>Discovery time</dt><dd>{discoveryMs} ms</dd></div>}{contactUrl && <div><dt>Contact page</dt><dd><a href={contactUrl} target="_blank" rel="noreferrer">{contactUrl}</a></dd></div>}</>}
+        </dl>
+        <div className="la-crawler-detail-emails-heading"><h3>Emails found</h3><span className="la-crawler-email-chip">{selectedEmails.length}</span></div>
+        {selectedEmails.length ? <ol className="la-crawler-detail-emails">{selectedEmails.map((email) => <li key={email}><span>{email}</span>{selectedRow.kind === 'Contact page' && homepageEmails.has(email.toLowerCase()) && <span className="la-crawler-duplicate-chip">Also found on homepage</span>}</li>)}</ol> : <p className="la-crawler-detail-empty">{selectedRow.status === 'Crawled' ? 'No emails found on this page.' : 'No emails found yet.'}</p>}
+      </aside>
+    </div>}
   </div>
 }
 

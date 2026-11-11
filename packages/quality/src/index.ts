@@ -1,4 +1,22 @@
 import type { Lead } from '@leadsghr/schemas'
+export { filterEmails } from './email-filter.ts'
+export type { FilterResult, FilteredEmail, RejectedEmail } from './email-filter.ts'
+export {
+  normalizeVerifyEmail,
+  checkDisposable,
+  checkRoleBased,
+  classifyRcpt,
+  classifyMailFrom,
+  finalizeResult,
+  scoreChecks,
+  checksComplete,
+  isRetryable,
+} from './email-verify/index.ts'
+export type {
+  EmailVerifyResult,
+  SmtpClassified,
+} from './email-verify/index.ts'
+export { DISPOSABLE_DOMAINS, isDisposableDomain } from './disposable-domains.ts'
 
 export function dedupeLeads(leads: Lead[]): Lead[] {
   const byKey = new Map<string, Lead>()

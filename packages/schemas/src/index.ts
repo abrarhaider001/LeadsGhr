@@ -62,6 +62,8 @@ export const desktopPreferencesSchema = z.object({
   showCrawlerPreview: z.boolean(),
   crawlerContactOnly: z.boolean().default(true),
   crawlerEmailSource: z.enum(['leadsghr', 'email-hunter']).default('leadsghr'),
+  crawlerFetchMethod: z.enum(['browser', 'http']).default('browser'),
+  crawlerConcurrentPages: z.number().int().min(1).max(8).default(2),
   showChromeDuringSearch: z.boolean(),
   searchGoogleMaps: z.boolean().default(true),
   useNicheKeywords: z.boolean().default(false),
@@ -72,12 +74,18 @@ export const desktopPreferencesSchema = z.object({
   includePhone: z.boolean(),
   includeAddress: z.boolean(),
   includeLocation: z.boolean(),
+  emailVerifyMailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
+  emailVerifyEhlo: z.string().trim().min(1).max(255).default('verify.example.com'),
+  emailVerifyPerSession: z.number().int().min(1).max(40).default(8),
+  emailVerifyPaceMs: z.number().int().min(0).max(5000).default(400),
 })
 export type DesktopPreferences = z.infer<typeof desktopPreferencesSchema>
 export const defaultDesktopPreferences: DesktopPreferences = {
   showCrawlerPreview: true,
   crawlerContactOnly: true,
   crawlerEmailSource: 'leadsghr',
+  crawlerFetchMethod: 'browser',
+  crawlerConcurrentPages: 2,
   showChromeDuringSearch: true,
   searchGoogleMaps: true,
   useNicheKeywords: false,
@@ -88,6 +96,10 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   includePhone: true,
   includeAddress: true,
   includeLocation: true,
+  emailVerifyMailFrom: 'verify@example.com',
+  emailVerifyEhlo: 'verify.example.com',
+  emailVerifyPerSession: 8,
+  emailVerifyPaceMs: 400,
 }
 
 export const mapsQuerySchema = z.string().trim().min(2).max(260)
@@ -96,7 +108,7 @@ export const mapsScanSchema = z.object({ query: mapsQuerySchema, location: z.str
 
 export const preparedCrawlSearchSchema = z.object({ niche: z.string().trim().min(1).max(120), term: z.string().trim().min(1).max(120), place: z.string().trim().min(1).max(160), query: mapsQuerySchema })
 export type PreparedCrawlSearch = z.infer<typeof preparedCrawlSearchSchema>
-export const crawlRowSchema = z.object({ id: z.string().min(1).max(500), niche: z.string().max(120).optional(), name: z.string().max(500), website: z.string().max(2000), phone: z.string().max(200), location: z.string().max(200), address: z.string().max(1000), mapsUrl: z.string().max(2000), source: z.enum(['Maps', 'Website', 'Maps + website']), emails: z.array(z.string()).max(100), emailsScanned: z.boolean() })
+export const crawlRowSchema = z.object({ id: z.string().min(1).max(500), niche: z.string().max(120).optional(), name: z.string().max(500), website: z.string().max(2000), phone: z.string().max(200), location: z.string().max(200), address: z.string().max(1000), mapsUrl: z.string().max(2000), source: z.enum(['Maps', 'Website', 'Maps + website']), emails: z.array(z.string()).max(1000), emailsScanned: z.boolean() })
 export type CrawlRow = z.infer<typeof crawlRowSchema>
 export const pipelineProviderSchema = z.enum(['google-maps', 'google', 'facebook', 'linkedin'])
 export type PipelineProvider = z.infer<typeof pipelineProviderSchema>
@@ -108,3 +120,40 @@ export const crawlRunRowInputSchema = z.object({ id: crawlRunIdSchema, row: craw
 export type CrawlRunSummary = { id: string; name: string; provider: PipelineProvider; kind: 'pipeline' | 'search'; niches: string[]; states: string[]; stateStartNumber: number; stateEndNumber: number; startedAt: string; finishedAt: string | null; status: 'running' | 'stopped' | 'completed' | 'failed'; nextQueryIndex: number; totalQueries: number; entryCount: number; latestFileName: string | null; latestFileSize: number | null; latestFilePath: string | null }
 export type CrawlExport = { id: string; runId: string; fileName: string; filePath: string; fileSize: number; entryCount: number; exportedAt: string }
 export type CrawlRunDetail = CrawlRunSummary & { criteria: SearchCriteria; preferences: DesktopPreferences; searches: PreparedCrawlSearch[]; rows: CrawlRow[] }
+
+export const emailVerifyStatusSchema = z.enum(['valid', 'risky', 'invalid', 'unknown'])
+export type EmailVerifyStatus = z.infer<typeof emailVerifyStatusSchema>
+export const EMAIL_VERIFY_CONCURRENCY_MIN = 1
+export const EMAIL_VERIFY_CONCURRENCY_MAX = 20
+export const EMAIL_VERIFY_CONCURRENCY_DEFAULT = 5
+export const emailVerifyRequestSchema = z.object({
+  emails: z.array(z.string().trim().min(1).max(320)).min(1).max(5000),
+  concurrency: z.number().int().min(EMAIL_VERIFY_CONCURRENCY_MIN).max(EMAIL_VERIFY_CONCURRENCY_MAX).default(EMAIL_VERIFY_CONCURRENCY_DEFAULT),
+  mailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
+  ehlo: z.string().trim().min(1).max(255).default('verify.example.com'),
+  perSession: z.number().int().min(1).max(40).default(8),
+  paceMs: z.number().int().min(0).max(5000).default(400),
+})
+export type EmailVerifyRequest = z.infer<typeof emailVerifyRequestSchema>
+export const emailVerifyChecksSchema = z.object({
+  syntax: z.boolean(),
+  domain: z.boolean(),
+  mx: z.boolean(),
+  smtp: z.enum(['accepted', 'rejected', 'temp', 'blocked', 'skipped', 'unverifiable']),
+  disposable: z.boolean(),
+  roleBased: z.boolean(),
+  catchAll: z.boolean(),
+})
+export type EmailVerifyChecks = z.infer<typeof emailVerifyChecksSchema>
+export const emailVerifyResultSchema = z.object({
+  email: z.string().min(1).max(320),
+  status: emailVerifyStatusSchema,
+  reason: z.string().max(500),
+  code: z.string().max(40).optional(),
+  confidence: z.number().int().min(0).max(100),
+  checks: emailVerifyChecksSchema,
+  mxHost: z.string().max(255).optional(),
+  smtpCode: z.number().int().optional(),
+})
+export type EmailVerifyResult = z.infer<typeof emailVerifyResultSchema>
+export const emailVerifyJobIdSchema = z.string().uuid()

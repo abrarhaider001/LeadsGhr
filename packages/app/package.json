@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@leadsghr/extract": "workspace:*",
+        "@leadsghr/quality": "workspace:*",
         "@leadsghr/schemas": "workspace:*",
         "@leadsghr/ui": "workspace:*",
         "react": "^19.2.0",
@@ -22,5 +23,8 @@
     },
     "peerDependencies": {
         "react": "^19.0.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.3.0"
     }
 }

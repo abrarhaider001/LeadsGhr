@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "electron-vite dev",
         "build": "electron-vite build && electron-builder",
+        "rebuild:native": "electron-rebuild -f -o better-sqlite3",
         "typecheck": "tsc --noEmit",
         "lint": "tsc --noEmit"
     },
@@ -15,6 +16,7 @@
         "@leadsghr/export": "workspace:*",
         "@leadsghr/extract": "workspace:*",
         "@leadsghr/platform": "workspace:*",
+        "@leadsghr/quality": "workspace:*",
         "@leadsghr/schemas": "workspace:*",
         "@leadsghr/ui": "workspace:*",
         "better-sqlite3": "^12.2.0",
@@ -26,6 +28,8 @@
         "zod": "^4.1.12"
     },
     "devDependencies": {
+        "@electron/rebuild": "^4.2.1",
+        "@tailwindcss/vite": "^4.3.5",
         "@types/better-sqlite3": "^7.6.13",
         "@types/node": "^22.10.2",
         "@types/react": "^19.2.2",
@@ -33,7 +37,8 @@
         "@vitejs/plugin-react": "^5.0.0",
         "electron": "^38.0.0",
         "electron-builder": "^26.0.0",
-        "electron-vite": "^4.0.0"
+        "electron-vite": "^4.0.0",
+        "tailwindcss": "^4.3.5"
     },
     "main": "./out/main/main.cjs"
 }

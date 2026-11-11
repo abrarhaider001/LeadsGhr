@@ -10,9 +10,11 @@ A separate Chrome extension may be built later for sending emails and manually e
 
 ## Pipeline
 
-The **Discovery tools** sidebar also includes **Email Validation** and **Email Spam Check**. Their pages are navigation placeholders; validation and spam analysis are not implemented yet. Email Filtering remains the available local cleanup tool.
+The **Discovery tools** sidebar also includes **Email Validation** and **Email Spam Check**. Email Validation runs a local SMTP RCPT TO probe (no mail sent) after MX/A lookup and labels addresses Valid, Risky, Invalid, or Unknown; many networks block outbound port 25, so Unknown is common and not overclaimed. Email Spam Check remains a navigation placeholder. Email Filtering remains the local syntax and junk cleanup tool.
 
 **Deleting a saved pipeline:** The Pipeline page lists previous pipelines with a trash icon. After confirmation, deletion removes that pipeline's SQLite run, business rows, queued pages, and export history. The delete button is unavailable while a pipeline is running; stop it first. CSV files already written to disk are retained.
+
+**Clear all local crawl and Pipeline history:** Close the desktop app, then run `pnpm clear:crawl-history` from the project root. The script backs up `leadsghr.sqlite` in the same user-data folder before removing saved runs, page queues, result rows, filter audits, and export-history records. Preferences, saved selections, leads, and CSV files on disk remain available. Restart the app to see the empty history.
 
 **Current creation flow:** Click **Create pipeline** to open the right-side drawer. Enter a name, select Google Maps, and choose whether to reuse the saved niche, state, and location selections. If all three checked sections have saved choices, **Start pipeline** begins the crawl. Uncheck a section and the action becomes **Add pipeline**; the guided page opens at the first section needing new choices and skips the sections being reused. New states require new locations.
 
@@ -56,9 +58,9 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev:desktop` is an equivalent explicit command. The light-only splash screen shows the centered `public/leadsghr-logo-v1.svg` and a loading progress bar. The Electron window opens maximized with the light-on-dark LeadsGhr wordmark in the sidebar and the geometric L-and-arrow desktop icon. Keep the terminal running while using it and press Ctrl+C to stop. The local SQLite file is created under Electron's user-data directory only when a saved-scan feature is used.
+`pnpm dev:desktop` is an equivalent explicit command. The light-only splash screen shows the centered `public/leadsghr-logo-v1.svg` and a loading progress bar. The Electron window opens maximized with the light-on-dark LeadsGhr wordmark in the sidebar and the LG monogram desktop icon. Keep the terminal running while using it and press Ctrl+C to stop. The local SQLite file is created under Electron's user-data directory only when a saved-scan feature is used.
 
-If an earlier install skipped dependency scripts and reports `Electron uninstall`, run `pnpm --filter @leadsghr/desktop rebuild electron`. If your shell has `ELECTRON_RUN_AS_NODE=1`, clear it for that session with `Remove-Item Env:ELECTRON_RUN_AS_NODE` before `pnpm dev`.
+`pnpm install` rebuilds `better-sqlite3` for Electron. A binary built for plain Node fails at startup with a `NODE_MODULE_VERSION` mismatch; run `pnpm --filter @leadsghr/desktop run rebuild:native` to rebuild it again. If an earlier install skipped dependency scripts and reports `Electron uninstall`, run `pnpm --filter @leadsghr/desktop rebuild electron`. If your shell has `ELECTRON_RUN_AS_NODE=1`, clear it for that session with `Remove-Item Env:ELECTRON_RUN_AS_NODE` before `pnpm dev`.
 
 ```bash
 pnpm typecheck
@@ -138,7 +140,7 @@ The original specification catalogues **54 features**. Groups A-G inform this de
 **What it covers:** Merge duplicates, check contact quality, rank leads, and retain source evidence.
 
 - [D1: Deduplication and Entity Resolution](docs/features/D1-Deduplication%20and%20Entity%20Resolution/FEATURES-D1-README.md) — Merges records that describe the same company across sources.
-- [D2: Email Verifier](docs/features/D2-Email%20Verifier/FEATURES-D2-README.md) — Checks syntax, domain existence, MX records, disposable domains, catch-all behaviour and (optionally) a gentle SMTP handshake without sending mail.
+- [D2: Email Verifier](docs/features/D2-Email%20Verifier/FEATURES-D2-README.md) — Partial: Email Validation runs a local SMTP RCPT TO probe after MX/A lookup; disposable and catch-all workflows remain future work.
 - [D3: Phone Validator](docs/features/D3-Phone%20Validator/FEATURES-D3-README.md) — Validates numbers against national numbering plans, flags possible and impossible numbers and marks toll-free or premium lines.
 - [D4: Lead Scoring](docs/features/D4-Lead%20Scoring/FEATURES-D4-README.md) — Gives every lead a 0 to 100 score from transparent rules: has verified email, has phone, website quality, niche match strength, location match, size hint, rating and recency.
 - [D5: Source Tracking and Confidence](docs/features/D5-Source%20Tracking%20and%20Confidence/FEATURES-D5-README.md) — Every field remembers where it came from, when it was seen and how confident the extraction was.

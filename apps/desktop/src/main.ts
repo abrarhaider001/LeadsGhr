@@ -11,6 +11,7 @@ import { autoUpdater } from 'electron-updater'
 import { scanMaps } from './maps-scan'
 import { createCrawlRunStore, registerCrawlRunIpc } from './crawl-runs'
 import { registerPipelinePages } from './pipeline-pages'
+import { abortActiveEmailVerify, registerEmailVerifyIpc } from './email-verify'
 
 let db: Database.Database | undefined
 let adapters: ReturnType<typeof createDesktopAdapters> | undefined
@@ -21,8 +22,13 @@ let criteriaWrite = Promise.resolve()
 
 async function readPreferences(): Promise<DesktopPreferences> {
   await preferencesWrite.catch(() => undefined)
-  try { return { ...desktopPreferencesSchema.parse(JSON.parse(await readFile(join(app.getPath('userData'), 'preferences.json'), 'utf8'))), scanPublicWebsites: false } }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultDesktopPreferences; throw error }
+  try {
+    const raw = JSON.parse(await readFile(join(app.getPath('userData'), 'preferences.json'), 'utf8')) as Record<string, unknown>
+    const preferences = desktopPreferencesSchema.parse({ ...defaultDesktopPreferences, ...raw })
+    if (/@(?:localhost|.+\.invalid)$/i.test(preferences.emailVerifyMailFrom)) preferences.emailVerifyMailFrom = defaultDesktopPreferences.emailVerifyMailFrom
+    if (/^(?:localhost|.*\.invalid)$/i.test(preferences.emailVerifyEhlo)) preferences.emailVerifyEhlo = defaultDesktopPreferences.emailVerifyEhlo
+    return { ...preferences, scanPublicWebsites: false }
+  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultDesktopPreferences; throw error }
 }
 
 
@@ -73,6 +79,7 @@ function createWindow(crawlStore: ReturnType<typeof createCrawlRunStore>) {
 app.whenReady().then(() => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
+  registerEmailVerifyIpc(localStore().db)
   ipcMain.handle('leadsghr:scan', async (_event, input: unknown) => {
     const { url } = scanRequestSchema.parse(input)
     const { db, adapters } = localStore()
@@ -153,7 +160,7 @@ app.whenReady().then(() => {
   createWindow(crawlStore)
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
-app.on('before-quit', () => { activeMapsScan?.controller.abort(); db?.close() })
+app.on('before-quit', () => { activeMapsScan?.controller.abort(); abortActiveEmailVerify(); db?.close() })
 
 
 

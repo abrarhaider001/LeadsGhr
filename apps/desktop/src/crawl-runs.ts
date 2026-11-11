@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import Database from 'better-sqlite3'
 import { crawlRowsToCsv } from '@leadsghr/export'
+import { filterEmails } from '@leadsghr/quality'
 import { createCrawlRunSchema, crawlRunIdSchema, crawlRunProgressSchema, crawlRunRowInputSchema, type CrawlExport, type CrawlRow, type CrawlRunDetail, type CrawlRunSummary, type CreateCrawlRun } from '@leadsghr/schemas'
 
 type StoredRun = { id: string; name: string; provider: CrawlRunSummary['provider']; kind: CrawlRunSummary['kind']; criteria_json: string; preferences_json: string; searches_json: string; state_start_number: number; state_end_number: number; started_at: string; finished_at: string | null; status: CrawlRunSummary['status']; next_query_index: number; error: string | null }
@@ -13,6 +14,7 @@ export function createCrawlRunStore(db: Database.Database) {
   db.exec(`CREATE TABLE IF NOT EXISTS crawl_runs (id TEXT PRIMARY KEY, criteria_json TEXT NOT NULL, preferences_json TEXT NOT NULL, searches_json TEXT NOT NULL, state_start_number INTEGER NOT NULL, state_end_number INTEGER NOT NULL, started_at TEXT NOT NULL, finished_at TEXT, status TEXT NOT NULL, next_query_index INTEGER NOT NULL DEFAULT 0, error TEXT);
     CREATE TABLE IF NOT EXISTS crawl_run_rows (run_id TEXT NOT NULL REFERENCES crawl_runs(id) ON DELETE CASCADE, row_key TEXT NOT NULL, payload TEXT NOT NULL, first_seen_at TEXT NOT NULL, PRIMARY KEY (run_id, row_key));
     CREATE TABLE IF NOT EXISTS crawl_exports (id TEXT PRIMARY KEY, run_id TEXT NOT NULL REFERENCES crawl_runs(id) ON DELETE CASCADE, file_name TEXT NOT NULL, file_path TEXT NOT NULL, file_size INTEGER NOT NULL, entry_count INTEGER NOT NULL, exported_at TEXT NOT NULL, csv_bytes BLOB);
+    CREATE TABLE IF NOT EXISTS pipeline_email_filters (run_id TEXT NOT NULL, row_key TEXT NOT NULL, original_emails_json TEXT NOT NULL, rejected_json TEXT NOT NULL, filtered_at TEXT NOT NULL, PRIMARY KEY (run_id,row_key));
     CREATE INDEX IF NOT EXISTS crawl_runs_started_idx ON crawl_runs(started_at DESC);
     CREATE INDEX IF NOT EXISTS crawl_exports_run_idx ON crawl_exports(run_id, exported_at DESC);`)
   const exportColumns = db.pragma('table_info(crawl_exports)') as { name: string }[]
@@ -54,6 +56,7 @@ export function createCrawlRunStore(db: Database.Database) {
       db.transaction(() => {
         db.prepare('DELETE FROM pipeline_pages WHERE run_id=?').run(runId)
         db.prepare('DELETE FROM crawl_exports WHERE run_id=?').run(runId)
+        db.prepare('DELETE FROM pipeline_email_filters WHERE run_id=?').run(runId)
         db.prepare('DELETE FROM crawl_run_rows WHERE run_id=?').run(runId)
         db.prepare('DELETE FROM crawl_runs WHERE id=?').run(runId)
       })()
@@ -64,9 +67,41 @@ export function createCrawlRunStore(db: Database.Database) {
       const { id, row } = crawlRunRowInputSchema.parse(input)
       if (!stored(id)) throw new Error('Crawl run not found')
       const key = row.mapsUrl.trim().toLowerCase() || row.website.trim().toLowerCase().replace(/\/$/, '') || `${row.name.trim().toLowerCase()}|${row.address.trim().toLowerCase()}`
+      const existing = db.prepare('SELECT payload FROM crawl_run_rows WHERE run_id=? AND row_key=?').get(id, key) as { payload: string } | undefined
+      const previous = existing ? JSON.parse(existing.payload) as CrawlRow : null
+      const merged: CrawlRow = previous ? {
+        ...row,
+        emails: [...new Set([...previous.emails, ...row.emails])].slice(0, 1000),
+        emailsScanned: previous.emailsScanned || row.emailsScanned,
+        source: previous.emailsScanned ? previous.source : row.source,
+      } : row
       db.prepare('INSERT INTO crawl_run_rows (run_id,row_key,payload,first_seen_at) VALUES (?,?,?,?) ON CONFLICT(run_id,row_key) DO UPDATE SET payload=excluded.payload')
-        .run(id, key, JSON.stringify(row), new Date().toISOString())
+        .run(id, key, JSON.stringify(merged), new Date().toISOString())
       return true
+    },
+    filterRunEmails(id: string) {
+      const runId = crawlRunIdSchema.parse(id)
+      const run = stored(runId)
+      if (!run || run.kind !== 'pipeline') throw new Error('Pipeline not found')
+      const items = db.prepare('SELECT row_key,payload FROM crawl_run_rows WHERE run_id=? ORDER BY first_seen_at,row_key').all(runId) as { row_key: string; payload: string }[]
+      const prior = db.prepare('SELECT original_emails_json FROM pipeline_email_filters WHERE run_id=? AND row_key=?')
+      const update = db.prepare('UPDATE crawl_run_rows SET payload=? WHERE run_id=? AND row_key=?')
+      const audit = db.prepare('INSERT INTO pipeline_email_filters (run_id,row_key,original_emails_json,rejected_json,filtered_at) VALUES (?,?,?,?,?) ON CONFLICT(run_id,row_key) DO UPDATE SET original_emails_json=excluded.original_emails_json,rejected_json=excluded.rejected_json,filtered_at=excluded.filtered_at')
+      let before = 0, kept = 0, removed = 0
+      db.transaction(() => {
+        for (const item of items) {
+          const row = JSON.parse(item.payload) as CrawlRow
+          const previous = prior.get(runId, item.row_key) as { original_emails_json: string } | undefined
+          const original = [...new Set([...(previous ? JSON.parse(previous.original_emails_json) as string[] : []), ...row.emails])]
+          const result = filterEmails(original.map((value) => ({ value, source: row.website || row.mapsUrl || row.name })))
+          before += result.total
+          kept += result.kept.length
+          removed += result.rejected.length
+          update.run(JSON.stringify({ ...row, emails: result.kept.map((entry) => entry.email) }), runId, item.row_key)
+          audit.run(runId, item.row_key, JSON.stringify(original), JSON.stringify(result.rejected), new Date().toISOString())
+        }
+      })()
+      return { before, kept, removed }
     },
     progress(input: unknown) {
       const update = crawlRunProgressSchema.parse(input)
@@ -126,6 +161,7 @@ export function registerCrawlRunIpc(store: ReturnType<typeof createCrawlRunStore
   ipcMain.handle('leadsghr:crawl-runs:list', (event) => { owner(event); return store.list() })
   ipcMain.handle('leadsghr:crawl-runs:exports', (event) => { owner(event); return store.listExports() })
   ipcMain.handle('leadsghr:crawl-runs:row', (event, input: unknown) => { owner(event); return store.saveRow(input) })
+  ipcMain.handle('leadsghr:crawl-runs:filter-emails', (event, id: unknown) => { owner(event); return store.filterRunEmails(crawlRunIdSchema.parse(id)) })
   ipcMain.handle('leadsghr:crawl-runs:progress', (event, input: unknown) => { owner(event); return store.progress(input) })
   ipcMain.handle('leadsghr:crawl-runs:export', (event, id: unknown, saveAs: unknown) => store.export(crawlRunIdSchema.parse(id), saveAs === true, owner(event)))
   ipcMain.handle('leadsghr:crawl-runs:reexport-snapshot', (event, id: unknown) => store.reexportSnapshot(crawlRunIdSchema.parse(id), owner(event)))

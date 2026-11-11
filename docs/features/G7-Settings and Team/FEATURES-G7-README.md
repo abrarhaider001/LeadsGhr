@@ -6,7 +6,7 @@
 
 **Status:** Partially implemented (desktop).
 
-**Current coverage:** Local desktop preferences persist; team, roles and broader organisation settings are missing.
+**Current coverage:** Local desktop preferences persist for Crawler, Search, and Email Validation (MAIL FROM, EHLO, session pacing); team, roles and broader organisation settings are missing.
 
 **Minimum plan:** Explorer  
 **Priority:** P1  
