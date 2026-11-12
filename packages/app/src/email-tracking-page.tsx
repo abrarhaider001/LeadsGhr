@@ -33,7 +33,7 @@ const installSteps: { kind: IconKind; title: string; body: ReactNode }[] = [
 ]
 
 const flow: { kind: IconKind; title: string; body: string }[] = [
-  { kind: 'compose', title: 'You compose', body: 'Gmail compose shows a LeadsGhr bar. Keep Tracking on, or turn it off for one email.' },
+  { kind: 'compose', title: 'You compose', body: 'New emails and replies in a conversation show a LeadsGhr bar. Keep Tracking on, or turn it off for one message.' },
   { kind: 'send', title: 'LeadsGhr tags the email', body: 'On Send, the extension creates a unique tracking ID for this email and adds an invisible 1×1 image.' },
   { kind: 'open', title: 'The recipient opens it', body: 'When the email is opened with images shown, the mail app loads that image and the tracking service records the time.' },
   { kind: 'bell', title: 'You are notified', body: 'Every minute the extension checks for new loads, updates the ticks in Sent, and shows a Chrome notification.' },
@@ -96,9 +96,9 @@ export function EmailTrackingPage() {
 
     <div className="la-tracking-columns">
       <section className="la-tracking-panel" aria-labelledby="la-tracking-ticks-title">
-        <h3 id="la-tracking-ticks-title">Reading the ticks in Sent</h3>
+        <h3 id="la-tracking-ticks-title">Reading the ticks</h3>
         <ul className="la-tracking-legend">{tickStates.map(item => <li key={item.state}><Ticks state={item.state}/><div><strong>{item.title}</strong><span>{item.body}</span></div></li>)}</ul>
-        <p className="la-tracking-panel-note">Hover the ticks to see when the image was last loaded, how soon after sending it was first loaded, and every load time. <strong>Open full settings → Email report</strong> lists every tracked email.</p>
+        <p className="la-tracking-panel-note">Ticks appear in the Sent list and beside each message you sent inside a conversation, so every reply has its own status. Hover the ticks to see when the image was last loaded, how soon after sending it was first loaded, and every load time. <strong>Open full settings → Email report</strong> lists every tracked email.</p>
       </section>
       <section className="la-tracking-panel" aria-labelledby="la-tracking-notes-title">
         <h3 id="la-tracking-notes-title">Good to know</h3>

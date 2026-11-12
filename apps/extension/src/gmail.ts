@@ -5,7 +5,7 @@ const observedLoads = (count: number): string => count ? `${count} image load${c
 const css = document.createElement('style')
 css.textContent = `.lg-track-button{border:1px solid #dadce0;background:#fff;border-radius:7px;padding:5px 9px;cursor:pointer;font:12px Arial;color:#202124}.lg-track-button.on{color:#5B12C9;border-color:#5B12C9}.lg-track-banner{display:flex;align-items:center;gap:8px;margin:8px 0;padding:6px 8px;background:#f6f2ff;border-radius:7px;font:12px Arial;color:#352254}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 5px;padding:5px;border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:#f1eef8}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}
 .lg-ticks{display:inline-flex;align-items:center;flex:none}.lg-ticks svg{display:block;width:20px;height:12px;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-ticks.sent .lg-tick-first,.lg-ticks.loaded path{stroke:#5B12C9}
-.lg-track-row{display:inline-flex;align-items:center;margin-right:8px;padding:2px 3px;border-radius:5px;cursor:pointer;vertical-align:middle}.lg-track-row:hover,.lg-track-row[aria-expanded=true]{background:rgba(32,33,36,.07)}.lg-track-row:focus-visible{outline:2px solid #29CBEA;outline-offset:1px}
+.lg-track-row{display:inline-flex;align-items:center;margin-right:8px;padding:2px 3px;border-radius:5px;cursor:pointer;vertical-align:middle}.lg-track-row:hover,.lg-track-row[aria-expanded=true]{background:rgba(32,33,36,.07)}.lg-track-row:focus-visible{outline:2px solid #29CBEA;outline-offset:1px}.lg-msg-ticks{margin:0 4px 0 8px}
 .lg-card{position:fixed;z-index:2147483000;box-sizing:border-box;width:310px;max-width:calc(100vw - 16px);padding:14px 16px 16px;border:1px solid #DFD9EC;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(25,11,45,.18);color:#190B2D;font:13px/1.45 'Google Sans',Roboto,Arial,sans-serif;text-align:left;cursor:default}.lg-card[hidden]{display:none}
 .lg-card-head{display:flex;align-items:flex-start;gap:9px}.lg-card-head .lg-ticks{margin-top:4px}.lg-card-title{margin:0;font-size:14px;font-weight:400}.lg-card-title strong{font-weight:700}.lg-card-to{display:block;margin-top:2px;overflow:hidden;color:#675E76;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
 .lg-card-row{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:12px}.lg-card-row svg{flex:none;width:16px;height:16px;fill:none;stroke:#675E76;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-card-row strong{font-weight:700}
@@ -36,21 +36,62 @@ function ticks(state: TickState): HTMLElement {
   return span
 }
 
+const BODY_SELECTOR = '[g_editable="true"][contenteditable="true"], [role="textbox"][contenteditable="true"][aria-label*="Message Body"], div[contenteditable="true"][aria-label*="Message Body"]'
+const SEND_SELECTOR = '[role="button"][data-tooltip^="Send"], [role="button"][aria-label^="Send"], button[aria-label^="Send"]'
+
 function getComposeBody(compose: Element): HTMLElement | null {
-  return compose.querySelector<HTMLElement>('[g_editable="true"][contenteditable="true"], [role="textbox"][contenteditable="true"][aria-label*="Message Body"], div[contenteditable="true"][aria-label*="Message Body"]')
+  return compose.querySelector<HTMLElement>(BODY_SELECTOR)
 }
 
-function getComposeSubject(compose: Element): string {
-  return compose.querySelector<HTMLInputElement>('input[name="subjectbox"]')?.value?.trim() ?? ''
-}
-
-function getRecipient(compose: Element): string {
-  const chips = [...compose.querySelectorAll<HTMLElement>('[email]')]
-  return chips.map(chip => chip.getAttribute('email')).filter(Boolean).join(', ') || compose.querySelector<HTMLInputElement>('input[name="to"]')?.value?.trim() || ''
+/**
+ * The compose area for a body or Send button: the smallest ancestor holding both. This covers the
+ * New message dialog, a popped-out reply, and the inline reply box inside a conversation, so every
+ * message in a thread can be tracked, not only the first email.
+ */
+function composeRoot(from: Element): Element | null {
+  let node: Element | null = from
+  while (node && node !== document.body) {
+    if (node.querySelector(BODY_SELECTOR) && node.querySelector(SEND_SELECTOR)) return node
+    node = node.parentElement
+  }
+  return null
 }
 
 function findCompose(): Element[] {
-  return [...document.querySelectorAll('input[name="subjectbox"]')].map(input => input.closest('[role="dialog"]')).filter((value): value is Element => !!value)
+  const roots = new Set<Element>()
+  for (const body of document.querySelectorAll(BODY_SELECTOR)) {
+    const root = composeRoot(body)
+    if (root) roots.add(root)
+  }
+  return [...roots]
+}
+
+/** Subject of the open conversation (Gmail's thread heading). */
+function threadSubject(): string {
+  return document.querySelector<HTMLElement>('h2.hP')?.innerText.trim() ?? ''
+}
+
+/** A new email has a Subject field; an inline reply inherits the conversation subject. */
+function getComposeSubject(compose: Element): string {
+  const typed = compose.querySelector<HTMLInputElement>('input[name="subjectbox"]')?.value?.trim()
+  if (typed) return typed
+  const thread = threadSubject()
+  return thread ? `Re: ${thread}` : ''
+}
+
+const addressOf = (node: Element): string => (node.getAttribute('email') ?? node.getAttribute('data-hovercard-id') ?? '').trim().toLowerCase()
+
+/** Recipient chips in the compose area; for a reply whose chips are collapsed, the other people in the conversation. */
+function getRecipient(compose: Element): string {
+  const account = currentAccount()
+  const unique = (values: string[]) => [...new Set(values.filter(value => value.includes('@')))]
+  const preferOthers = (values: string[]) => values.some(value => value !== account) ? values.filter(value => value !== account) : values
+  const chips = unique([...compose.querySelectorAll('[email], [data-hovercard-id*="@"]')].map(addressOf))
+  if (chips.length) return preferOthers(chips).join(', ')
+  const typed = compose.querySelector<HTMLInputElement>('input[name="to"]')?.value?.trim()
+  if (typed) return typed
+  const thread = unique([...document.querySelectorAll('[role="main"] [role="listitem"] [email]')].map(addressOf))
+  return preferOthers(thread).slice(0, 5).join(', ')
 }
 
 let defaultTrackingEnabled = true
@@ -95,9 +136,10 @@ const replaying = new WeakSet<Element>()
 const registering = new WeakSet<Element>()
 document.addEventListener('keydown', event => {
   if (!(event.ctrlKey || event.metaKey) || event.key !== 'Enter') return
-  const compose = (event.target as Element)?.closest('[role="dialog"]')
+  const target = event.target as Element | null
+  const compose = target ? composeRoot(target) : null
   if (!compose || compose.querySelector('.lg-track-button')?.getAttribute('aria-pressed') !== 'true') return
-  const send = compose.querySelector<HTMLElement>('[role="button"][data-tooltip^="Send"], [role="button"][aria-label^="Send"], button[aria-label^="Send"]')
+  const send = compose.querySelector<HTMLElement>(SEND_SELECTOR)
   if (!send) return
   event.preventDefault()
   event.stopImmediatePropagation()
@@ -105,10 +147,10 @@ document.addEventListener('keydown', event => {
 }, true)
 document.addEventListener('click', async event => {
   const target = event.target as Element
-  const send = target.closest('[role="button"][data-tooltip^="Send"], [role="button"][aria-label^="Send"], button[aria-label^="Send"]')
+  const send = target.closest(SEND_SELECTOR)
   if (!send || replaying.has(send)) { if (send) replaying.delete(send); return }
   if (registering.has(send)) { event.preventDefault(); event.stopImmediatePropagation(); return }
-  const compose = send.closest('[role="dialog"]')
+  const compose = composeRoot(send)
   if (!compose || !compose.querySelector('.lg-track-banner')) return
   if (compose.querySelector('.lg-track-button')?.getAttribute('aria-pressed') !== 'true') return
   const body = getComposeBody(compose)
@@ -133,7 +175,7 @@ document.addEventListener('click', async event => {
     if (result.id) {
       let checks = 0
       const armAfterSend = () => {
-        if (!compose.isConnected) { void chrome.runtime.sendMessage({ kind: 'tracking:arm', id: result.id }).catch(() => undefined); return }
+        if (!compose.isConnected || !body.isConnected) { void chrome.runtime.sendMessage({ kind: 'tracking:arm', id: result.id }).catch(() => undefined); return }
         if (++checks < 24) window.setTimeout(armAfterSend, 500)
       }
       window.setTimeout(armAfterSend, 500)
@@ -148,6 +190,7 @@ let records: RecordEntry[] = []
 async function loadRecords(): Promise<void> {
   records = ((await chrome.storage.local.get('records')).records ?? []) as RecordEntry[]
   decorateSentRows()
+  decorateConversation()
   refreshOpenCard()
 }
 
@@ -182,6 +225,17 @@ function rowRecipients(row: HTMLElement): Set<string> {
   return new Set([...row.querySelectorAll<HTMLElement>('[email]')].map(node => (node.getAttribute('email') ?? '').trim().toLowerCase()).filter(Boolean))
 }
 
+/** "Re: Fwd: Hello" and "Hello" belong to the same conversation. */
+function normalizeSubject(value: string): string {
+  let subject = value.trim().toLowerCase()
+  let previous = ''
+  while (previous !== subject) {
+    previous = subject
+    subject = subject.replace(/^(re|fwd?|fw|aw|sv|vs|tr)\s*(\[\d+\])?\s*:\s*/i, '')
+  }
+  return subject.trim()
+}
+
 const recordRecipients = (item: RecordEntry): string[] => item.recipient.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
 
 /**
@@ -191,7 +245,7 @@ const recordRecipients = (item: RecordEntry): string[] => item.recipient.split('
  */
 function matchRecord(row: HTMLElement, text: string, used: Set<string>): RecordEntry | undefined {
   const addresses = rowRecipients(row)
-  const candidates = records.filter(item => !used.has(item.id) && item.subject && text.includes(item.subject.toLowerCase()) &&
+  const candidates = records.filter(item => !used.has(item.id) && normalizeSubject(item.subject) && text.includes(normalizeSubject(item.subject)) &&
     (!addresses.size || recordRecipients(item).some(address => addresses.has(address))))
   if (!candidates.length) return undefined
   const time = rowTime(row)
@@ -208,7 +262,7 @@ function matchRecord(row: HTMLElement, text: string, used: Set<string>): RecordE
 
 function decorateSentRows(): void {
   const sentView = location.hash.startsWith('#sent') || document.querySelector<HTMLInputElement>('input[aria-label="Search mail"]')?.value?.includes('in:sent')
-  if (!sentView || !defaultTrackingEnabled) { document.querySelectorAll('.lg-track-row').forEach(node => node.remove()); hideCard(); return }
+  if (!sentView || !defaultTrackingEnabled) { document.querySelectorAll('.lg-list-ticks').forEach(node => node.remove()); return }
   const used = new Set<string>()
   for (const row of document.querySelectorAll<HTMLElement>('tr[role="row"], tr.zA')) {
     const cells = row.querySelectorAll<HTMLElement>('td')
@@ -216,24 +270,88 @@ function decorateSentRows(): void {
     const text = row.innerText.toLowerCase()
     const record = matchRecord(row, text, used)
     if (record) used.add(record.id)
-    const old = row.querySelector<HTMLElement>('.lg-track-row')
-    const state = record ? `${record.id}:${record.sent ? 1 : 0}:${record.loads}` : 'untracked'
-    if (old?.dataset.state === state) continue
+    const old = row.querySelector<HTMLElement>('.lg-list-ticks')
+    if (old?.dataset.state === indicatorState(record)) continue
     old?.remove()
     const cell = row.querySelector<HTMLElement>('td.yX') ?? cells[3] ?? cells[0]
     if (!cell) continue
-    const indicator = document.createElement('span')
-    indicator.className = 'lg-track-row'
-    indicator.dataset.state = state
-    indicator.dataset.recordId = record?.id ?? ''
-    indicator.tabIndex = 0
-    indicator.setAttribute('role', 'button')
-    indicator.setAttribute('aria-haspopup', 'dialog')
-    indicator.setAttribute('aria-expanded', 'false')
-    indicator.setAttribute('aria-label', rowLabel(record))
-    indicator.append(ticks(tickState(record)))
-    bindCardTrigger(indicator)
-    cell.prepend(indicator)
+    cell.prepend(makeIndicator(record, 'lg-list-ticks'))
+  }
+}
+
+const indicatorState = (record: RecordEntry | undefined): string => record ? `${record.id}:${record.sent ? 1 : 0}:${record.loads}` : 'untracked'
+
+/** Focusable double-check button that opens the details card; used in the Sent list and in conversations. */
+function makeIndicator(record: RecordEntry | undefined, placement: 'lg-list-ticks' | 'lg-msg-ticks'): HTMLElement {
+  const indicator = document.createElement('span')
+  indicator.className = `lg-track-row ${placement}`
+  indicator.dataset.state = indicatorState(record)
+  indicator.dataset.recordId = record?.id ?? ''
+  indicator.tabIndex = 0
+  indicator.setAttribute('role', 'button')
+  indicator.setAttribute('aria-haspopup', 'dialog')
+  indicator.setAttribute('aria-expanded', 'false')
+  indicator.setAttribute('aria-label', rowLabel(record))
+  indicator.append(ticks(tickState(record)))
+  bindCardTrigger(indicator)
+  return indicator
+}
+
+// ---- Per-message ticks inside an open conversation ----
+
+/** Sender address in a message header (expanded `.gD`, collapsed `.zF`/`.yP`). */
+function messageSender(item: HTMLElement): string {
+  const node = item.querySelector('.gD[email], .zF[email], .yP[email], h3 [email]') ?? item.querySelector('[email]')
+  return node ? addressOf(node) : ''
+}
+
+/** Innermost Gmail message items of the open conversation. */
+function conversationMessages(): HTMLElement[] {
+  return [...document.querySelectorAll<HTMLElement>('[role="main"] [role="listitem"]')].filter(item => !item.querySelector('[role="listitem"]'))
+}
+
+/**
+ * Put ticks beside every message you sent in the open conversation, like the Sent list but per
+ * message. An expanded message is identified exactly by the LeadsGhr pixel inside it; a collapsed
+ * one by subject and send time. Your untracked messages get gray ticks; other people's get none.
+ */
+function decorateConversation(): void {
+  const heading = threadSubject()
+  const items = heading && defaultTrackingEnabled ? conversationMessages() : []
+  if (!items.length) { document.querySelectorAll('.lg-msg-ticks').forEach(node => node.remove()); return }
+  const account = currentAccount()
+  const subject = normalizeSubject(heading)
+  const used = new Set<string>()
+  const mine = items.filter(item => { const sender = messageSender(item); return !!sender && sender === account })
+  const matches = new Map<HTMLElement, RecordEntry | undefined>()
+  // Exact matches first, so time-based matching cannot take a record that a pixel identifies.
+  for (const item of mine) {
+    const pixelId = [...item.querySelectorAll<HTMLImageElement>('img[src*="pixel=1"]')].map(image => image.src.match(PIXEL_ID_PATTERN)?.[1]?.toLowerCase()).find(Boolean)
+    const record = pixelId ? records.find(entry => entry.id === pixelId) : undefined
+    if (record) { used.add(record.id); matches.set(item, record) }
+  }
+  for (const item of mine) {
+    if (matches.has(item)) continue
+    const time = rowTime(item)
+    let best: RecordEntry | undefined
+    let bestGap = Infinity
+    if (time !== null) for (const entry of records) {
+      if (used.has(entry.id) || normalizeSubject(entry.subject) !== subject || (entry.sender && entry.sender !== account)) continue
+      const gap = Math.abs(entry.sentAt - time)
+      if (gap < bestGap) { best = entry; bestGap = gap }
+    }
+    const record = best && bestGap <= MATCH_WINDOW_MS ? best : undefined
+    if (record) used.add(record.id)
+    matches.set(item, record)
+  }
+  for (const item of items) {
+    const old = item.querySelector<HTMLElement>('.lg-msg-ticks')
+    if (!matches.has(item)) { old?.remove(); continue }
+    const record = matches.get(item)
+    if (old?.dataset.state === indicatorState(record)) continue
+    old?.remove()
+    const anchor = item.querySelector<HTMLElement>('span.g3') ?? [...item.querySelectorAll<HTMLElement>('span[title]')].find(span => /\d{4}/.test(span.title) && /\d{1,2}[:.]\d{2}/.test(span.title))
+    anchor?.insertAdjacentElement('afterend', makeIndicator(record, 'lg-msg-ticks'))
   }
 }
 
@@ -480,6 +598,7 @@ const observer = new MutationObserver(() => {
     scheduled = false
     findCompose().forEach(decorateCompose)
     reportOwnViews()
+    decorateConversation()
     decorateNavbar()
     decorateSentRows()
   }, 250)
