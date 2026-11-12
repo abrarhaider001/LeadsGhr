@@ -1,4 +1,4 @@
-type RecordEntry = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
+type RecordEntry = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; sender?: string; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
 type TickState = 'untracked' | 'sent' | 'loaded'
 const observedLoads = (count: number): string => count ? `${count} image load${count === 1 ? '' : 's'} observed` : 'No image load observed yet'
 
@@ -9,7 +9,6 @@ css.textContent = `.lg-track-button{border:1px solid #dadce0;background:#fff;bor
 .lg-card{position:fixed;z-index:2147483000;box-sizing:border-box;width:310px;max-width:calc(100vw - 16px);padding:14px 16px 16px;border:1px solid #DFD9EC;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(25,11,45,.18);color:#190B2D;font:13px/1.45 'Google Sans',Roboto,Arial,sans-serif;text-align:left;cursor:default}.lg-card[hidden]{display:none}
 .lg-card-head{display:flex;align-items:flex-start;gap:9px}.lg-card-head .lg-ticks{margin-top:4px}.lg-card-title{margin:0;font-size:14px;font-weight:400}.lg-card-title strong{font-weight:700}.lg-card-to{display:block;margin-top:2px;overflow:hidden;color:#675E76;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
 .lg-card-row{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:12px}.lg-card-row svg{flex:none;width:16px;height:16px;fill:none;stroke:#675E76;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-card-row strong{font-weight:700}
-.lg-card-history{margin:10px 0 0;padding:8px 10px;border-radius:8px;background:#F7F4FF;color:#675E76;font-size:11px;line-height:1.7;list-style:none}.lg-card-history li{display:flex;justify-content:space-between;gap:10px}
 .lg-card-note{margin:12px 0 0;padding-top:10px;border-top:1px solid #DFD9EC;color:#675E76;font-size:11px;line-height:1.45}
 .lg-card-button{display:block;width:100%;min-height:36px;margin-top:12px;border:0;border-radius:8px;background:#5B12C9;color:#fff;font:700 13px 'Google Sans',Roboto,Arial,sans-serif;cursor:pointer}.lg-card-button:hover{filter:brightness(1.08)}.lg-card-button:focus-visible{outline:2px solid #29CBEA;outline-offset:2px}`
 document.documentElement.append(css)
@@ -120,7 +119,7 @@ document.addEventListener('click', async event => {
   event.stopImmediatePropagation()
   registering.add(send)
   try {
-    const result = await chrome.runtime.sendMessage({ kind: 'tracking:register', recipient, subject }) as { pixelUrl?: string; id?: string; error?: string }
+    const result = await chrome.runtime.sendMessage({ kind: 'tracking:register', recipient, subject, sender: currentAccount() }) as { pixelUrl?: string; id?: string; error?: string }
     if (result.error || !result.pixelUrl) throw new Error(result.error || 'Could not create tracking pixel.')
     const image = document.createElement('img')
     image.src = result.pixelUrl
@@ -250,7 +249,6 @@ function ago(from: number, to = Date.now()): string {
   return `${days} day${days === 1 ? '' : 's'}`
 }
 
-const stamp = (value: string | number): string => new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag)
@@ -324,21 +322,11 @@ function renderCard(target: HTMLElement, record: RecordEntry | undefined): void 
     title.append('Opened or image loaded ', element('strong', '', Number.isNaN(lastLoad) ? 'recently' : `${ago(lastLoad)} ago`))
     if (!Number.isNaN(firstLoad)) target.append(rowWithIcon(EYE, element('strong', '', 'First loaded'), ` ${ago(record.sentAt, firstLoad)} after you sent it`))
     target.append(rowWithIcon(CLOCK, element('strong', '', observedLoads(record.loads))))
-    if (events.length) {
-      const list = element('ol', 'lg-card-history')
-      list.setAttribute('aria-label', 'Recent observed image loads')
-      events.slice(0, 5).forEach((event, index) => {
-        const item = element('li')
-        item.append(element('span', '', `Load ${record.loads - index}`), element('span', '', stamp(event)))
-        list.append(item)
-      })
-      target.append(list)
-    }
     target.append(element('p', 'lg-card-note', 'Gmail may show a cached image on later opens, so repeat opens can go unobserved. Counts are observed image loads, not exact reads.'))
   }
   const button = element('button', 'lg-card-button', 'View in LeadsGhr')
   button.type = 'button'
-  button.addEventListener('click', () => { hideCard(); void chrome.runtime.openOptionsPage() })
+  button.addEventListener('click', () => { hideCard(); void chrome.runtime.sendMessage({ kind: 'tracking:open-report', id: record.id }).catch(() => undefined) })
   target.append(button)
 }
 
@@ -451,12 +439,47 @@ function decorateNavbar(): void {
 }
 
 let scheduled = false
+// ---- Sender's own views ----
+// When the sender opens their own tracked email, Gmail loads the tracking image through its proxy
+// (src "https://…googleusercontent.com/…#<endpoint>?id=<uuid>&pixel=1"), which the server would count
+// as an open. Report such views so the background worker can subtract the matching load.
+const EMAIL_PATTERN = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/
+const PIXEL_ID_PATTERN = /[?&]id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})&pixel=1/i
+
+/** Address of the Gmail account in this tab, e.g. from the title "Inbox - name@gmail.com - Gmail". */
+function currentAccount(): string {
+  const fromTitle = document.title.match(EMAIL_PATTERN)?.[0]
+  if (fromTitle) return fromTitle.toLowerCase()
+  const label = document.querySelector('a[aria-label^="Google Account"]')?.getAttribute('aria-label') ?? ''
+  return label.match(EMAIL_PATTERN)?.[0]?.toLowerCase() ?? ''
+}
+
+const reportedPixels = new WeakSet<HTMLImageElement>()
+function reportOwnViews(): void {
+  const account = currentAccount()
+  if (!account) return
+  for (const image of document.querySelectorAll<HTMLImageElement>('img[src*="pixel=1"]')) {
+    if (reportedPixels.has(image)) continue
+    const id = image.src.match(PIXEL_ID_PATTERN)?.[1]?.toLowerCase()
+    // Wait until the saved records are loaded before deciding about a LeadsGhr pixel.
+    if (id && !records.length) continue
+    reportedPixels.add(image)
+    // Compose bodies hold the direct pixel before sending; the server ignores those loads already.
+    if (!id || image.closest('[contenteditable="true"]')) continue
+    // Only a tracked email sent from this same account counts as the sender's own view, so a
+    // recipient account opened in another tab of this Chrome profile is still counted.
+    const record = id ? records.find(item => item.id === id) : undefined
+    if (record?.sender && record.sender === account) void chrome.runtime.sendMessage({ kind: 'tracking:own-view', id: record.id }).catch(() => undefined)
+  }
+}
+
 const observer = new MutationObserver(() => {
   if (scheduled) return
   scheduled = true
   window.setTimeout(() => {
     scheduled = false
     findCompose().forEach(decorateCompose)
+    reportOwnViews()
     decorateNavbar()
     decorateSentRows()
   }, 250)

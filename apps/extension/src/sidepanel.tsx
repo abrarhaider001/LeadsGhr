@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 
 type RecordEntry = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
@@ -8,7 +8,7 @@ const style = `body{font:14px Arial,sans-serif;color:#21152d;margin:0;background
 .report-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.report-head h2{margin:0}
 .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}.metric{padding:12px;border:1px solid #ded6ec;border-radius:10px;background:#F7F4FF}.metric strong{display:block;font-size:22px}.metric span{color:#756987;font-size:12px}
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}.toolbar input{flex:1;min-width:200px;margin:0!important}.segments{display:flex;gap:4px;padding:3px;border:1px solid #ded6ec;border-radius:9px}.segments button{padding:7px 11px;background:transparent;color:#62556c;font-size:12px}.segments button[aria-pressed=true]{background:#ECE9FA;color:#5B12C9;font-weight:700}
-.emails{margin:0;padding:0;list-style:none}.email{border-top:1px solid #eee}.email-summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;width:100%;padding:12px 6px;border-radius:8px;background:transparent;color:inherit;text-align:left}.email-summary:hover,.email.open .email-summary{background:#F7F4FF}
+.emails{margin:0;padding:0;list-style:none}.email{border-top:1px solid #eee}.email-summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;width:100%;padding:12px 6px;border-radius:8px;background:transparent;color:inherit;text-align:left}.email-summary:hover,.email.open .email-summary{background:#F7F4FF}.email{scroll-margin:24px}
 .email-main strong,.email-main small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.email-main small{margin-top:3px;color:#756987;font-size:12px}
 .pill{padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700}.pill.opened{background:#ECE9FA;color:#5B12C9}.pill.sent{background:#F1F1F3;color:#62556c}.pill.unsent{background:#FFF4E5;color:#8A4B00}
 .email-loads{min-width:46px;text-align:right}.email-loads strong{display:block;font-size:18px}.email-loads small{color:#756987;font-size:11px}
@@ -22,6 +22,7 @@ function Ticks({ sent, loaded }: { sent: boolean; loaded: boolean }) {
 }
 
 type Filter = 'all' | 'opened' | 'waiting'
+type FocusRequest = { id: string; at: number }
 
 function ago(from: number, to = Date.now()): string {
   const minutes = Math.round(Math.max(0, to - from) / 60000)
@@ -62,10 +63,21 @@ function EmailDetails({ record }: { record: RecordEntry }) {
   </div>
 }
 
-function EmailReport({ records, onRefresh }: { records: RecordEntry[]; onRefresh: () => void }) {
+function EmailReport({ records, onRefresh, focus }: { records: RecordEntry[]; onRefresh: () => void; focus: FocusRequest | null }) {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [expanded, setExpanded] = useState<string | null>(null)
+  // "View in LeadsGhr" and notification clicks open this page on one email (once per request).
+  const handledFocus = useRef(0)
+  useEffect(() => {
+    if (!focus || focus.at === handledFocus.current || !records.some(record => record.id === focus.id)) return
+    handledFocus.current = focus.at
+    setQuery('')
+    setFilter('all')
+    setExpanded(focus.id)
+    window.requestAnimationFrame(() => document.getElementById(`email-${focus.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
+    void chrome.storage.local.remove('focusEmail')
+  }, [focus, records])
   const sentRecords = records.filter(record => record.sent !== false)
   const opened = sentRecords.filter(record => record.loads > 0).length
   const totalLoads = records.reduce((total, record) => total + record.loads, 0)
@@ -89,7 +101,7 @@ function EmailReport({ records, onRefresh }: { records: RecordEntry[]; onRefresh
     <ul className="emails">{visible.map(record => {
       const open = expanded === record.id
       const state = status(record)
-      return <li key={record.id} className={`email${open ? ' open' : ''}`}>
+      return <li key={record.id} id={`email-${record.id}`} className={`email${open ? ' open' : ''}`}>
         <button type="button" className="email-summary" aria-expanded={open} onClick={() => setExpanded(open ? null : record.id)}>
           <Ticks sent={record.sent !== false} loaded={record.loads > 0}/>
           <span className="email-main"><strong>{record.subject}</strong><small>To {record.recipient} · {record.sent === false ? 'not sent' : `sent ${when(record.sentAt)}`}{record.lastLoad ? ` · last load ${ago(Date.parse(record.lastLoad))} ago` : ''}</small></span>
@@ -109,16 +121,22 @@ function Options() {
   const [enabled, setEnabled] = useState(true)
   const [records, setRecords] = useState<RecordEntry[]>([])
   const [message, setMessage] = useState('')
+  const [focus, setFocus] = useState<FocusRequest | null>(null)
   useEffect(() => {
     const load = async () => {
-      const data = await chrome.storage.local.get(['endpoint', 'registrationKey', 'enabled', 'records'])
+      const data = await chrome.storage.local.get(['endpoint', 'registrationKey', 'enabled', 'records', 'focusEmail'])
+      if (data.focusEmail?.id) setFocus(data.focusEmail)
       setEndpoint(data.endpoint ?? '')
       setRegistrationKey(data.registrationKey ?? '')
       setEnabled(data.enabled !== false)
       setRecords(data.records ?? [])
     }
     void load()
-    chrome.storage.onChanged.addListener((changes, area) => { if (area === 'local' && changes.records) setRecords(changes.records.newValue ?? []) })
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area !== 'local') return
+      if (changes.records) setRecords(changes.records.newValue ?? [])
+      if (changes.focusEmail?.newValue?.id) setFocus(changes.focusEmail.newValue)
+    })
   }, [])
   async function save() {
     try {
@@ -134,7 +152,7 @@ function Options() {
   }
   return <main><style>{style}</style><h1>LeadsGhr Mail Tracking</h1><p>Gmail compose tracking and image-load indicators. A public tracking endpoint must be configured before real email tracking can work.</p>
     <section><h2>Tracking settings</h2><label>Public HTTPS endpoint<input type="text" value={endpoint} onChange={event => setEndpoint(event.target.value)} placeholder="https://YOUR_PROJECT.supabase.co/functions/v1/mail-tracking" /></label><label>Registration key<input type="password" value={registrationKey} onChange={event => setRegistrationKey(event.target.value)} placeholder="Server registration key" /></label><label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Enable tracking by default</label><button onClick={() => void save()}>Save settings</button><p className="muted">Only opaque pixel tokens are stored online. Recipient and subject stay in this Chrome profile. An image load can come from a mail proxy or preview and does not prove a person read the email. Gmail fetches the image through its proxy and may reuse a cached copy, so repeat opens can go unobserved; counts are observed image loads, not exact opens.</p></section>
-    <EmailReport records={records} onRefresh={() => void refresh()}/>
+    <EmailReport records={records} onRefresh={() => void refresh()} focus={focus}/>
     {message && <p role="status">{message}</p>}</main>
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><Options /></React.StrictMode>)

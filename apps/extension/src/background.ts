@@ -1,4 +1,12 @@
-type TrackingRecord = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[]; notifiedLoads?: number }
+type TrackingRecord = {
+  id: string; recipient: string; subject: string; sentAt: number; sent?: boolean
+  /** Gmail account that sent the email; used to recognise the sender's own views. */
+  sender?: string
+  /** Observed loads after removing the sender's own views. */
+  loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[]; notifiedLoads?: number
+  /** Times the sender's Gmail displayed this email, and the server load times attributed to them. */
+  ownViews?: number[]; ownEvents?: string[]
+}
 type Settings = { endpoint: string; registrationKey: string; enabled: boolean }
 const defaults: Settings = { endpoint: '', registrationKey: '', enabled: true }
 
@@ -30,11 +38,26 @@ chrome.runtime.onInstalled.addListener(() => { void ensureRefreshAlarm() })
 chrome.runtime.onStartup.addListener(() => { void ensureRefreshAlarm() })
 void ensureRefreshAlarm()
 chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === REFRESH_ALARM) void refresh() })
+/** Open the full settings page scrolled to one email in the Email report. */
+async function openReport(id?: string): Promise<void> {
+  if (id) await chrome.storage.local.set({ focusEmail: { id, at: Date.now() } })
+  await chrome.runtime.openOptionsPage()
+}
+
 chrome.notifications.onClicked.addListener((notificationId) => {
   if (!notificationId.startsWith(NOTIFICATION_PREFIX)) return
   void chrome.notifications.clear(notificationId)
-  void chrome.runtime.openOptionsPage()
+  // Notification ids are `${prefix}${recordId}-${loads}`.
+  void openReport(notificationId.slice(NOTIFICATION_PREFIX.length).replace(/-\d+$/, ''))
 })
+
+// A load whose server time falls in this window around a sender view is treated as the sender's own.
+const OWN_VIEW_BEFORE_MS = 15000
+const OWN_VIEW_AFTER_MS = 45000
+const isOwnLoad = (at: string, views: number[]): boolean => {
+  const time = Date.parse(at)
+  return views.some(view => time >= view - OWN_VIEW_BEFORE_MS && time <= view + OWN_VIEW_AFTER_MS)
+}
 
 const observedLoadText = (count: number): string => `${count} image load${count === 1 ? '' : 's'} observed`
 
@@ -89,17 +112,18 @@ async function refresh(): Promise<void> {
   const updated = latest.map((record) => {
     const update = fetched.get(record.id)
     if (!update) return record
+    // Remove loads caused by the sender opening the email in their own Gmail.
+    const ownEvents = new Set(record.ownEvents ?? [])
+    if (update.events && record.ownViews?.length) for (const event of update.events) if (isOwnLoad(event, record.ownViews)) ownEvents.add(event)
+    const loads = Math.max(0, update.loads - ownEvents.size)
+    const events = update.events ? update.events.filter(event => !ownEvents.has(event)) : record.events
+    const firstLoad = !loads ? null : update.firstLoad && !ownEvents.has(update.firstLoad) ? update.firstLoad : events?.[events.length - 1] ?? update.firstLoad
+    const lastLoad = !loads ? null : events?.[0] ?? update.lastLoad ?? record.lastLoad
     // Records saved before notifications existed start at their current count without a backlog alert.
-    const notifiedLoads = typeof record.notifiedLoads === 'number' ? record.notifiedLoads : update.loads
-    if (notify !== false && update.loads > notifiedLoads) notifications.push(notifyObservedLoad(record, notifiedLoads, update.loads).catch(() => undefined))
-    return {
-      ...record,
-      loads: update.loads,
-      firstLoad: update.firstLoad ?? record.firstLoad ?? null,
-      lastLoad: update.lastLoad ?? record.lastLoad,
-      events: update.events ?? record.events,
-      notifiedLoads: Math.max(notifiedLoads, update.loads)
-    }
+    // Capping at `loads` lets a later real load notify after an own view was subtracted.
+    const notifiedLoads = Math.min(typeof record.notifiedLoads === 'number' ? record.notifiedLoads : loads, loads)
+    if (notify !== false && loads > notifiedLoads) notifications.push(notifyObservedLoad(record, notifiedLoads, loads).catch(() => undefined))
+    return { ...record, loads, firstLoad, lastLoad, events, ownEvents: [...ownEvents], notifiedLoads: loads }
   })
   await chrome.storage.local.set({ records: updated })
   await Promise.all(notifications)
@@ -113,18 +137,32 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
     void (async () => { const config = await settings(); const url = endpointUrl(config.endpoint); url.searchParams.set('id', id); url.searchParams.set('arm', '1'); await requestEndpoint(url, { method: 'POST', headers: { 'X-LeadsGhr-Key': config.registrationKey } }); const { records = [] } = await chrome.storage.local.get('records') as { records?: TrackingRecord[] }; await chrome.storage.local.set({ records: records.map(record => record.id === id ? { ...record, sent: true, sentAt: Date.now() } : record) }); return { ok: true } })().then(respond, error => respond({ error: String(error) }))
     return true
   }
+  if (message.kind === 'tracking:open-report') {
+    const id = 'id' in message && typeof message.id === 'string' ? message.id : undefined
+    void openReport(id).then(() => respond({ ok: true }), error => respond({ error: String(error) }))
+    return true
+  }
+  if (message.kind === 'tracking:own-view' && 'id' in message && typeof message.id === 'string') {
+    const id = message.id
+    void (async () => {
+      const { records = [] } = await chrome.storage.local.get('records') as { records?: TrackingRecord[] }
+      await chrome.storage.local.set({ records: records.map(record => record.id === id ? { ...record, ownViews: [...(record.ownViews ?? []), Date.now()].slice(-30) } : record) })
+    })().then(() => respond({ ok: true }), error => respond({ error: String(error) }))
+    return true
+  }
   if (message.kind !== 'tracking:register' || !('recipient' in message) || !('subject' in message)) return
   void (async () => {
     const config = await settings()
     if (!config.enabled || !config.endpoint || !config.registrationKey) throw new Error('Configure the public tracking endpoint in extension settings first.')
     const recipient = String(message.recipient).trim().slice(0, 320)
     const subject = String(message.subject).trim().slice(0, 200)
+    const sender = 'sender' in message && typeof message.sender === 'string' ? message.sender.trim().toLowerCase().slice(0, 320) : ''
     if (!recipient || !subject) throw new Error('Recipient and subject are required.')
     const id = crypto.randomUUID()
     const url = endpointUrl(config.endpoint)
     await requestEndpoint(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-LeadsGhr-Key': config.registrationKey }, body: JSON.stringify({ id }) })
     const { records = [] } = await chrome.storage.local.get('records') as { records?: TrackingRecord[] }
-    await chrome.storage.local.set({ records: [{ id, recipient, subject, sentAt: Date.now(), sent: false, loads: 0, lastLoad: null, events: [], notifiedLoads: 0 }, ...records].slice(0, 500) })
+    await chrome.storage.local.set({ records: [{ id, recipient, subject, sender, sentAt: Date.now(), sent: false, loads: 0, lastLoad: null, events: [], notifiedLoads: 0 }, ...records].slice(0, 500) })
     url.searchParams.set('id', id)
     url.searchParams.set('pixel', '1')
     return { pixelUrl: url.toString(), id }
