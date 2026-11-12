@@ -2,7 +2,7 @@
 
 Snapshot: 2026-11-09. This compares the original feature guides with the active Electron desktop source. A partial status means a usable slice exists, but the guide is not fully met. A1 is implemented for the current desktop local-search flow; its historical account-sync and named-profile integrations remain with A5/G6. A separate Gmail tracking extension is built, while the original extension feature set remains largely planned.
 
-Email Tracking has a local pixel demo and a Gmail extension documented in [Email Tracking](../EMAIL_TRACKING_README.md). The extension reports observed image loads (not exact opens), keeps an observed-load timestamp history, and shows Chrome notifications for new loads. Real recipient-side image-load detection requires applying the included migrations and deploying the public HTTPS function; this has not been manually verified against Gmail.
+Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TRACKING_README.md); the desktop Email Tracking page downloads it and explains installation and behavior. The earlier local pixel demo was removed. The extension reports observed image loads (not exact opens), keeps an observed-load timestamp history, and shows Chrome notifications for new loads. Real recipient-side image-load detection requires applying the included migrations and deploying the public HTTPS function; this has not been manually verified against Gmail.
 
 | Status | Count |
 | --- | ---: |

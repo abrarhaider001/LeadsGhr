@@ -13,7 +13,6 @@ import { scanMaps } from './maps-scan'
 import { createCrawlRunStore, registerCrawlRunIpc } from './crawl-runs'
 import { registerPipelinePages } from './pipeline-pages'
 import { abortActiveEmailVerify, registerEmailVerifyIpc } from './email-verify'
-import { closeLocalEmailTracking, registerLocalEmailTracking } from './local-email-tracking'
 
 let db: Database.Database | undefined
 let adapters: ReturnType<typeof createDesktopAdapters> | undefined
@@ -77,7 +76,6 @@ app.whenReady().then(async () => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
   registerEmailVerifyIpc()
-  await registerLocalEmailTracking(localStore().db)
   ipcMain.handle('leadsghr:tracking:download-extension', async () => {
     const source = app.isPackaged
       ? join(process.resourcesPath, 'leadsghr-mail-tracking.zip')
@@ -169,7 +167,7 @@ app.whenReady().then(async () => {
   createWindow(crawlStore)
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
-app.on('before-quit', () => { activeMapsScan?.controller.abort(); abortActiveEmailVerify(); closeLocalEmailTracking(); db?.close() })
+app.on('before-quit', () => { activeMapsScan?.controller.abort(); abortActiveEmailVerify(); db?.close() })
 
 
 
