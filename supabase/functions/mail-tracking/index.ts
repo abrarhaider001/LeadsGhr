@@ -29,8 +29,16 @@ Deno.serve(async request => {
     return new Response(gif, { headers: { 'Content-Type': 'image/gif', 'Cache-Control': 'private, no-store, max-age=0', 'X-Content-Type-Options': 'nosniff' } })
   }
   if (request.method === 'GET' && id) {
-    const { data, error } = await db.from('mail_tracking_pixels').select('image_loads,last_loaded_at').eq('id', id).single()
-    return error ? json({ error: 'Pixel not found' }, 404) : json({ loads: data.image_loads, lastLoad: data.last_loaded_at })
+    const { data, error } = await db.from('mail_tracking_pixels').select('image_loads,first_loaded_at,last_loaded_at').eq('id', id).single()
+    if (error) return json({ error: 'Pixel not found' }, 404)
+    const { data: events, error: eventsError } = await db
+      .from('mail_tracking_events')
+      .select('observed_at')
+      .eq('pixel_id', id)
+      .order('observed_at', { ascending: false })
+      .limit(50)
+    if (eventsError) return json({ error: 'Could not read observed image-load history' }, 500)
+    return json({ loads: data.image_loads, firstLoad: data.first_loaded_at, lastLoad: data.last_loaded_at, events: events.map(event => event.observed_at) })
   }
   return json({ error: 'Unsupported request' }, 405)
 })

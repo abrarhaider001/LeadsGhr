@@ -3,7 +3,7 @@
   "name": "LeadsGhr Mail Tracking",
   "version": "0.1.0",
   "description": "Track image loads for messages you send from Gmail.",
-  "permissions": ["storage", "alarms"],
+  "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": ["https://mail.google.com/*"],
   "web_accessible_resources": [{ "resources": ["icon.svg"], "matches": ["https://mail.google.com/*"] }],
   "optional_host_permissions": ["https://*/*"],

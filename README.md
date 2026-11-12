@@ -35,7 +35,7 @@ Collect public data only. Respect robots.txt and polite delays, pause on challen
 - TypeScript, React, Node.js, pnpm workspaces, Turborepo.
 - Electron and electron-vite for the desktop UI; context isolation, disabled Node integration, Zod-validated IPC, electron-builder and electron-updater.
 - Local SQLite through better-sqlite3 for leads, scan history and queued jobs. Exports are files on disk.
-- Supabase Auth and an RLS-protected user profile table for account data; an optional Edge Function stores opaque mail-tracking tokens and image-load counts.
+- Supabase Auth and an RLS-protected user profile table for account data; an optional Edge Function stores opaque mail-tracking tokens, image-load counts, and load timestamps.
 - Shared packages: core, extract, crawler, quality, export, schemas, ui, app and platform. Extractors accept HTML strings and use Cheerio and libphonenumber-js.
 
 ## Repository
@@ -45,14 +45,19 @@ apps/desktop/  Electron main, preload and React renderer
 apps/extension/  Gmail tracking Chrome MV3 extension and downloadable ZIP
 packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
 supabase/     Account/profile schema and optional mail-tracking function/migration
+.github/workflows/  Supabase deploy: applies migrations and deploys Edge Functions on every branch push
 docs/         Current desktop guides and preserved original specification
 ```
 
 Legacy web, API, and worker folders remain inactive reference code. `apps/extension` is an active Gmail tracking build in the pnpm workspace.
 
+## Supabase deployment
+
+`.github/workflows/supabase-deploy.yml` runs on GitHub Actions when a push to any branch changes `supabase/migrations/`, `supabase/functions/`, or `supabase/config.toml`. It applies migrations not yet recorded in the hosted project's migration history (`supabase db push`) and deploys every function in `supabase/functions/` without Docker. It needs the repository secret `SUPABASE_ACCESS_TOKEN` (a Supabase personal access token) and the repository variable `SUPABASE_PROJECT_ID` (the project ref). Function secrets such as `MAIL_TRACKING_REGISTRATION_KEY` stay in the Supabase dashboard. It can also be run manually from the Actions tab, with a dry-run option and a one-time option to record migrations that were already applied by hand in the SQL Editor. There is one hosted project, so the most recent push from any branch is what runs live, and a migration applied from a branch stays applied even if that branch is abandoned. Keep migrations additive and safe to re-run.
+
 ## Gmail tracking extension
 
-Open **Email Tracking → Get Chrome extension** in the desktop app to save the ZIP and view Chrome installation steps. The source build is `pnpm --filter @leadsghr/extension build`. The extension displays a tracking control in Gmail compose, a LeadsGhr toolbar entry, and gray or purple double ticks with image-load counts in matched sent rows. Real recipient-side loads require deploying the included public HTTPS tracking function and configuring its endpoint in extension settings. See the [Email Tracking guide](docs/EMAIL_TRACKING_README.md) for setup, behavior, and limits.
+Open **Email Tracking → Get Chrome extension** in the desktop app to save the ZIP and view Chrome installation steps. The source build is `pnpm --filter @leadsghr/extension build`. The extension displays a tracking control in Gmail compose, a LeadsGhr toolbar entry, gray or green double ticks in matched sent rows with a hover card showing observed image-load counts and times, an observed-load history, and Chrome notifications for new loads. Gmail's image cache can hide repeat opens, so counts are observed loads, not exact opens. Real recipient-side loads require deploying the included public HTTPS tracking function and configuring its endpoint in extension settings. See the [Email Tracking guide](docs/EMAIL_TRACKING_README.md) for setup, behavior, and limits.
 
 ## Run the desktop app
 

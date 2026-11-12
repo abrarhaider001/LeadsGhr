@@ -2,7 +2,7 @@
 
 The Chrome extension toolbar opens a compact white popup with Tracking report and Settings tabs. It uses the project purple accent, lavender surfaces, local image-load counters, a default-tracking switch, and a link to full settings. Only working tracking controls are shown; the wider product menu in the visual reference is not part of the extension.
 
-Inside Gmail, the LeadsGhr logo control is placed beside the top-right Settings control. The left navigation has no injected LeadsGhr button. With tracking enabled, Sent rows show two gray ticks by default. A confirmed tracked send colors the first tick purple; an observed image load colors the second tick purple and shows the count. Untracked rows keep both ticks gray.
+Inside Gmail, the LeadsGhr logo control is placed beside the top-right Settings control. The left navigation has no injected LeadsGhr button. With tracking enabled, Sent rows show a thin SVG double-check mark: light gray for untracked rows, gray for a confirmed tracked send with no observed load, and green after an image load is observed. The ticks are a keyboard-focusable button that opens a floating details card on hover, click, or Enter: the last load as relative time, first load relative to sending, observed-load count, up to five recent load times, a cache caveat, and a purple **View in LeadsGhr** button. The popup and full settings page use the same tick mark. Green is used only for the loaded tick state.
 
 The extension install view places a direct ZIP download button beside the introduction, followed by custom SVG step icons and responsive setup cards. Its final note explains the public endpoint needed for recipient-side tracking.
 
