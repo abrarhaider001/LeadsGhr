@@ -178,8 +178,22 @@ function rowTime(row: HTMLElement): number | null {
   return null
 }
 
-function matchRecord(row: HTMLElement, text: string): RecordEntry | undefined {
-  const candidates = records.filter(item => item.subject && text.includes(item.subject.toLowerCase()))
+/** Recipient addresses Gmail attaches to the row's participant names (`<span email="...">`). */
+function rowRecipients(row: HTMLElement): Set<string> {
+  return new Set([...row.querySelectorAll<HTMLElement>('[email]')].map(node => (node.getAttribute('email') ?? '').trim().toLowerCase()).filter(Boolean))
+}
+
+const recordRecipients = (item: RecordEntry): string[] => item.recipient.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
+
+/**
+ * Pick the tracked message for a row: same subject, same recipient address when Gmail exposes it,
+ * closest send time within the window, and not already given to another row in this pass. The
+ * recipient check separates same-subject emails sent seconds apart to different people.
+ */
+function matchRecord(row: HTMLElement, text: string, used: Set<string>): RecordEntry | undefined {
+  const addresses = rowRecipients(row)
+  const candidates = records.filter(item => !used.has(item.id) && item.subject && text.includes(item.subject.toLowerCase()) &&
+    (!addresses.size || recordRecipients(item).some(address => addresses.has(address))))
   if (!candidates.length) return undefined
   const time = rowTime(row)
   // Without a readable time, only an unambiguous subject is safe to match.
@@ -196,11 +210,13 @@ function matchRecord(row: HTMLElement, text: string): RecordEntry | undefined {
 function decorateSentRows(): void {
   const sentView = location.hash.startsWith('#sent') || document.querySelector<HTMLInputElement>('input[aria-label="Search mail"]')?.value?.includes('in:sent')
   if (!sentView || !defaultTrackingEnabled) { document.querySelectorAll('.lg-track-row').forEach(node => node.remove()); hideCard(); return }
+  const used = new Set<string>()
   for (const row of document.querySelectorAll<HTMLElement>('tr[role="row"], tr.zA')) {
     const cells = row.querySelectorAll<HTMLElement>('td')
     if (cells.length < 4) continue
     const text = row.innerText.toLowerCase()
-    const record = matchRecord(row, text)
+    const record = matchRecord(row, text, used)
+    if (record) used.add(record.id)
     const old = row.querySelector<HTMLElement>('.lg-track-row')
     const state = record ? `${record.id}:${record.sent ? 1 : 0}:${record.loads}` : 'untracked'
     if (old?.dataset.state === state) continue
