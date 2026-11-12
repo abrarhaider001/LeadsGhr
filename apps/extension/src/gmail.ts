@@ -4,7 +4,7 @@ const observedLoads = (count: number): string => count ? `${count} image load${c
 
 const css = document.createElement('style')
 css.textContent = `.lg-track-button{border:1px solid #dadce0;background:#fff;border-radius:7px;padding:5px 9px;cursor:pointer;font:12px Arial;color:#202124}.lg-track-button.on{color:#5B12C9;border-color:#5B12C9}.lg-track-banner{display:flex;align-items:center;gap:8px;margin:8px 0;padding:6px 8px;background:#f6f2ff;border-radius:7px;font:12px Arial;color:#352254}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 5px;padding:5px;border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:#f1eef8}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}
-.lg-ticks{display:inline-flex;align-items:center;flex:none}.lg-ticks svg{display:block;width:20px;height:12px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-ticks.untracked{color:#C4C7CC}.lg-ticks.sent{color:#9AA0A6}.lg-ticks.loaded{color:#1E8E3E}
+.lg-ticks{display:inline-flex;align-items:center;flex:none}.lg-ticks svg{display:block;width:20px;height:12px;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-ticks.sent .lg-tick-first,.lg-ticks.loaded path{stroke:#1E8E3E}
 .lg-track-row{display:inline-flex;align-items:center;margin-right:8px;padding:2px 3px;border-radius:5px;cursor:pointer;vertical-align:middle}.lg-track-row:hover,.lg-track-row[aria-expanded=true]{background:rgba(32,33,36,.07)}.lg-track-row:focus-visible{outline:2px solid #29CBEA;outline-offset:1px}
 .lg-card{position:fixed;z-index:2147483000;box-sizing:border-box;width:310px;max-width:calc(100vw - 16px);padding:14px 16px 16px;border:1px solid #DFD9EC;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(25,11,45,.18);color:#190B2D;font:13px/1.45 'Google Sans',Roboto,Arial,sans-serif;text-align:left;cursor:default}.lg-card[hidden]{display:none}
 .lg-card-head{display:flex;align-items:flex-start;gap:9px}.lg-card-head .lg-ticks{margin-top:4px}.lg-card-title{margin:0;font-size:14px;font-weight:400}.lg-card-title strong{font-weight:700}.lg-card-to{display:block;margin-top:2px;overflow:hidden;color:#675E76;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
@@ -27,11 +27,13 @@ function icon(viewBox: string, paths: string[]): SVGSVGElement {
   return svg
 }
 
-/** Thin overlapping double check: light gray = not tracked, gray = tracked send, green = image load observed. */
+/** Double check: both gray by default, first green once a tracked send is confirmed, both green once an image load is observed. */
 function ticks(state: TickState): HTMLElement {
   const span = document.createElement('span')
   span.className = `lg-ticks ${state}`
-  span.append(icon('0 0 20 12', ['M1.5 6.3l3.3 3.3L11.4 3', 'M8.6 8.1l1.5 1.5L16.6 3']))
+  const svg = icon('0 0 20 12', ['M1.5 6.3l3.3 3.3L11.4 3', 'M8.6 8.1l1.5 1.5L16.6 3'])
+  svg.querySelector('path')?.setAttribute('class', 'lg-tick-first')
+  span.append(svg)
   return span
 }
 
