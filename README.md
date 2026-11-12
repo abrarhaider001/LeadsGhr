@@ -57,7 +57,7 @@ Legacy web, API, and worker folders remain inactive reference code. `apps/extens
 
 ## Gmail tracking extension
 
-Open **Email Tracking → Get Chrome extension** in the desktop app to save the ZIP and view Chrome installation steps. The source build is `pnpm --filter @leadsghr/extension build`. The extension displays a tracking control in Gmail compose, a LeadsGhr toolbar entry, gray or green double ticks in matched sent rows with a hover card showing observed image-load counts and times, an observed-load history, and Chrome notifications for new loads. Gmail's image cache can hide repeat opens, so counts are observed loads, not exact opens. Real recipient-side loads require deploying the included public HTTPS tracking function and configuring its endpoint in extension settings. See the [Email Tracking guide](docs/EMAIL_TRACKING_README.md) for setup, behavior, and limits.
+Open **Email Tracking → Get Chrome extension** in the desktop app to save the ZIP and view Chrome installation steps. The source build is `pnpm --filter @leadsghr/extension build`. The extension displays a tracking control in Gmail compose, a LeadsGhr toolbar entry, gray or purple double ticks in matched sent rows with a hover card showing observed image-load counts and times, an observed-load history, and Chrome notifications for new loads. Gmail's image cache can hide repeat opens, so counts are observed loads, not exact opens. Real recipient-side loads require deploying the included public HTTPS tracking function and configuring its endpoint in extension settings. See the [Email Tracking guide](docs/EMAIL_TRACKING_README.md) for setup, behavior, and limits.
 
 ## Run the desktop app
 

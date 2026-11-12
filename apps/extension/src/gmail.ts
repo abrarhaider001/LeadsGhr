@@ -4,7 +4,7 @@ const observedLoads = (count: number): string => count ? `${count} image load${c
 
 const css = document.createElement('style')
 css.textContent = `.lg-track-button{border:1px solid #dadce0;background:#fff;border-radius:7px;padding:5px 9px;cursor:pointer;font:12px Arial;color:#202124}.lg-track-button.on{color:#5B12C9;border-color:#5B12C9}.lg-track-banner{display:flex;align-items:center;gap:8px;margin:8px 0;padding:6px 8px;background:#f6f2ff;border-radius:7px;font:12px Arial;color:#352254}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 5px;padding:5px;border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:#f1eef8}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}
-.lg-ticks{display:inline-flex;align-items:center;flex:none}.lg-ticks svg{display:block;width:20px;height:12px;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-ticks.sent .lg-tick-first,.lg-ticks.loaded path{stroke:#1E8E3E}
+.lg-ticks{display:inline-flex;align-items:center;flex:none}.lg-ticks svg{display:block;width:20px;height:12px;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-ticks.sent .lg-tick-first,.lg-ticks.loaded path{stroke:#5B12C9}
 .lg-track-row{display:inline-flex;align-items:center;margin-right:8px;padding:2px 3px;border-radius:5px;cursor:pointer;vertical-align:middle}.lg-track-row:hover,.lg-track-row[aria-expanded=true]{background:rgba(32,33,36,.07)}.lg-track-row:focus-visible{outline:2px solid #29CBEA;outline-offset:1px}
 .lg-card{position:fixed;z-index:2147483000;box-sizing:border-box;width:310px;max-width:calc(100vw - 16px);padding:14px 16px 16px;border:1px solid #DFD9EC;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(25,11,45,.18);color:#190B2D;font:13px/1.45 'Google Sans',Roboto,Arial,sans-serif;text-align:left;cursor:default}.lg-card[hidden]{display:none}
 .lg-card-head{display:flex;align-items:flex-start;gap:9px}.lg-card-head .lg-ticks{margin-top:4px}.lg-card-title{margin:0;font-size:14px;font-weight:400}.lg-card-title strong{font-weight:700}.lg-card-to{display:block;margin-top:2px;overflow:hidden;color:#675E76;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
@@ -27,7 +27,7 @@ function icon(viewBox: string, paths: string[]): SVGSVGElement {
   return svg
 }
 
-/** Double check: both gray by default, first green once a tracked send is confirmed, both green once an image load is observed. */
+/** Double check: both gray by default, first purple once a tracked send is confirmed, both purple once an image load is observed. */
 function ticks(state: TickState): HTMLElement {
   const span = document.createElement('span')
   span.className = `lg-ticks ${state}`
@@ -162,6 +162,37 @@ function rowLabel(record: RecordEntry | undefined): string {
   return `Tracked message sent; ${observedLoads(record.loads)}. Show tracking details.`
 }
 
+// A Gmail list row is matched to a tracked message by subject AND sent time. Matching by subject
+// alone made every row with a repeated subject (e.g. several "test subject" emails) show the newest
+// tracked message's ticks and counts, including rows that were never tracked.
+const MATCH_WINDOW_MS = 3 * 60000
+
+/** Full send time from the row's date cell; Gmail puts it in a title such as "Thu, Nov 12, 2026, 4:18 PM". */
+function rowTime(row: HTMLElement): number | null {
+  for (const span of row.querySelectorAll<HTMLElement>('td.xW span[title], span[title]')) {
+    const title = span.getAttribute('title') ?? ''
+    if (!/\d{4}/.test(title) || !/\d{1,2}[:.]\d{2}/.test(title)) continue
+    const parsed = Date.parse(title.replace(/[  ]/g, ' ').replace(/\s+at\s+/i, ' '))
+    if (!Number.isNaN(parsed)) return parsed
+  }
+  return null
+}
+
+function matchRecord(row: HTMLElement, text: string): RecordEntry | undefined {
+  const candidates = records.filter(item => item.subject && text.includes(item.subject.toLowerCase()))
+  if (!candidates.length) return undefined
+  const time = rowTime(row)
+  // Without a readable time, only an unambiguous subject is safe to match.
+  if (time === null) return candidates.length === 1 ? candidates[0] : undefined
+  let best: RecordEntry | undefined
+  let bestGap = Infinity
+  for (const item of candidates) {
+    const gap = Math.abs(item.sentAt - time)
+    if (gap < bestGap) { best = item; bestGap = gap }
+  }
+  return bestGap <= MATCH_WINDOW_MS ? best : undefined
+}
+
 function decorateSentRows(): void {
   const sentView = location.hash.startsWith('#sent') || document.querySelector<HTMLInputElement>('input[aria-label="Search mail"]')?.value?.includes('in:sent')
   if (!sentView || !defaultTrackingEnabled) { document.querySelectorAll('.lg-track-row').forEach(node => node.remove()); hideCard(); return }
@@ -169,7 +200,7 @@ function decorateSentRows(): void {
     const cells = row.querySelectorAll<HTMLElement>('td')
     if (cells.length < 4) continue
     const text = row.innerText.toLowerCase()
-    const record = records.find(item => item.subject && text.includes(item.subject.toLowerCase()) && Math.abs(Date.now() - item.sentAt) < 90 * 86400000)
+    const record = matchRecord(row, text)
     const old = row.querySelector<HTMLElement>('.lg-track-row')
     const state = record ? `${record.id}:${record.sent ? 1 : 0}:${record.loads}` : 'untracked'
     if (old?.dataset.state === state) continue
@@ -304,8 +335,18 @@ function positionCard(target: HTMLElement, anchor: HTMLElement): void {
   target.style.top = `${top}px`
 }
 
+// Opening a card asks the background worker for fresh counts (at most every 20 s);
+// the open card re-renders when the stored records change.
+let lastCardRefresh = 0
+function requestFreshCounts(): void {
+  if (Date.now() - lastCardRefresh < 20000) return
+  lastCardRefresh = Date.now()
+  void chrome.runtime.sendMessage({ kind: 'tracking:refresh' }).catch(() => undefined)
+}
+
 function showCard(anchor: HTMLElement): void {
   cancelHide()
+  if (anchor.dataset.recordId) requestFreshCounts()
   const target = ensureCard()
   if (cardAnchor && cardAnchor !== anchor) cardAnchor.setAttribute('aria-expanded', 'false')
   cardAnchor = anchor
