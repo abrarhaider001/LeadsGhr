@@ -12,7 +12,7 @@ function StepIcon({ kind }: { kind: 'download' | 'chrome' | 'mail' }) {
 }
 
 const steps = [
-  { number: '01', kind: 'download' as const, title: 'Download and extract', details: <>Save the ZIP, then extract it to a permanent folder. Chrome loads the extracted files, not the ZIP itself.</> },
+  { number: '01', kind: 'download' as const, title: 'Download and extract', details: <>Save the ZIP to <code>C:\LeadsGhr\extensions</code>, then extract it to <code>C:\LeadsGhr\extensions\leadsghr-mail-tracking</code>. Chrome loads the extracted files, not the ZIP itself. Reuse this folder for updates so your settings are kept.</> },
   { number: '02', kind: 'chrome' as const, title: 'Load it in Chrome', details: <>Open <code>chrome://extensions</code>, turn on <strong>Developer mode</strong>, select <strong>Load unpacked</strong>, then choose the folder containing <code>manifest.json</code>.</> },
   { number: '03', kind: 'mail' as const, title: 'Connect and try it', details: <>In extension settings, enter your deployed public HTTPS tracking endpoint and registration key. Save, reload Gmail, then compose with Tracking on.</> },
 ]

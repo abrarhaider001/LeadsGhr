@@ -12,6 +12,12 @@ try {
   if (Test-Path -LiteralPath $archivePath) { Remove-Item -LiteralPath $archivePath -Force }
   Compress-Archive -Path (Join-Path $distRoot '*') -DestinationPath $archivePath
   Write-Output "Created $archivePath"
+  # Install copy for Chrome: same folder the desktop app's download dialog opens (apps/desktop/src/paths.ts).
+  $systemDrive = if ($env:SystemDrive) { $env:SystemDrive } else { 'C:' }
+  $installRoot = Join-Path "$systemDrive\" 'LeadsGhr\extensions'
+  New-Item -ItemType Directory -Force -Path $installRoot | Out-Null
+  Copy-Item -LiteralPath $archivePath -Destination (Join-Path $installRoot 'leadsghr-mail-tracking.zip') -Force
+  Write-Output "Copied to $(Join-Path $installRoot 'leadsghr-mail-tracking.zip')"
 } finally {
   Pop-Location
 }

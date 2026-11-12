@@ -14,7 +14,7 @@ The Discovery tools sidebar has separate Email Filtering, Email Validation, and 
 
 ## Saved crawl runs and exports
 
-Crawl Results saves each filtered row to a dedicated local SQLite run, advances its saved query index after each completed search, and writes a CSV to Documents/LeadsGhr/exports at stop or completion. The run records selected niches, states, first and last selected state numbers, timestamps, and progress. Pipeline runs additionally save every queued website URL and its page status, so an interrupted run can resume unfinished pages. The CSV includes niche, run date and time (UTC), business, website, phone, location, address, Maps URL, source, and emails. A stopped run can be resumed from Pipeline, Runs, or Exports. Dashboard displays saved runs in one Latest pipelines table with export actions. Exports shows run and file history with entry counts, file sizes and paths, plus re-export actions.
+Crawl Results saves each filtered row to a dedicated local SQLite run, advances its saved query index after each completed search, and writes a CSV to `C:\LeadsGhr\exports` at stop or completion. The run records selected niches, states, first and last selected state numbers, timestamps, and progress. Pipeline runs additionally save every queued website URL and its page status, so an interrupted run can resume unfinished pages. The CSV includes niche, run date and time (UTC), business, website, phone, location, address, Maps URL, source, and emails. A stopped run can be resumed from Pipeline, Runs, or Exports. Dashboard displays saved runs in one Latest pipelines table with export actions. Exports shows run and file history with entry counts, file sizes and paths, plus re-export actions.
 
 ## Pipeline and Crawl Results
 

@@ -4,7 +4,7 @@
 
 Click the LeadsGhr icon in Chrome's toolbar to open a compact popup. **Tracking report** shows locally stored message counts, total observed image loads, up to three recent messages, and a Refresh counts action. Each message reads, for example, **1 image load observed** with the last observed time; select a message with loads to expand its observed-load history. **Settings** lets you turn tracking on or off by default for Gmail drafts, turn image-load notifications on or off, and shows whether an endpoint and registration key are present. **Open full settings** opens the existing page for the public HTTPS endpoint, registration key, and complete tracked-message list. The popup does not add campaigns or other features from the visual reference. The preference is stored in Chrome and updates the Gmail compose control; an individual draft can still be toggled separately.
 
-The extension ZIP is available from **Email Tracking → Get Chrome extension → Download extension ZIP** in the desktop app. Extract it, open `chrome://extensions`, enable **Developer mode**, select **Load unpacked**, and choose the extracted folder containing `manifest.json`. The same build artifact is at `apps/extension/leadsghr-mail-tracking.zip`.
+The extension ZIP is available from **Email Tracking → Get Chrome extension → Download extension ZIP** in the desktop app. The save dialog opens in `C:\LeadsGhr\extensions`. Extract the ZIP to `C:\LeadsGhr\extensions\leadsghr-mail-tracking`, open `chrome://extensions`, enable **Developer mode**, select **Load unpacked**, and choose that folder. For updates, extract into the same folder and select **Reload**: Chrome ties an unpacked extension's ID, and therefore its saved settings and records, to the folder path. The same build artifact is at `apps/extension/leadsghr-mail-tracking.zip`.
 
 The install page places a direct ZIP download button beside the introduction. Three setup cards explain extraction, loading the folder into Chrome, and configuring the public endpoint before reloading Gmail. The download action reports the saved ZIP path or cancellation. Use the back button to return to Email Tracking.
 
@@ -27,7 +27,7 @@ To test: install the extracted extension, configure its endpoint/key, reload Gma
 
 The endpoint ignores image loads until after Gmail sends and the extension arms the token, plus a short delay to reduce compose-time false opens. Google or other mail image proxies can cache or prefetch images; therefore a load count is **image requests observed**, not a reliable unique-person or read count. If images are blocked, opens may be missed. Some Gmail layouts or send methods may not trigger the compose integration. The extension has not been manually exercised in a live Gmail session; verify a test send before relying on it.
 
-Rebuild the ZIP after source changes on Windows with `pnpm.cmd build:extension`. This builds `apps/extension/dist` and archives its contents to `apps/extension/leadsghr-mail-tracking.zip`. Restart or reload the unpacked extension in Chrome after replacing its files.
+Rebuild the ZIP after source changes on Windows with `pnpm.cmd build:extension`. This builds `apps/extension/dist` and archives its contents to `apps/extension/leadsghr-mail-tracking.zip`, then copies that ZIP to `C:\LeadsGhr\extensions\leadsghr-mail-tracking.zip`. Restart or reload the unpacked extension in Chrome after replacing its files.
 
 ## Local test
 

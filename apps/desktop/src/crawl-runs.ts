@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { basename, join } from 'node:path'
 import Database from 'better-sqlite3'
 import { crawlRowsToCsv } from '@leadsghr/export'
+import { leadsGhrExportsDirectory } from './paths'
 import { filterEmails } from '@leadsghr/quality'
 import { createCrawlRunSchema, crawlRunIdSchema, crawlRunProgressSchema, crawlRunRowInputSchema, type CrawlExport, type CrawlRow, type CrawlRunDetail, type CrawlRunSummary, type CreateCrawlRun } from '@leadsghr/schemas'
 
@@ -123,13 +124,14 @@ export function createCrawlRunStore(db: Database.Database) {
       const niche = (criteria.selectedNiches[0] ?? 'crawl').normalize('NFKD').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 45) || 'crawl'
       const stamp = run.started_at.replace(/[-:]/g, '').replace('T', '-').slice(0, 15)
       const fileName = `${niche}${criteria.selectedNiches.length > 1 ? `-plus-${criteria.selectedNiches.length - 1}` : ''}-${stamp}-${exportId.slice(0, 8)}.csv`
-      const directory = join(app.getPath('documents'), 'LeadsGhr', 'exports')
+      const directory = leadsGhrExportsDirectory()
       let path = join(directory, fileName)
+      await mkdir(directory, { recursive: true })
       if (saveAs) {
         const selection = await dialog.showSaveDialog(owner ?? BrowserWindow.getFocusedWindow()!, { title: 'Export crawl results', defaultPath: path, filters: [{ name: 'CSV files', extensions: ['csv'] }] })
         if (selection.canceled || !selection.filePath) return null
         path = selection.filePath
-      } else await mkdir(directory, { recursive: true })
+      }
       await writeFile(path, bytes)
       const item: CrawlExport = { id: exportId, runId: id, fileName: basename(path), filePath: path, fileSize: bytes.byteLength, entryCount: entryRows.length, exportedAt: new Date().toISOString() }
       db.prepare('INSERT INTO crawl_exports (id,run_id,file_name,file_path,file_size,entry_count,exported_at,csv_bytes) VALUES (?,?,?,?,?,?,?,?)').run(item.id, item.runId, item.fileName, item.filePath, item.fileSize, item.entryCount, item.exportedAt, Buffer.from(bytes))
@@ -139,7 +141,8 @@ export function createCrawlRunStore(db: Database.Database) {
       const previous = db.prepare('SELECT * FROM crawl_exports WHERE id=?').get(crawlRunIdSchema.parse(exportId)) as (StoredExport & { csv_bytes: Buffer | null }) | undefined
       if (!previous) throw new Error('CSV export not found')
       const bytes = previous.csv_bytes ?? await readFile(previous.file_path)
-      const selection = await dialog.showSaveDialog(owner, { title: 'Re-export saved CSV', defaultPath: join(app.getPath('documents'), 'LeadsGhr', 'exports', previous.file_name), filters: [{ name: 'CSV files', extensions: ['csv'] }] })
+      await mkdir(leadsGhrExportsDirectory(), { recursive: true })
+      const selection = await dialog.showSaveDialog(owner, { title: 'Re-export saved CSV', defaultPath: join(leadsGhrExportsDirectory(), previous.file_name), filters: [{ name: 'CSV files', extensions: ['csv'] }] })
       if (selection.canceled || !selection.filePath) return null
       await writeFile(selection.filePath, bytes)
       const item: CrawlExport = { id: randomUUID(), runId: previous.run_id, fileName: basename(selection.filePath), filePath: selection.filePath, fileSize: bytes.byteLength, entryCount: previous.entry_count, exportedAt: new Date().toISOString() }

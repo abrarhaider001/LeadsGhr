@@ -18,7 +18,7 @@ The pnpm workspace includes `apps/desktop`, `apps/extension`, and `packages/*`. 
 
 | Environment | How it is used | Data boundary |
 | --- | --- | --- |
-| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences, SQLite, and local exports |
+| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences and SQLite; CSV exports go to `C:\LeadsGhr\exports` and the extension ZIP to `C:\LeadsGhr\extensions` (`apps/desktop/src/paths.ts`) |
 | Packaged desktop build | `pnpm.cmd build` when packaging is needed | Runs on the user's PC; generated output is not source and stays ignored |
 | Supabase | Account profile schema and optional mail tracking endpoint | Never store extracted leads, crawl observations, queues, exports, message recipients, or subjects |
 | GitHub | `abrarhaider001/LeadsGhr`, with `main` as the owner's branch | Agents commit completed work; pushing (which can trigger the Supabase deploy), releasing, and deploying require the owner's explicit approval |
