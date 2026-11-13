@@ -72,6 +72,25 @@ function threadSubject(): string {
 }
 
 /** A new email has a Subject field; an inline reply inherits the conversation subject. */
+const FIELD_SELECTOR = 'input[name="subjectbox"], input[name="to"], [name="to"], [aria-label^="To"], [email], [data-hovercard-id*="@"]'
+
+/**
+ * Area to read Recipients and Subject from. In Gmail these fields sit above the body/Send block,
+ * outside the smallest area holding both, so widen the area until it includes the Subject field
+ * (or, for an inline reply, recipient chips). Stop before it would contain another message body,
+ * so fields from a second open draft are never read.
+ */
+function fieldScope(compose: Element): Element {
+  let scope = compose
+  while (!scope.querySelector('input[name="subjectbox"]')) {
+    const parent = scope.parentElement
+    if (!parent || parent === document.body || parent.querySelectorAll(BODY_SELECTOR).length > 1) break
+    scope = parent
+    if (scope.matches('[role="dialog"]')) break
+  }
+  return scope.querySelector(FIELD_SELECTOR) ? scope : compose
+}
+
 function getComposeSubject(compose: Element): string {
   const typed = compose.querySelector<HTMLInputElement>('input[name="subjectbox"]')?.value?.trim()
   if (typed) return typed
@@ -197,8 +216,9 @@ document.addEventListener('click', async event => {
   const body = resolveBody(compose)
   if (!body) { reportSkipped('LeadsGhr could not find the message body.'); return }
   // Never skip tracking because a field could not be read: the pixel ID identifies the message.
-  const recipient = getRecipient(compose) || '(unknown recipient)'
-  const subject = getComposeSubject(compose) || '(no subject)'
+  const fields = fieldScope(compose)
+  const recipient = getRecipient(fields) || '(unknown recipient)'
+  const subject = getComposeSubject(fields) || '(no subject)'
   console.info('[LeadsGhr] Registering tracking', { recipient, subject, sender: currentAccount() })
   event.preventDefault()
   event.stopImmediatePropagation()
