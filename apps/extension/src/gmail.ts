@@ -612,3 +612,23 @@ chrome.storage.onChanged.addListener((changes, area) => {
 void chrome.storage.local.get('enabled').then(data => { defaultTrackingEnabled = data.enabled !== false; updateComposeDefault(); decorateSentRows() })
 void loadRecords()
 void chrome.runtime.sendMessage({ kind: 'tracking:refresh' }).catch(() => undefined)
+
+
+// ---- Reload Gmail when LeadsGhr is turned off, reloaded, or updated (as Mailsuite does) ----
+// A port to the background worker closes when the extension goes away. If the extension context is
+// gone (chrome.runtime.id is undefined), reload so Gmail drops LeadsGhr's controls and ticks. If only
+// the service worker restarted, the context is intact and the port simply reconnects.
+function watchExtension(): void {
+  let port: chrome.runtime.Port
+  try { port = chrome.runtime.connect({ name: 'leadsghr-gmail' }) } catch { location.reload(); return }
+  port.onDisconnect.addListener(() => {
+    if (!chrome.runtime?.id) { location.reload(); return }
+    window.setTimeout(watchExtension, 1000)
+  })
+}
+watchExtension()
+
+// The background worker pings open Gmail tabs; a tab without a live LeadsGhr script is reloaded.
+chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
+  if (message && typeof message === 'object' && 'kind' in message && message.kind === 'leadsghr:ping') { respond({ ok: true }); return }
+})

@@ -213,6 +213,30 @@ async function refresh(): Promise<void> {
   await Promise.all(notifications)
 }
 
+// ---- Gmail tabs follow the extension's state ----
+// Gmail scripts hold this port so they can tell when the extension is turned off or reloaded.
+chrome.runtime.onConnect.addListener(port => { if (port.name !== 'leadsghr-gmail') port.disconnect() })
+
+/**
+ * After install, update, reload, or turning the extension back on, open Gmail tabs still run no
+ * LeadsGhr script (or an orphaned old one). Reload each fully loaded Gmail tab that does not answer
+ * a ping, so the compose bar and ticks appear without a manual refresh.
+ */
+async function reloadStaleGmailTabs(): Promise<void> {
+  const tabs = await chrome.tabs.query({ url: 'https://mail.google.com/*' })
+  await Promise.all(tabs.map(async tab => {
+    if (tab.id === undefined || tab.status !== 'complete' || tab.discarded) return
+    try {
+      const reply = await chrome.tabs.sendMessage(tab.id, { kind: 'leadsghr:ping' }) as { ok?: boolean } | undefined
+      if (reply?.ok) return
+    } catch { /* no live LeadsGhr script in this tab */ }
+    await chrome.tabs.reload(tab.id).catch(() => undefined)
+  }))
+}
+chrome.runtime.onInstalled.addListener(() => { void reloadStaleGmailTabs() })
+// A worker start after the extension is turned back on fires no install event, so check on every start.
+void reloadStaleGmailTabs().catch(() => undefined)
+
 chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
   if (!message || typeof message !== 'object' || !('kind' in message)) return
   if (message.kind === 'tracking:refresh') { void refresh().then(() => respond({ ok: true }), error => respond({ error: String(error) })); return true }
