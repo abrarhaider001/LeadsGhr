@@ -109,7 +109,32 @@ function updateComposeDefault() {
   })
 }
 
-const trackingEnabledFor = (compose: Element): boolean => compose.querySelector<HTMLElement>('.lg-track-banner')?.dataset.enabled === 'true'
+/**
+ * Whether to track comes only from the popup setting. The "tracking enabled" line is a visual cue;
+ * if Gmail's layout prevents inserting it, messages are still tracked.
+ */
+const trackingEnabledFor = (_compose: Element): boolean => defaultTrackingEnabled
+
+/** Compose area for a Send button: the shared ancestor of body and Send, else the compose dialog (old behaviour). */
+function resolveCompose(send: Element): Element | null {
+  const root = composeRoot(send)
+  if (root) return root
+  return send.closest('[role="dialog"]')
+}
+
+/** Message body for a compose area; if none is inside it, the only visible body on the page. */
+function resolveBody(compose: Element): HTMLElement | null {
+  const inside = getComposeBody(compose)
+  if (inside) return inside
+  const visible = [...document.querySelectorAll<HTMLElement>(BODY_SELECTOR)].filter(node => node.offsetParent !== null)
+  return visible.length === 1 ? visible[0] : null
+}
+
+/** Tell the user (Chrome notification + console) when a message goes out without tracking while tracking is on. */
+function reportSkipped(reason: string): void {
+  console.warn(`[LeadsGhr] Sent without tracking: ${reason}`)
+  void chrome.runtime.sendMessage({ kind: 'tracking:skipped', reason }).catch(() => undefined)
+}
 
 /** Block that holds the Send toolbar: the child of the body/toolbar common ancestor that contains Send. */
 function toolbarBlock(compose: Element, body: Element): Element | null {
@@ -152,7 +177,8 @@ const registering = new WeakSet<Element>()
 document.addEventListener('keydown', event => {
   if (!(event.ctrlKey || event.metaKey) || event.key !== 'Enter') return
   const target = event.target as Element | null
-  const compose = target ? composeRoot(target) : null
+  const dialog = target?.closest('[role="dialog"], form, .M9, .ip, .iN') ?? null
+  const compose = target ? composeRoot(target) ?? dialog : null
   if (!compose || !trackingEnabledFor(compose)) return
   const send = compose.querySelector<HTMLElement>(SEND_SELECTOR)
   if (!send) return
@@ -165,10 +191,11 @@ document.addEventListener('click', async event => {
   const send = target.closest(SEND_SELECTOR)
   if (!send || replaying.has(send)) { if (send) replaying.delete(send); return }
   if (registering.has(send)) { event.preventDefault(); event.stopImmediatePropagation(); return }
-  const compose = composeRoot(send)
-  if (!compose || !trackingEnabledFor(compose)) return
-  const body = getComposeBody(compose)
-  if (!body) { console.warn('[LeadsGhr] Send clicked but no message body was found; sent without tracking.'); return }
+  if (!defaultTrackingEnabled) return
+  const compose = resolveCompose(send)
+  if (!compose) { reportSkipped('LeadsGhr could not find the compose window for this Send button.'); return }
+  const body = resolveBody(compose)
+  if (!body) { reportSkipped('LeadsGhr could not find the message body.'); return }
   // Never skip tracking because a field could not be read: the pixel ID identifies the message.
   const recipient = getRecipient(compose) || '(unknown recipient)'
   const subject = getComposeSubject(compose) || '(no subject)'
@@ -619,11 +646,17 @@ const observer = new MutationObserver(() => {
   scheduled = true
   window.setTimeout(() => {
     scheduled = false
-    findCompose().forEach(decorateCompose)
-    reportOwnViews()
-    decorateConversation()
-    decorateNavbar()
-    decorateSentRows()
+    // Each pass is isolated so an error in one (for example an unexpected Gmail layout) cannot stop the others.
+    const passes: [string, () => void][] = [
+      ['compose', () => findCompose().forEach(decorateCompose)],
+      ['own views', reportOwnViews],
+      ['conversation', decorateConversation],
+      ['navbar', decorateNavbar],
+      ['sent rows', decorateSentRows],
+    ]
+    for (const [name, pass] of passes) {
+      try { pass() } catch (error) { console.error(`[LeadsGhr] ${name} update failed`, error) }
+    }
   }, 250)
 })
 observer.observe(document.documentElement, { childList: true, subtree: true })

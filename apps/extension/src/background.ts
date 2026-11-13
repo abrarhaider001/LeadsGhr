@@ -245,6 +245,12 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
     void (async () => { const config = await settings(); const url = endpointUrl(config.endpoint); url.searchParams.set('id', id); url.searchParams.set('arm', '1'); await requestEndpoint(url, { method: 'POST', headers: { 'X-LeadsGhr-Key': config.registrationKey } }); const { records = [] } = await chrome.storage.local.get('records') as { records?: TrackingRecord[] }; await chrome.storage.local.set({ records: records.map(record => record.id === id ? { ...record, sent: true, sentAt: Date.now() } : record) }); return { ok: true } })().then(respond, error => respond({ error: String(error) }))
     return true
   }
+  if (message.kind === 'tracking:skipped') {
+    const reason = 'reason' in message && typeof message.reason === 'string' ? message.reason.slice(0, 200) : 'Unknown reason.'
+    chrome.notifications.create(`leadsghr-skipped-${Date.now()}`, { type: 'basic', iconUrl: chrome.runtime.getURL('icon.png'), title: 'Email sent without tracking', message: reason, priority: 1 })
+    respond({ ok: true })
+    return
+  }
   if (message.kind === 'tracking:open-report') {
     const id = 'id' in message && typeof message.id === 'string' ? message.id : undefined
     void openReport(id).then(() => respond({ ok: true }), error => respond({ error: String(error) }))
