@@ -86,7 +86,10 @@ function getRecipient(compose: Element): string {
   const account = currentAccount()
   const unique = (values: string[]) => [...new Set(values.filter(value => value.includes('@')))]
   const preferOthers = (values: string[]) => values.some(value => value !== account) ? values.filter(value => value !== account) : values
-  const chips = unique([...compose.querySelectorAll('[email], [data-hovercard-id*="@"]')].map(addressOf))
+  // Recipient chips only: Gmail's address-suggestion dropdown also carries addresses and must be ignored.
+  const chips = unique([...compose.querySelectorAll('[email], [data-hovercard-id*="@"]')]
+    .filter(node => !node.closest('[role="listbox"], [role="option"], [role="menu"], [role="menuitem"]'))
+    .map(addressOf))
   if (chips.length) return preferOthers(chips).join(', ')
   const typed = compose.querySelector<HTMLInputElement>('input[name="to"]')?.value?.trim()
   if (typed) return typed
@@ -165,15 +168,18 @@ document.addEventListener('click', async event => {
   const compose = composeRoot(send)
   if (!compose || !trackingEnabledFor(compose)) return
   const body = getComposeBody(compose)
-  const recipient = getRecipient(compose)
-  const subject = getComposeSubject(compose)
-  if (!body || !recipient || !subject) return
+  if (!body) { console.warn('[LeadsGhr] Send clicked but no message body was found; sent without tracking.'); return }
+  // Never skip tracking because a field could not be read: the pixel ID identifies the message.
+  const recipient = getRecipient(compose) || '(unknown recipient)'
+  const subject = getComposeSubject(compose) || '(no subject)'
+  console.info('[LeadsGhr] Registering tracking', { recipient, subject, sender: currentAccount() })
   event.preventDefault()
   event.stopImmediatePropagation()
   registering.add(send)
   try {
     const result = await chrome.runtime.sendMessage({ kind: 'tracking:register', recipient, subject, sender: currentAccount() }) as { pixelUrl?: string; id?: string; error?: string }
     if (result.error || !result.pixelUrl) throw new Error(result.error || 'Could not create tracking pixel.')
+    console.info('[LeadsGhr] Tracking pixel added', result.id)
     const image = document.createElement('img')
     image.src = result.pixelUrl
     image.width = 1
@@ -192,6 +198,7 @@ document.addEventListener('click', async event => {
       window.setTimeout(armAfterSend, 500)
     }
   } catch (error) {
+    console.error('[LeadsGhr] Tracking failed; message not sent', error)
     const banner = compose.querySelector<HTMLElement>('.lg-track-banner')
     if (banner) {
       banner.classList.add('error')
@@ -259,8 +266,10 @@ const recordRecipients = (item: RecordEntry): string[] => item.recipient.split('
  */
 function matchRecord(row: HTMLElement, text: string, used: Set<string>): RecordEntry | undefined {
   const addresses = rowRecipients(row)
-  const candidates = records.filter(item => !used.has(item.id) && normalizeSubject(item.subject) && text.includes(normalizeSubject(item.subject)) &&
-    (!addresses.size || recordRecipients(item).some(address => addresses.has(address))))
+  const bySubject = records.filter(item => !used.has(item.id) && normalizeSubject(item.subject) && text.includes(normalizeSubject(item.subject)))
+  // The recipient only narrows same-subject candidates; a recipient read differently (or unknown) never blocks a match.
+  const byRecipient = addresses.size ? bySubject.filter(item => recordRecipients(item).some(address => addresses.has(address))) : []
+  const candidates = byRecipient.length ? byRecipient : bySubject
   if (!candidates.length) return undefined
   const time = rowTime(row)
   // Without a readable time, only an unambiguous subject is safe to match.
