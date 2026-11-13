@@ -141,6 +141,8 @@ const OWN_VIEW_AFTER_MS = 45000
 // Loads this soon after sending are automatic, not opens: Gmail holds a sent message for up to
 // 30 s (Undo Send) and Google or security scanners can fetch its images around delivery.
 const AUTOMATIC_FETCH_WINDOW_MS = 30000
+// Loads within this time of the previous counted load belong to the same open.
+const SAME_OPEN_MS = 60000
 const isAutomaticLoad = (at: string, sentAt: number): boolean => Date.parse(at) - sentAt < AUTOMATIC_FETCH_WINDOW_MS
 const isOwnLoad = (at: string, views: number[]): boolean => {
   const time = Date.parse(at)
@@ -202,9 +204,19 @@ async function refresh(): Promise<void> {
     if (!update) return record
     // Remove loads caused by the sender opening the email in their own Gmail.
     const ownEvents = new Set(record.ownEvents ?? [])
-    // Discount the sender's own views and automatic fetches right after sending.
-    if (update.events) for (const event of update.events) {
-      if (isAutomaticLoad(event, record.sentAt) || (record.ownViews?.length && isOwnLoad(event, record.ownViews))) ownEvents.add(event)
+    // Discounted loads (stored as ownEvents): the sender's own views, automatic fetches right after
+    // sending, and repeat fetches within a minute of a counted load (one open often fetches the image
+    // several times, e.g. opening the email and then writing a reply that shows the quote).
+    if (update.events) {
+      for (const event of update.events) {
+        if (isAutomaticLoad(event, record.sentAt) || (record.ownViews?.length && isOwnLoad(event, record.ownViews))) ownEvents.add(event)
+      }
+      let lastCounted = -Infinity
+      for (const event of update.events.filter(item => !ownEvents.has(item)).sort((a, b) => Date.parse(a) - Date.parse(b))) {
+        const time = Date.parse(event)
+        if (time - lastCounted < SAME_OPEN_MS) ownEvents.add(event)
+        else lastCounted = time
+      }
     }
     const loads = Math.max(0, update.loads - ownEvents.size)
     const events = update.events ? update.events.filter(event => !ownEvents.has(event)) : record.events

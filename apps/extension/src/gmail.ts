@@ -5,7 +5,7 @@ const observedLoads = (count: number): string => count ? `${count} image load${c
 const css = document.createElement('style')
 css.textContent = `.lg-track-banner{margin:0;padding:6px 16px 2px;font:12px/1.4 'Google Sans',Roboto,Arial,sans-serif;color:#5B12C9}.lg-track-banner[hidden]{display:none}.lg-track-banner.error{color:#B3261E}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 5px;padding:5px;border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:#f1eef8}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}
 .lg-ticks{display:inline-flex;align-items:center;flex:none}.lg-ticks svg{display:block;width:20px;height:12px;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-ticks.sent .lg-tick-first,.lg-ticks.loaded path{stroke:#5B12C9}
-.lg-track-row{display:inline-flex;align-items:center;margin-right:8px;padding:2px 3px;border-radius:5px;cursor:pointer;vertical-align:middle}.lg-track-row:hover,.lg-track-row[aria-expanded=true]{background:rgba(32,33,36,.07)}.lg-track-row:focus-visible{outline:2px solid #29CBEA;outline-offset:1px}.lg-msg-ticks{margin:0 4px 0 8px}
+.lg-track-row{display:inline-flex;align-items:center;margin-right:8px;padding:2px 3px;border-radius:5px;cursor:pointer;vertical-align:middle}.lg-track-row:hover,.lg-track-row[aria-expanded=true]{background:rgba(32,33,36,.07)}.lg-track-row:focus-visible{outline:2px solid #29CBEA;outline-offset:1px}.lg-msg-ticks{margin:0 4px 0 8px}.lg-hot{margin-left:5px;padding:1px 6px;border-radius:9px;background:#5B12C9;color:#fff;font:700 9px/1.5 'Google Sans',Roboto,Arial,sans-serif;letter-spacing:.06em}
 .lg-card{position:fixed;z-index:2147483000;box-sizing:border-box;width:310px;max-width:calc(100vw - 16px);padding:14px 16px 16px;border:1px solid #DFD9EC;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(25,11,45,.18);color:#190B2D;font:13px/1.45 'Google Sans',Roboto,Arial,sans-serif;text-align:left;cursor:default}.lg-card[hidden]{display:none}
 .lg-card-head{display:flex;align-items:flex-start;gap:9px}.lg-card-head .lg-ticks{margin-top:4px}.lg-card-title{margin:0;font-size:14px;font-weight:400}.lg-card-title strong{font-weight:700}.lg-card-to{display:block;margin-top:2px;overflow:hidden;color:#675E76;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
 .lg-card-row{display:flex;align-items:center;gap:7px;margin-top:9px;font-size:12px}.lg-card-row svg{flex:none;width:16px;height:16px;fill:none;stroke:#675E76;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-card-row strong{font-weight:700}
@@ -233,6 +233,9 @@ document.addEventListener('click', async event => {
     image.height = 1
     image.alt = ''
     image.style.cssText = 'width:1px;height:1px;opacity:0.01'
+    // Replies and forwards quote earlier messages together with their tracking images. Remove those
+    // so opening this message does not count as another open of the earlier email.
+    for (const quoted of body.querySelectorAll<HTMLImageElement>('img')) if (PIXEL_ID_PATTERN.test(quoted.src)) quoted.remove()
     body.append(image)
     replaying.add(send)
     ;(send as HTMLElement).click()
@@ -349,6 +352,9 @@ function decorateSentRows(): void {
   }
 }
 
+/** More loads than this marks an email HOT beside its ticks. */
+const HOT_LOADS = 5
+
 const indicatorState = (record: RecordEntry | undefined): string => record ? `${record.id}:${record.sent ? 1 : 0}:${record.loads}` : 'untracked'
 
 /** Focusable double-check button that opens the details card; used in the Sent list and in conversations. */
@@ -363,6 +369,12 @@ function makeIndicator(record: RecordEntry | undefined, placement: 'lg-list-tick
   indicator.setAttribute('aria-expanded', 'false')
   indicator.setAttribute('aria-label', rowLabel(record))
   indicator.append(ticks(tickState(record)))
+  if (record && record.loads > HOT_LOADS) {
+    const hot = document.createElement('span')
+    hot.className = 'lg-hot'
+    hot.textContent = 'HOT'
+    indicator.append(hot)
+  }
   bindCardTrigger(indicator)
   return indicator
 }
