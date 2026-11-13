@@ -3,7 +3,7 @@ type TickState = 'untracked' | 'sent' | 'loaded'
 const observedLoads = (count: number): string => count ? `${count} image load${count === 1 ? '' : 's'} observed` : 'No image load observed yet'
 
 const css = document.createElement('style')
-css.textContent = `.lg-track-button{border:1px solid #dadce0;background:#fff;border-radius:7px;padding:5px 9px;cursor:pointer;font:12px Arial;color:#202124}.lg-track-button.on{color:#5B12C9;border-color:#5B12C9}.lg-track-banner{display:flex;align-items:center;gap:8px;margin:8px 0;padding:6px 8px;background:#f6f2ff;border-radius:7px;font:12px Arial;color:#352254}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 5px;padding:5px;border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:#f1eef8}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}
+css.textContent = `.lg-track-banner{margin:0;padding:6px 16px 2px;font:12px/1.4 'Google Sans',Roboto,Arial,sans-serif;color:#5B12C9}.lg-track-banner[hidden]{display:none}.lg-track-banner.error{color:#B3261E}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 5px;padding:5px;border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:#f1eef8}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}
 .lg-ticks{display:inline-flex;align-items:center;flex:none}.lg-ticks svg{display:block;width:20px;height:12px;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.lg-ticks.sent .lg-tick-first,.lg-ticks.loaded path{stroke:#5B12C9}
 .lg-track-row{display:inline-flex;align-items:center;margin-right:8px;padding:2px 3px;border-radius:5px;cursor:pointer;vertical-align:middle}.lg-track-row:hover,.lg-track-row[aria-expanded=true]{background:rgba(32,33,36,.07)}.lg-track-row:focus-visible{outline:2px solid #29CBEA;outline-offset:1px}.lg-msg-ticks{margin:0 4px 0 8px}
 .lg-card{position:fixed;z-index:2147483000;box-sizing:border-box;width:310px;max-width:calc(100vw - 16px);padding:14px 16px 16px;border:1px solid #DFD9EC;border-radius:12px;background:#fff;box-shadow:0 10px 30px rgba(25,11,45,.18);color:#190B2D;font:13px/1.45 'Google Sans',Roboto,Arial,sans-serif;text-align:left;cursor:default}.lg-card[hidden]{display:none}
@@ -95,41 +95,53 @@ function getRecipient(compose: Element): string {
 }
 
 let defaultTrackingEnabled = true
+const BANNER_TEXT = 'LeadsGhr tracking enabled'
+
+/** Tracking follows the popup's "Tracking by default" switch; when it is off the line is hidden and mail is sent untracked. */
 function updateComposeDefault() {
   document.querySelectorAll<HTMLElement>('.lg-track-banner').forEach(banner => {
-    const toggle = banner.querySelector<HTMLButtonElement>('.lg-track-button')
-    const label = banner.querySelector<HTMLElement>('span:nth-child(2)')
-    if (!toggle || !label) return
-    toggle.setAttribute('aria-pressed', String(defaultTrackingEnabled))
-    toggle.classList.toggle('on', defaultTrackingEnabled)
-    toggle.textContent = defaultTrackingEnabled ? 'Tracking on' : 'Tracking off'
-    label.textContent = defaultTrackingEnabled ? 'LeadsGhr tracking is on · a tiny image will be added when you send' : 'LeadsGhr tracking is off for this message'
+    banner.dataset.enabled = String(defaultTrackingEnabled)
+    banner.hidden = !defaultTrackingEnabled
+    banner.textContent = BANNER_TEXT
   })
 }
 
+const trackingEnabledFor = (compose: Element): boolean => compose.querySelector<HTMLElement>('.lg-track-banner')?.dataset.enabled === 'true'
+
+/** Block that holds the Send toolbar: the child of the body/toolbar common ancestor that contains Send. */
+function toolbarBlock(compose: Element, body: Element): Element | null {
+  const send = compose.querySelector(SEND_SELECTOR)
+  if (!send) return null
+  let block: Element | null = send
+  while (block?.parentElement && !block.parentElement.contains(body)) block = block.parentElement
+  return block?.parentElement ? block : null
+}
+
+/**
+ * Show "LeadsGhr tracking enabled" at the bottom of the compose window, just above the Send toolbar.
+ * It sits outside the editable message body, so it is never part of the sent email.
+ */
 function decorateCompose(compose: Element): void {
   if (compose.querySelector('.lg-track-banner')) return
   const body = getComposeBody(compose)
   if (!body) return
+  const toolbar = toolbarBlock(compose, body)
   const banner = document.createElement('div')
   banner.className = 'lg-track-banner'
-  banner.append(ticks('sent'))
-  const label = document.createElement('span')
-  label.textContent = defaultTrackingEnabled ? 'LeadsGhr tracking is on · a tiny image will be added when you send' : 'LeadsGhr tracking is off for this message'
-  const toggle = document.createElement('button')
-  toggle.type = 'button'
-  toggle.className = `lg-track-button${defaultTrackingEnabled ? ' on' : ''}`
-  toggle.textContent = defaultTrackingEnabled ? 'Tracking on' : 'Tracking off'
-  toggle.setAttribute('aria-pressed', String(defaultTrackingEnabled))
-  toggle.addEventListener('click', () => {
-    const on = toggle.getAttribute('aria-pressed') !== 'true'
-    toggle.setAttribute('aria-pressed', String(on))
-    toggle.classList.toggle('on', on)
-    toggle.textContent = on ? 'Tracking on' : 'Tracking off'
-    label.textContent = on ? 'LeadsGhr tracking is on · a tiny image will be added when you send' : 'LeadsGhr tracking is off for this message'
-  })
-  banner.append(label, toggle)
-  body.parentElement?.insertBefore(banner, body)
+  banner.setAttribute('role', 'status')
+  banner.dataset.enabled = String(defaultTrackingEnabled)
+  banner.hidden = !defaultTrackingEnabled
+  banner.textContent = BANNER_TEXT
+  if (!toolbar) { body.after(banner); return }
+  // Gmail lays the compose window out as table rows; keep the markup valid when the toolbar is a row.
+  if (toolbar.tagName === 'TR') {
+    const row = document.createElement('tr')
+    const cell = document.createElement('td')
+    cell.colSpan = 99
+    cell.append(banner)
+    row.append(cell)
+    toolbar.before(row)
+  } else toolbar.before(banner)
 }
 
 const replaying = new WeakSet<Element>()
@@ -138,7 +150,7 @@ document.addEventListener('keydown', event => {
   if (!(event.ctrlKey || event.metaKey) || event.key !== 'Enter') return
   const target = event.target as Element | null
   const compose = target ? composeRoot(target) : null
-  if (!compose || compose.querySelector('.lg-track-button')?.getAttribute('aria-pressed') !== 'true') return
+  if (!compose || !trackingEnabledFor(compose)) return
   const send = compose.querySelector<HTMLElement>(SEND_SELECTOR)
   if (!send) return
   event.preventDefault()
@@ -151,8 +163,7 @@ document.addEventListener('click', async event => {
   if (!send || replaying.has(send)) { if (send) replaying.delete(send); return }
   if (registering.has(send)) { event.preventDefault(); event.stopImmediatePropagation(); return }
   const compose = composeRoot(send)
-  if (!compose || !compose.querySelector('.lg-track-banner')) return
-  if (compose.querySelector('.lg-track-button')?.getAttribute('aria-pressed') !== 'true') return
+  if (!compose || !trackingEnabledFor(compose)) return
   const body = getComposeBody(compose)
   const recipient = getRecipient(compose)
   const subject = getComposeSubject(compose)
@@ -181,8 +192,11 @@ document.addEventListener('click', async event => {
       window.setTimeout(armAfterSend, 500)
     }
   } catch (error) {
-    const label = compose.querySelector<HTMLElement>('.lg-track-banner span:nth-child(2)')
-    if (label) label.textContent = `Tracking unavailable: ${String(error)}. Message was not sent; turn tracking off to send without it.`
+    const banner = compose.querySelector<HTMLElement>('.lg-track-banner')
+    if (banner) {
+      banner.classList.add('error')
+      banner.textContent = `LeadsGhr tracking unavailable: ${error instanceof Error ? error.message : String(error)} The message was not sent. Try again, or turn off Tracking by default in the LeadsGhr popup to send without tracking.`
+    }
   } finally { registering.delete(send) }
 }, true)
 
