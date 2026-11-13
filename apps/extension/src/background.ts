@@ -31,13 +31,97 @@ async function requestEndpoint(url: URL, init?: RequestInit): Promise<Response> 
 const REFRESH_ALARM = 'tracking-refresh'
 const NOTIFICATION_PREFIX = 'leadsghr-tracking-'
 
+// Fallback poll for when the realtime connection is down (30 s is Chrome's minimum alarm period).
+const REFRESH_PERIOD_MINUTES = 0.5
+
 async function ensureRefreshAlarm(): Promise<void> {
-  if (!await chrome.alarms.get(REFRESH_ALARM)) await chrome.alarms.create(REFRESH_ALARM, { periodInMinutes: 1 })
+  const existing = await chrome.alarms.get(REFRESH_ALARM)
+  if (existing?.periodInMinutes !== REFRESH_PERIOD_MINUTES) await chrome.alarms.create(REFRESH_ALARM, { periodInMinutes: REFRESH_PERIOD_MINUTES })
 }
-chrome.runtime.onInstalled.addListener(() => { void ensureRefreshAlarm() })
-chrome.runtime.onStartup.addListener(() => { void ensureRefreshAlarm() })
+chrome.runtime.onInstalled.addListener(() => { void ensureRefreshAlarm(); void connectRealtime() })
+chrome.runtime.onStartup.addListener(() => { void ensureRefreshAlarm(); void connectRealtime() })
 void ensureRefreshAlarm()
-chrome.alarms.onAlarm.addListener((alarm) => { if (alarm.name === REFRESH_ALARM) void refresh() })
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== REFRESH_ALARM) return
+  void connectRealtime()
+  void refresh()
+})
+
+// ---- Instant notifications ----
+// The tracking function broadcasts a Supabase Realtime message on every pixel request. While this
+// socket is open, a recipient's open triggers a refresh (and notification) within about a second.
+// Socket traffic every 20 s also keeps the MV3 service worker alive; if Chrome stops it anyway, the
+// 30 s alarm reconnects and polls.
+type RealtimeConfig = { url: string; anonKey: string; topic: string }
+let socket: WebSocket | null = null
+let connecting = false
+let heartbeat: ReturnType<typeof setInterval> | undefined
+let reconnectTimer: ReturnType<typeof setTimeout> | undefined
+let refreshTimer: ReturnType<typeof setTimeout> | undefined
+let reconnectDelay = 2000
+let messageRef = 0
+
+function scheduleRefresh(): void {
+  if (refreshTimer !== undefined) clearTimeout(refreshTimer)
+  // Short delay batches several loads (e.g. Gmail fetching twice) into one refresh.
+  refreshTimer = setTimeout(() => { refreshTimer = undefined; void refresh() }, 400)
+}
+
+function closeRealtime(): void {
+  if (reconnectTimer !== undefined) clearTimeout(reconnectTimer)
+  reconnectTimer = undefined
+  const current = socket
+  socket = null
+  if (heartbeat !== undefined) clearInterval(heartbeat)
+  heartbeat = undefined
+  current?.close()
+}
+
+async function connectRealtime(): Promise<void> {
+  if (connecting || (socket && socket.readyState <= WebSocket.OPEN)) return
+  connecting = true
+  try {
+    const config = await settings()
+    if (!config.endpoint || !config.registrationKey) return
+    const url = endpointUrl(config.endpoint)
+    url.searchParams.set('realtime', '1')
+    const info = await (await requestEndpoint(url, { headers: { 'X-LeadsGhr-Key': config.registrationKey } })).json() as Partial<RealtimeConfig>
+    if (!info.url || !info.anonKey || !info.topic) return
+    const address = new URL('/realtime/v1/websocket', info.url)
+    address.protocol = 'wss:'
+    address.searchParams.set('apikey', info.anonKey)
+    address.searchParams.set('vsn', '1.0.0')
+    const current = new WebSocket(address)
+    socket = current
+    const topic = `realtime:${info.topic}`
+    const send = (message: object) => { if (current.readyState === WebSocket.OPEN) current.send(JSON.stringify({ ...message, ref: String(++messageRef) })) }
+    current.onopen = () => {
+      reconnectDelay = 2000
+      send({ topic, event: 'phx_join', join_ref: '1', payload: { config: { broadcast: { ack: false, self: false }, presence: { key: '' }, postgres_changes: [], private: false }, access_token: info.anonKey } })
+      heartbeat = setInterval(() => send({ topic: 'phoenix', event: 'heartbeat', payload: {} }), 20000)
+    }
+    current.onmessage = (event) => {
+      try {
+        const message = JSON.parse(String(event.data)) as { event?: string; payload?: { event?: string } }
+        if (message.event === 'broadcast' && message.payload?.event === 'load') scheduleRefresh()
+      } catch { /* ignore malformed frames */ }
+    }
+    current.onerror = () => current.close()
+    current.onclose = () => {
+      if (socket !== current) return
+      socket = null
+      if (heartbeat !== undefined) clearInterval(heartbeat)
+      heartbeat = undefined
+      reconnectTimer = setTimeout(() => { reconnectTimer = undefined; void connectRealtime() }, reconnectDelay)
+      reconnectDelay = Math.min(reconnectDelay * 2, 60000)
+    }
+  } catch { /* the 30 s poll keeps working without realtime */ } finally { connecting = false }
+}
+
+void connectRealtime()
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && (changes.endpoint || changes.registrationKey)) { closeRealtime(); void connectRealtime() }
+})
 /** Open the full settings page scrolled to one email in the Email report. */
 async function openReport(id?: string): Promise<void> {
   if (id) await chrome.storage.local.set({ focusEmail: { id, at: Date.now() } })

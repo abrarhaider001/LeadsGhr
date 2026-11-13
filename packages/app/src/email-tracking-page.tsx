@@ -36,7 +36,7 @@ const flow: { kind: IconKind; title: string; body: string }[] = [
   { kind: 'compose', title: 'You compose', body: 'New emails and replies in a conversation show a LeadsGhr bar. Keep Tracking on, or turn it off for one message.' },
   { kind: 'send', title: 'LeadsGhr tags the email', body: 'On Send, the extension creates a unique tracking ID for this email and adds an invisible 1×1 image.' },
   { kind: 'open', title: 'The recipient opens it', body: 'When the email is opened with images shown, the mail app loads that image and the tracking service records the time.' },
-  { kind: 'bell', title: 'You are notified', body: 'Every minute the extension checks for new loads, updates the ticks in Sent, and shows a Chrome notification.' },
+  { kind: 'bell', title: 'You are notified', body: 'The tracking service pushes each load to the extension right away, which updates the ticks and shows a Chrome notification within seconds.' },
 ]
 
 const tickStates: { state: 'untracked' | 'sent' | 'loaded'; title: string; body: string }[] = [
