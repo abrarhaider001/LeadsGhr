@@ -138,6 +138,10 @@ chrome.notifications.onClicked.addListener((notificationId) => {
 // A load whose server time falls in this window around a sender view is treated as the sender's own.
 const OWN_VIEW_BEFORE_MS = 15000
 const OWN_VIEW_AFTER_MS = 45000
+// Loads this soon after sending are automatic, not opens: Gmail holds a sent message for up to
+// 30 s (Undo Send) and Google or security scanners can fetch its images around delivery.
+const AUTOMATIC_FETCH_WINDOW_MS = 30000
+const isAutomaticLoad = (at: string, sentAt: number): boolean => Date.parse(at) - sentAt < AUTOMATIC_FETCH_WINDOW_MS
 const isOwnLoad = (at: string, views: number[]): boolean => {
   const time = Date.parse(at)
   return views.some(view => time >= view - OWN_VIEW_BEFORE_MS && time <= view + OWN_VIEW_AFTER_MS)
@@ -198,7 +202,10 @@ async function refresh(): Promise<void> {
     if (!update) return record
     // Remove loads caused by the sender opening the email in their own Gmail.
     const ownEvents = new Set(record.ownEvents ?? [])
-    if (update.events && record.ownViews?.length) for (const event of update.events) if (isOwnLoad(event, record.ownViews)) ownEvents.add(event)
+    // Discount the sender's own views and automatic fetches right after sending.
+    if (update.events) for (const event of update.events) {
+      if (isAutomaticLoad(event, record.sentAt) || (record.ownViews?.length && isOwnLoad(event, record.ownViews))) ownEvents.add(event)
+    }
     const loads = Math.max(0, update.loads - ownEvents.size)
     const events = update.events ? update.events.filter(event => !ownEvents.has(event)) : record.events
     const firstLoad = !loads ? null : update.firstLoad && !ownEvents.has(update.firstLoad) ? update.firstLoad : events?.[events.length - 1] ?? update.firstLoad
