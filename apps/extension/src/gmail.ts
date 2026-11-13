@@ -436,7 +436,7 @@ function renderCard(target: HTMLElement, record: RecordEntry | undefined): void 
 
   if (!record) {
     title.append(element('strong', '', 'Not tracked by LeadsGhr'))
-    target.append(element('p', 'lg-card-note', 'Only messages sent with LeadsGhr tracking on show image-load activity. Keep Tracking on in the compose window to track new messages.'))
+    target.append(element('p', 'lg-card-note', 'Only messages sent while “LeadsGhr tracking enabled” shows above Send are tracked. Turn on Tracking by default in the LeadsGhr popup to track new messages.'))
     return
   }
   titleBlock.append(element('span', 'lg-card-to', `To ${record.recipient}`))
