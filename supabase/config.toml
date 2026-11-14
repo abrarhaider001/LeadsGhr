@@ -1,0 +1,2 @@
+[functions.mail-tracking]
+verify_jwt = false

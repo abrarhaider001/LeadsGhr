@@ -2,9 +2,9 @@
 
 **Pick a niche. Get the leads.**
 
-LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase is reserved for user authentication and account/profile data; it does not store extracted leads.
+LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase holds account/profile data and, when deployed, opaque email-tracking pixel tokens and image-load counts; it does not store extracted leads.
 
-A separate Chrome extension may be built later for sending emails and manually extracting emails from an opened page. It is not part of this application.
+A companion Gmail tracking extension is available as a downloadable MV3 ZIP from the desktop Email Tracking page. It needs a separately deployed public HTTPS pixel endpoint to observe recipient-side image loads. Manual email extraction in the extension remains planned.
 
 [Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
 
@@ -24,7 +24,7 @@ The sidebar groups Crawler, New Search, Niche Library, and **Email Filtering** u
 
 ### Run history and CSV files
 
-Each run records its name and provider, selected niches and states, first and last selected state numbers, query count, next query position, start and finish times, filtered business rows, and website page queue. After an app restart, in-flight pages return to the queue. **Resume** on Pipeline, Runs, or Exports retries the current Maps query or continues the unfinished website queue. Pipeline's home page lists saved pipelines for resumption or deletion. The automatic CSV is written to `Documents/LeadsGhr/exports` with niche, run date, and time in its filename. It includes the business fields, source, and collected emails. Dashboard shows saved runs in one Latest pipelines table. Runs and Exports show progress, filenames, entry counts, paths, file sizes, and re-export actions. The separate Crawler test remains unsaved.
+Each run records its name and provider, selected niches and states, first and last selected state numbers, query count, next query position, start and finish times, filtered business rows, and website page queue. After an app restart, in-flight pages return to the queue. **Resume** on Pipeline, Runs, or Exports retries the current Maps query or continues the unfinished website queue. Pipeline's home page lists saved pipelines for resumption or deletion. The automatic CSV is written to `C:\LeadsGhr\exports` (on non-Windows systems, `Documents/LeadsGhr/exports`) with niche, run date, and time in its filename. It includes the business fields, source, and collected emails. Dashboard shows saved runs in one Latest pipelines table. Runs and Exports show progress, filenames, entry counts, paths, file sizes, and re-export actions. The separate Crawler test remains unsaved.
 
 ## Responsible use
 
@@ -35,19 +35,29 @@ Collect public data only. Respect robots.txt and polite delays, pause on challen
 - TypeScript, React, Node.js, pnpm workspaces, Turborepo.
 - Electron and electron-vite for the desktop UI; context isolation, disabled Node integration, Zod-validated IPC, electron-builder and electron-updater.
 - Local SQLite through better-sqlite3 for leads, scan history and queued jobs. Exports are files on disk.
-- Supabase Auth and an RLS-protected user profile table for account data only.
+- Supabase Auth and an RLS-protected user profile table for account data; an optional Edge Function stores opaque mail-tracking tokens, image-load counts, and load timestamps.
 - Shared packages: core, extract, crawler, quality, export, schemas, ui, app and platform. Extractors accept HTML strings and use Cheerio and libphonenumber-js.
 
 ## Repository
 
 ```text
 apps/desktop/  Electron main, preload and React renderer
+apps/extension/  Gmail tracking Chrome MV3 extension and downloadable ZIP
 packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
-supabase/     Account/profile-only migration
+supabase/     Account/profile schema and optional mail-tracking function/migration
+.github/workflows/  Supabase deploy: applies migrations and deploys Edge Functions on every branch push
 docs/         Current desktop guides and preserved original specification
 ```
 
-Legacy web, API, worker and extension source folders remain in the repository as inactive reference code. They are excluded from the pnpm workspace and all active scripts.
+Legacy web, API, and worker folders remain inactive reference code. `apps/extension` is an active Gmail tracking build in the pnpm workspace.
+
+## Supabase deployment
+
+`.github/workflows/supabase-deploy.yml` runs on GitHub Actions when a push to any branch changes `supabase/migrations/`, `supabase/functions/`, or `supabase/config.toml`. It applies migrations not yet recorded in the hosted project's migration history (`supabase db push`) and deploys every function in `supabase/functions/` without Docker. It needs the repository secret `SUPABASE_ACCESS_TOKEN` (a Supabase personal access token) and the repository variable `SUPABASE_PROJECT_ID` (the project ref). Function secrets such as `MAIL_TRACKING_REGISTRATION_KEY` stay in the Supabase dashboard. It can also be run manually from the Actions tab, with a dry-run option and a one-time option to record migrations that were already applied by hand in the SQL Editor. There is one hosted project, so the most recent push from any branch is what runs live, and a migration applied from a branch stays applied even if that branch is abandoned. Keep migrations additive and safe to re-run.
+
+## Gmail tracking extension
+
+Open **Email Tracking** in the desktop app to download the ZIP and read how to install the extension and how tracking works. The source build is `pnpm --filter @leadsghr/extension build`. The extension displays a tracking control in Gmail compose, a LeadsGhr toolbar entry, gray or purple double ticks in matched sent rows with a hover card showing observed image-load counts and times, an observed-load history, and Chrome notifications for new loads. Gmail's image cache can hide repeat opens, so counts are observed loads, not exact opens. Real recipient-side loads require deploying the included public HTTPS tracking function and configuring its endpoint in extension settings. See the [Email Tracking guide](docs/EMAIL_TRACKING_README.md) for setup, behavior, and limits.
 
 ## Run the desktop app
 

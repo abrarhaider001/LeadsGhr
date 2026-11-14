@@ -1,6 +1,6 @@
 import type { Lead } from '@leadsghr/schemas'
 
-export type PlatformKind = 'desktop'
+export type PlatformKind = 'desktop' | 'extension'
 export interface StorageAdapter {
   saveLead(lead: Lead): Promise<Lead>
   getLead(orgId: string, id: string): Promise<Lead | null>
