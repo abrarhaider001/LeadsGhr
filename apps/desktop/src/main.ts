@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { readFile, writeFile, copyFile } from 'node:fs/promises'
 import Database from 'better-sqlite3'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, type DesktopPreferences } from '@leadsghr/schemas'
+import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, applyEmailVerifyChecksToPreferences, type DesktopPreferences } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
 import { registerCrawlerTest } from './crawler-test'
@@ -25,7 +25,10 @@ async function readPreferences(): Promise<DesktopPreferences> {
   await preferencesWrite.catch(() => undefined)
   try {
     const raw = JSON.parse(await readFile(join(app.getPath('userData'), 'preferences.json'), 'utf8')) as Record<string, unknown>
-    const preferences = desktopPreferencesSchema.parse({ ...defaultDesktopPreferences, ...raw })
+    const preferences = applyEmailVerifyChecksToPreferences(
+      desktopPreferencesSchema.parse({ ...defaultDesktopPreferences, ...raw }),
+      {},
+    )
     if (/@(?:localhost|.+\.invalid)$/i.test(preferences.emailVerifyMailFrom)) preferences.emailVerifyMailFrom = defaultDesktopPreferences.emailVerifyMailFrom
     if (/^(?:localhost|.*\.invalid)$/i.test(preferences.emailVerifyEhlo)) preferences.emailVerifyEhlo = defaultDesktopPreferences.emailVerifyEhlo
     return { ...preferences, scanPublicWebsites: false }
@@ -157,7 +160,10 @@ app.whenReady().then(async () => {
   })
   ipcMain.handle('leadsghr:preferences:save', async (event, input: unknown) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
-    const preferences = { ...desktopPreferencesSchema.parse(input), scanPublicWebsites: false }
+    const preferences = {
+      ...applyEmailVerifyChecksToPreferences(desktopPreferencesSchema.parse(input), {}),
+      scanPublicWebsites: false,
+    }
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
     return preferences

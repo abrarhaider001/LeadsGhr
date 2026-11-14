@@ -1,4 +1,4 @@
-export type EmailVerifyStatus = 'valid' | 'risky' | 'invalid' | 'unknown'
+export type EmailVerifyStatus = 'valid' | 'risky' | 'invalid'
 
 export type EmailVerifySmtpCheck =
   | 'accepted'
