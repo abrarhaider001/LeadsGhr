@@ -1,6 +1,7 @@
-export { normalizeVerifyEmail } from './normalize.ts'
+export { normalizeVerifyEmail, looseVerifyEmail } from './normalize.ts'
 export { checkDisposable, checkRoleBased } from './risks.ts'
 export { classifyRcpt, classifyMailFrom } from './smtp-classify.ts'
 export type { SmtpClassified } from './smtp-classify.ts'
 export { finalizeResult, scoreChecks, checksComplete, isRetryable } from './finalize.ts'
+export type { EmailVerifyEnabledChecks } from './finalize.ts'
 export type { EmailVerifyResult } from './types.ts'

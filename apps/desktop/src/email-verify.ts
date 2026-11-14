@@ -27,7 +27,19 @@ export function registerEmailVerifyIpc(db: Database.Database) {
     const parsed = emailVerifyRequestSchema.parse(input)
     const mailFrom = /@(?:localhost|.+\.invalid)$/i.test(parsed.mailFrom) ? 'verify@example.com' : parsed.mailFrom
     const ehlo = /^(?:localhost|.*\.invalid)$/i.test(parsed.ehlo) ? 'verify.example.com' : parsed.ehlo
-    const { emails, concurrency, perSession, paceMs } = parsed
+    const {
+      emails,
+      concurrency,
+      perSession,
+      paceMs,
+      checkSyntax,
+      checkDomain,
+      checkMx,
+      checkSmtp,
+      checkDisposable,
+      checkRoleBased,
+      checkCatchAll,
+    } = parsed
     activeJob?.controller.abort()
     const id = randomUUID()
     const controller = new AbortController()
@@ -39,7 +51,7 @@ export function registerEmailVerifyIpc(db: Database.Database) {
         const slots: Array<EmailVerifyResult | undefined> = Array.from({ length: emails.length })
         let completed = 0
         try {
-          if (!await preflight(controller.signal)) {
+          if (checkSmtp && !await preflight(controller.signal)) {
             if (!sender.isDestroyed() && activeJob?.id === id) {
               sender.send('leadsghr:email-verify:event', {
                 id,
@@ -56,7 +68,20 @@ export function registerEmailVerifyIpc(db: Database.Database) {
 
           await verifyPipeline(
             emails,
-            { mailFrom, ehlo, perSession, paceMs, workers: concurrency },
+            {
+              mailFrom,
+              ehlo,
+              perSession,
+              paceMs,
+              workers: concurrency,
+              checkSyntax,
+              checkDomain,
+              checkMx,
+              checkSmtp,
+              checkDisposable,
+              checkRoleBased,
+              checkCatchAll,
+            },
             controller.signal,
             (result, index) => {
               slots[index] = result

@@ -1,3 +1,5 @@
+import { registerSendingRuntime } from './email-sending/runner'
+
 type TrackingRecord = {
   id: string; recipient: string; subject: string; sentAt: number; sent?: boolean
   /** Gmail account that sent the email; used to recognise the sender's own views. */
@@ -172,6 +174,8 @@ async function notifyObservedLoad(record: TrackingRecord, previousLoads: number,
 }
 
 type ObservedUpdate = { loads: number; firstLoad: string | null; lastLoad: string | null; events?: string[] }
+
+registerSendingRuntime()
 
 async function refresh(): Promise<void> {
   const config = await settings()

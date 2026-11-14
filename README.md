@@ -4,13 +4,13 @@
 
 LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase holds account/profile data and, when deployed, opaque email-tracking pixel tokens and image-load counts; it does not store extracted leads.
 
-A companion Gmail tracking extension is available as a downloadable MV3 ZIP from the desktop Email Tracking page. It needs a separately deployed public HTTPS pixel endpoint to observe recipient-side image loads. Manual email extraction in the extension remains planned.
+A companion Gmail mail extension is available as a downloadable MV3 ZIP from the desktop Email Sending and Email Tracking pages. It can send templated CSV ranges through the user's Gmail session and optionally track image loads when a public HTTPS pixel endpoint is configured. Manual email extraction in the extension remains planned.
 
 [Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
 
 ## Pipeline
 
-The **Discovery tools** sidebar also includes **Email Validation** and **Email Spam Check**. Email Validation runs a local SMTP RCPT TO probe (no mail sent) after MX/A lookup and labels addresses Valid, Risky, Invalid, or Unknown; many networks block outbound port 25, so Unknown is common and not overclaimed. Email Spam Check remains a navigation placeholder. Email Filtering remains the local syntax and junk cleanup tool.
+The **Discovery tools** sidebar also includes **Email Validation** and **Email Spam Check**. Email Validation runs a local SMTP RCPT TO probe (no mail sent) after MX/A lookup and labels addresses Valid, Risky, or Invalid. Soft SMTP outcomes (provider hide, block, temp) stay Valid with a reason code. Email Spam Check remains a navigation placeholder. Email Filtering remains the local syntax and junk cleanup tool.
 
 **Deleting a saved pipeline:** The Pipeline page lists previous pipelines with a trash icon. After confirmation, deletion removes that pipeline's SQLite run, business rows, queued pages, and export history. The delete button is unavailable while a pipeline is running; stop it first. CSV files already written to disk are retained.
 
@@ -42,14 +42,14 @@ Collect public data only. Respect robots.txt and polite delays, pause on challen
 
 ```text
 apps/desktop/  Electron main, preload and React renderer
-apps/extension/  Gmail tracking Chrome MV3 extension and downloadable ZIP
+apps/extension/  Gmail mail Chrome MV3 extension (sending + tracking) and downloadable ZIP
 packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
 supabase/     Account/profile schema and optional mail-tracking function/migration
 .github/workflows/  Supabase deploy: applies migrations and deploys Edge Functions on every branch push
 docs/         Current desktop guides and preserved original specification
 ```
 
-Legacy web, API, and worker folders remain inactive reference code. `apps/extension` is an active Gmail tracking build in the pnpm workspace.
+Legacy web, API, and worker folders remain inactive reference code. `apps/extension` is an active Gmail mail build in the pnpm workspace.
 
 ## Supabase deployment
 
@@ -58,6 +58,10 @@ Legacy web, API, and worker folders remain inactive reference code. `apps/extens
 ## Gmail tracking extension
 
 Open **Email Tracking** in the desktop app to download the ZIP and read how to install the extension and how tracking works. The source build is `pnpm --filter @leadsghr/extension build`. The extension displays a tracking control in Gmail compose, a LeadsGhr toolbar entry, gray or purple double ticks in matched sent rows with a hover card showing observed image-load counts and times, an observed-load history, and Chrome notifications for new loads. Gmail's image cache can hide repeat opens, so counts are observed loads, not exact opens. Real recipient-side loads require deploying the included public HTTPS tracking function and configuring its endpoint in extension settings. See the [Email Tracking guide](docs/EMAIL_TRACKING_README.md) for setup, behavior, and limits.
+
+## Gmail email sending
+
+Open **Email Sending** in the desktop app to download the same extension ZIP and read the sending steps. In the extension's full settings, the **Sending** tab loads a subject/body template (with `{{field}}` placeholders), imports a recipient CSV, takes an inclusive From/To range, and sends one message at a time through the open Gmail tab with a polite delay (5–120 seconds) and Pause, Resume, and Cancel. Campaign recipients and bodies stay in the Chrome profile. When tracking is on, each campaign message gets its own tracking pixel like any other Gmail send. See [Email Sending](docs/EMAIL_SENDING_README.md).
 
 ## Run the desktop app
 
@@ -92,7 +96,7 @@ Open **Crawler** in the desktop sidebar, enter a public homepage URL, and click 
 
 ## Profile and preferences
 
-The **Profile** sidebar page has Account and Preferences tabs. The Account tab starts with Abrar Haider and abrar@leedsghr.com as editable local profile details and displays a locally saved generated avatar. The sidebar greets the saved first name. A Reset Password form is visible but inactive until Supabase authentication is connected. Click **Generate new** to replace the avatar and save the new choice. Supabase sign-in is not wired into this desktop build, so no name, email, or plan is invented. Preferences are saved in Electron user data: show or hide the Crawler webpage preview, show Chrome during contractor searches or run it in the background, choose fast niche-name searches or expanded Niche Library terms, show or hide businesses without website URLs (hidden by default), and choose which contractor fields appear in the saved crawl results table (company, website, phone, address, and searched location). Hiding the preview does not stop the Crawler from scrolling and extracting. Crawl results and selected fields are saved locally with their run; Supabase does not receive them.
+The **Profile** sidebar page has Account and Preferences tabs. The Account tab starts with Abrar Haider and abrar@leedsghr.com as editable local profile details and displays a locally saved generated avatar. The sidebar greets the saved first name. A Reset Password form is visible but inactive until Supabase authentication is connected. Click **Generate new** to replace the avatar and save the new choice. Supabase sign-in is not wired into this desktop build, so no name, email, or plan is invented. Preferences are saved in Electron user data: show or hide the Crawler webpage preview, show Chrome during contractor searches or run it in the background, choose fast niche-name searches or expanded Niche Library terms, show or hide businesses without website URLs (hidden by default), choose which contractor fields appear in the saved crawl results table (company, website, phone, address, and searched location), and choose Email Validation confidence checks (Syntax, Domain, MX, SMTP, Disposable, Role-based, Catch-all). Hiding the preview does not stop the Crawler from scrolling and extracting. Crawl results and selected fields are saved locally with their run; Supabase does not receive them.
 
 ## Feature summary
 

@@ -8,11 +8,11 @@ Rules for coding agents working in this repository. LeadsGhr is a desktop applic
 | --- | --- | --- | --- |
 | Desktop app | `apps/desktop/` | Electron on the user's computer and IP | Local SQLite, user-data files, CSV exports |
 | React UI and shared logic | `packages/app/`, `packages/ui/`, other `packages/*` | Electron renderer or reusable TypeScript | No direct database or filesystem access from shared code |
-| Gmail tracking extension | `apps/extension/` | Chrome Manifest V3 | Message metadata in Chrome storage; opaque pixel counts in optional public service |
+| Gmail mail extension | `apps/extension/` | Chrome Manifest V3 | Sending campaigns and tracking metadata in Chrome storage; opaque pixel counts in optional public service |
 | Account and tracking backend | `supabase/migrations/`, `supabase/functions/` | Supabase when deployed | Identity/profile data and opaque mail-tracking tokens/counts |
 | Product documentation | `docs/` | Repository files | Current guides, feature status, and archived specification |
 
-The pnpm workspace includes `apps/desktop`, `apps/extension`, and `packages/*`. `apps/web`, `apps/api`, and `apps/worker` remain inactive reference code. The Gmail extension is a tracking companion; original extension feature requirements remain separate. The feature specification describes intended behavior; `docs/features/FEATURE_STATUS_README.md` distinguishes that from implemented behavior.
+The pnpm workspace includes `apps/desktop`, `apps/extension`, and `packages/*`. `apps/web`, `apps/api`, and `apps/worker` remain inactive reference code. The Gmail extension is a mail companion for templated sending and open tracking; original extension feature requirements remain separate. The feature specification describes intended behavior; `docs/features/FEATURE_STATUS_README.md` distinguishes that from implemented behavior. Campaign recipients and bodies stay in Chrome storage only.
 
 ## 2. Environments
 
@@ -57,7 +57,7 @@ Do not silently rewrite the product to match an old specification. Explain any c
 - `packages/app` owns React screens and UI flow. `packages/ui` owns shared components, fonts, tokens, and styles. `packages/schemas` owns shared contracts. `packages/extract` accepts HTML strings and must remain usable without Node-only modules.
 - The Crawler tab is a temporary, unsaved test. Pipeline runs and their URL queue are persisted locally and resumable. Do not conflate their state or promise that an extracted email is verified.
 - Use the existing light-only theme: Instrument Sans, Monaspace Neon, the tokens in `packages/ui/src/styles.css`, and the brand assets in `public/`. Use the custom dropdown component for dropdowns. Consult `docs/theme/THEME_README.md` before changing visual behavior.
-- Treat inactive web/API/worker folders as reference code. The user explicitly activated `apps/extension` for Gmail open tracking. Keep tracking metadata in Chrome storage and the public pixel store limited to opaque tokens and image-load counts.
+- Treat inactive web/API/worker folders as reference code. The user explicitly activated `apps/extension` for Gmail open tracking and email sending. Keep campaign and tracking metadata in Chrome storage and the public pixel store limited to opaque tokens and image-load counts.
 
 ## 6. Where context lives
 

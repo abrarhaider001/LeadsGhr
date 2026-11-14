@@ -2,13 +2,13 @@
 
 Snapshot: 2026-11-09. This compares the original feature guides with the active Electron desktop source. A partial status means a usable slice exists, but the guide is not fully met. A1 is implemented for the current desktop local-search flow; its historical account-sync and named-profile integrations remain with A5/G6. A separate Gmail tracking extension is built, while the original extension feature set remains largely planned.
 
-Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TRACKING_README.md); the desktop Email Tracking page downloads it and explains installation and behavior. The earlier local pixel demo was removed. The extension reports observed image loads (not exact opens), keeps an observed-load timestamp history, and shows Chrome notifications for new loads. Real recipient-side image-load detection requires applying the included migrations and deploying the public HTTPS function; this has not been manually verified against Gmail.
+Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TRACKING_README.md); the desktop Email Tracking page downloads it and explains installation and behavior. The earlier local pixel demo was removed. The extension reports observed image loads (not exact opens), keeps an observed-load timestamp history, and shows Chrome notifications for new loads. Real recipient-side image-load detection requires applying the included migrations and deploying the public HTTPS function; this has not been manually verified against Gmail. Email Sending uses the same extension's modular `email-sending` package for template + CSV range campaigns through Gmail, documented in [Email Sending](../EMAIL_SENDING_README.md).
 
 | Status | Count |
 | --- | ---: |
 | Implemented for desktop local flow | 1 |
-| Partially implemented on desktop | 23 |
-| Not implemented on desktop | 20 |
+| Partially implemented on desktop | 24 |
+| Not implemented on desktop | 19 |
 | Deferred to a separate Chrome extension | 10 |
 
 ## Desktop features
@@ -38,7 +38,7 @@ Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TR
 | [C7: Company Profile Builder](C7-Company%20Profile%20Builder/FEATURES-C7-README.md) | Not implemented | No company profile synthesis. |
 | [C8: Structured Data Reader](C8-Structured%20Data%20Reader/FEATURES-C8-README.md) | Not implemented | No JSON-LD, microdata or RDFa reader. |
 | [D1: Deduplication and Entity Resolution](D1-Deduplication%20and%20Entity%20Resolution/FEATURES-D1-README.md) | Partial | A simple deduplication key utility exists; fuzzy company resolution and review are missing. |
-| [D2: Email Verifier](D2-Email%20Verifier/FEATURES-D2-README.md) | Partial | Local pipeline covers syntax, DNS, MX, SMTP, disposable, role-based, and catch-all with confidence scores. Ownership OTP and paid API fallback remain out of scope. |
+| [D2: Email Verifier](D2-Email%20Verifier/FEATURES-D2-README.md) | Partial | Local pipeline covers syntax, DNS, MX, SMTP, disposable, role-based, and catch-all with Valid/Risky/Invalid statuses (soft SMTP outcomes stay Valid). Ownership OTP and paid API fallback remain out of scope. |
 | [D3: Phone Validator](D3-Phone%20Validator/FEATURES-D3-README.md) | Partial | Telephone parsing validates extracted tel links; a full number-validation workflow and flags are missing. |
 | [D4: Lead Scoring](D4-Lead%20Scoring/FEATURES-D4-README.md) | Partial | A simple quickScore utility exists; the specified weighted lead scoring is not wired into the lead workflow. |
 | [D5: Source Tracking and Confidence](D5-Source%20Tracking%20and%20Confidence/FEATURES-D5-README.md) | Not implemented | No field-level source and confidence record. |
@@ -55,10 +55,10 @@ Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TR
 | [G1: Dashboard](G1-Dashboard/FEATURES-G1-README.md) | Partial | Latest pipelines uses local run records with CSV export; metric totals and chart use local run and export data. |
 | [G2: Live Run Console](G2-Live%20Run%20Console/FEATURES-G2-README.md) | Partial | Crawler activity and Maps result streaming exist; full run progress, speed and ETA console are missing. |
 | [G3: Lead Table Workspace](G3-Lead%20Table%20Workspace/FEATURES-G3-README.md) | Partial | Local lead table with search and status filter exists; editing, tagging and advanced grid tools are missing. |
-| [G4: Outreach Segments and Templates](G4-Outreach%20Segments%20and%20Templates/FEATURES-G4-README.md) | Not implemented | No outreach segmentation or template workflow. |
+| [G4: Outreach Segments and Templates](G4-Outreach%20Segments%20and%20Templates/FEATURES-G4-README.md) | Partial | Desktop segment builder remains unimplemented. The Gmail extension Sending tab supports template load, CSV recipients, inclusive ranges, and paced sends; see [Email Sending](../EMAIL_SENDING_README.md). |
 | [G5: Compliance Center](G5-Compliance%20Center/FEATURES-G5-README.md) | Not implemented | No compliance center or suppression controls. |
 | [G6: Accounts, Billing and Plans](G6-Accounts%2C%20Billing%20and%20Plans/FEATURES-G6-README.md) | Partial | Local editable profile exists; Supabase account flow, billing, seats and password reset are missing. |
-| [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist for Crawler, Search, and Email Validation; team, roles and broader organisation settings are missing. |
+| [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist for Crawler, Search, and Email Validation (all confidence checks); team, roles and broader organisation settings are missing. |
 
 ## Separate future Chrome extension
 

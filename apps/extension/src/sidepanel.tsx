@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { EmailSendingPanel } from './email-sending/panel'
 
 type RecordEntry = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
 
@@ -14,6 +15,7 @@ const style = `body{font:14px Arial,sans-serif;color:#21152d;margin:0;background
 .email-loads{min-width:46px;text-align:right}.email-loads strong{display:block;font-size:18px}.email-loads small{color:#756987;font-size:11px}
 .details{margin:0 6px 14px;padding:14px 16px;border:1px solid #ded6ec;border-radius:10px}.details dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 20px;margin:0}.details dt{color:#756987;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}.details dd{margin:3px 0 0;font-size:13px;overflow-wrap:anywhere}.details code{font-size:12px}.details h3{margin:16px 0 8px;font-size:13px}
 .timeline{margin:0;padding:8px 12px;border-radius:8px;background:#F7F4FF;list-style:none;font-size:12px;color:#62556c;line-height:1.8}.timeline li{display:flex;justify-content:space-between;gap:12px}.note{margin:10px 0 0;font-size:12px;color:#756987}.empty{color:#756987}
+.tabs{display:flex;gap:8px;margin:20px 0 0}.tabs button{background:#f4effc;color:#352254}.tabs button.active{background:#5B12C9;color:#fff}h2{margin:0 0 8px;font-size:20px}h3{margin:24px 0 8px;font-size:16px}input[type=number],textarea{display:block;width:100%;box-sizing:border-box;padding:11px;border:1px solid #DFD9EC;border-radius:8px;margin-top:6px;font:inherit}textarea{resize:vertical;min-height:140px}input[type=number]:focus,textarea:focus{border-color:#5B12C9;outline:none}button:disabled{opacity:.55;cursor:not-allowed}.row{display:flex;justify-content:space-between;gap:16px;padding:10px;border-top:1px solid #eee}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}.status-box{border:1px solid #eee;border-radius:8px;padding:12px;background:#faf8ff}
 @media (max-width:640px){.metrics{grid-template-columns:repeat(2,1fr)}.details dl{grid-template-columns:1fr}.email-summary{grid-template-columns:auto minmax(0,1fr) auto}.pill{display:none}}`
 
 /** Both gray by default, first purple once the send is confirmed, both purple once an image load is observed. */
@@ -115,7 +117,7 @@ function EmailReport({ records, onRefresh, focus }: { records: RecordEntry[]; on
   </section>
 }
 
-function Options() {
+function TrackingPanel() {
   const [endpoint, setEndpoint] = useState('')
   const [registrationKey, setRegistrationKey] = useState('')
   const [enabled, setEnabled] = useState(true)
@@ -150,9 +152,35 @@ function Options() {
     const result = await chrome.runtime.sendMessage({ kind: 'tracking:refresh' }) as { error?: string }
     setMessage(result?.error ?? 'Observed image loads refreshed.')
   }
-  return <main><style>{style}</style><h1>LeadsGhr Mail Tracking</h1><p>Gmail compose tracking and image-load indicators. A public tracking endpoint must be configured before real email tracking can work.</p>
+  return <>
     <section><h2>Tracking settings</h2><label>Public HTTPS endpoint<input type="text" value={endpoint} onChange={event => setEndpoint(event.target.value)} placeholder="https://YOUR_PROJECT.supabase.co/functions/v1/mail-tracking" /></label><label>Registration key<input type="password" value={registrationKey} onChange={event => setRegistrationKey(event.target.value)} placeholder="Server registration key" /></label><label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Enable tracking by default</label><button onClick={() => void save()}>Save settings</button><p className="muted">Only opaque pixel tokens are stored online. Recipient and subject stay in this Chrome profile. An image load can come from a mail proxy or preview and does not prove a person read the email. Gmail fetches the image through its proxy and may reuse a cached copy, so repeat opens can go unobserved; counts are observed image loads, not exact opens.</p></section>
     <EmailReport records={records} onRefresh={() => void refresh()} focus={focus}/>
-    {message && <p role="status">{message}</p>}</main>
+    {message && <p role="status">{message}</p>}
+  </>
+}
+
+type Tab = 'sending' | 'tracking'
+
+/** Full settings page: templated Gmail sending and open tracking. "View in LeadsGhr" opens the Tracking tab. */
+function Options() {
+  const [tab, setTab] = useState<Tab>('sending')
+  useEffect(() => {
+    void chrome.storage.local.get('focusEmail').then(data => { if (data.focusEmail?.id) setTab('tracking') })
+    const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+      if (area === 'local' && changes.focusEmail?.newValue?.id) setTab('tracking')
+    }
+    chrome.storage.onChanged.addListener(onChanged)
+    return () => chrome.storage.onChanged.removeListener(onChanged)
+  }, [])
+  return <main>
+    <style>{style}</style>
+    <h1>LeadsGhr Mail</h1>
+    <p>Send templated email ranges through your Gmail session, and track image loads on messages you send.</p>
+    <div className="tabs" role="tablist" aria-label="Mail tools">
+      <button type="button" role="tab" className={tab === 'sending' ? 'active' : ''} aria-selected={tab === 'sending'} onClick={() => setTab('sending')}>Sending</button>
+      <button type="button" role="tab" className={tab === 'tracking' ? 'active' : ''} aria-selected={tab === 'tracking'} onClick={() => setTab('tracking')}>Tracking</button>
+    </div>
+    {tab === 'sending' ? <EmailSendingPanel /> : <TrackingPanel />}
+  </main>
 }
 createRoot(document.getElementById('root')!).render(<React.StrictMode><Options /></React.StrictMode>)

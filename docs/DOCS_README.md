@@ -1,12 +1,13 @@
 # LeadsGhr documentation
 
-The source is the 90-page original "LeadAtlas Complete Specification" (version 3.0, October 2026). The transcriptions preserve historical source requirements. The active product is desktop-first: SQLite and disk hold extraction data. A separate Gmail tracking extension is now built from `apps/extension`; its optional public Supabase pixel service stores opaque tokens and image-load counts only. Most original extension features remain future work.
+The source is the 90-page original "LeadAtlas Complete Specification" (version 3.0, October 2026). The transcriptions preserve historical source requirements. The active product is desktop-first: SQLite and disk hold extraction data. A separate Gmail mail extension is built from `apps/extension` for templated sending and open tracking; its optional public Supabase pixel service stores opaque tokens and image-load counts only. Most original extension feature guides remain future work.
 
 ## Project guides
 
 - [Feature implementation status](features/FEATURE_STATUS_README.md)
 
 - [Crawler test page](crawler/CRAWLER_README.md)
+- [Email Sending Gmail campaigns](EMAIL_SENDING_README.md)
 - [Email Tracking local prototype](EMAIL_TRACKING_README.md)
 
 - [Theme, typography, sizing, and motion](theme/THEME_README.md)

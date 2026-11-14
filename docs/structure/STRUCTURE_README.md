@@ -11,6 +11,7 @@ apps/desktop/
   src/adapters.ts   SQLite, public HTTP, local queue and disk adapters
   src/email-verify.ts Email Validation IPC and job control
   src/email-verify/ Pipeline, DNS, SMTP client, and Valid/Invalid SQLite cache
+  src/local-email-tracking.ts Local loopback pixel and tracking records
   src/renderer.tsx  Shared React app
 packages/
   app/              Desktop pages, splash, niche and location JSON data
@@ -18,17 +19,19 @@ packages/
   schemas/          Zod contracts
   core/ extract/ crawler/ quality/ export/  Reusable product logic
   platform/         Adapter interfaces
-supabase/migrations/ Account/profile-only schema with RLS
+supabase/migrations/ Account/profile schema, plus optional opaque mail-tracking tokens
+apps/extension/     Active MV3 Gmail mail companion (sending + tracking)
+  src/email-sending/ Modular campaign CSV, template, range, queue, and compose helpers
 docs/              Current guides plus historical specification archive
 ```
 
-All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data; the optional mail-tracking function stores opaque pixel tokens, image-load counts, and load timestamps only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker folders are inactive. `apps/extension` is an active MV3 Gmail tracking build in the pnpm workspace.
+All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data; the optional mail-tracking function stores opaque pixel tokens, image-load counts, and load timestamps only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker folders are inactive. `apps/extension` is an active MV3 Gmail mail build (sending and tracking) in the pnpm workspace. Campaign recipients and bodies stay in Chrome storage only.
 
 The New Search page has a niche/state step and a separate location step with numbered chips and inclusive page and location-number range controls. It reads `packages/app/data/niches.json` and `packages/app/data/us-states-locations.json`. Electron main validates and stores custom niches and selections in a local `search-criteria.json` file under the app user-data directory.
 
 Crawl Results is a React page in `packages/app`. The React results page queues all selected niche/location queries and runs them one by one. Electron main validates each query and starts a separate, clean Chrome instance through `apps/desktop/src/maps-scan.ts`. The scanner checks robots.txt, reads visible public result cards with polite scrolling, streams rows over IPC, and stops on challenges or user cancellation. The temporary Chrome profile is removed after the run; filtered streamed rows are saved in dedicated local crawl-run tables, separate from the lead table, with query checkpoints for resume.
 
-Profile preferences use the Zod contract in `packages/schemas`. Electron main loads and saves `preferences.json` in the app user-data directory through validated preload IPC. The React profile component renders Profile from the sidebar footer and Preferences from the expandable Settings item in Workspace. Preferences groups Crawler, Search, and Email Validation controls. Email Validation stores MAIL FROM, EHLO, recipients per session, and pace for the local SMTP probe. The Chrome visibility setting reaches `maps-scan.ts` before a scan starts; selected result fields are retained in renderer memory and determine the table columns. Crawler keeps its sandboxed webview mounted offscreen when the preview option is off so scrolling and extraction continue. Account identity is a placeholder until Supabase Auth is connected.
+Profile preferences use the Zod contract in `packages/schemas`. Electron main loads and saves `preferences.json` in the app user-data directory through validated preload IPC. The React profile component renders Profile from the sidebar footer and Preferences from the expandable Settings item in Workspace. Preferences groups Crawler, Search, and Email Validation controls. Email Validation stores every confidence check toggle (Syntax, Domain, MX, SMTP, Disposable, Role-based, Catch-all), MAIL FROM, EHLO, recipients per session, and pace. Catch-all needs SMTP; SMTP needs MX; MX needs Domain. The Chrome visibility setting reaches `maps-scan.ts` before a scan starts; selected result fields are retained in renderer memory and determine the table columns. Crawler keeps its sandboxed webview mounted offscreen when the preview option is off so scrolling and extraction continue. Account identity is a placeholder until Supabase Auth is connected.
 
 Brand SVGs live in `public/`; the desktop PNG and ICO live in `apps/desktop/resources/`. `scripts/regenerate-brand-icons.mjs` rasterizes the mark-only SVG. The Profile character avatar uses `react-nice-avatar` with a locally stored seed; it is independent of account authentication and brand assets.
 

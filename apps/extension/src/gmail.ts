@@ -1,6 +1,18 @@
+import { composeAndSend } from './email-sending/compose'
+import type { ComposePayload } from './email-sending/types'
+
 type RecordEntry = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; sender?: string; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
 type TickState = 'untracked' | 'sent' | 'loaded'
 const observedLoads = (count: number): string => count ? `${count} image load${count === 1 ? '' : 's'} observed` : 'No image load observed yet'
+
+chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
+  if (!message || typeof message !== 'object' || !('kind' in message)) return
+  if (message.kind === 'sending:ping') { respond({ ok: true }); return }
+  if (message.kind !== 'sending:compose') return
+  const payload = message as ComposePayload & { kind: string }
+  void composeAndSend({ to: payload.to, subject: payload.subject, bodyHtml: payload.bodyHtml }).then(respond)
+  return true
+})
 
 const css = document.createElement('style')
 css.textContent = `.lg-track-banner{margin:0;padding:6px 16px 2px;font:12px/1.4 'Google Sans',Roboto,Arial,sans-serif;color:#5B12C9}.lg-track-banner[hidden]{display:none}.lg-track-banner.error{color:#B3261E}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 5px;padding:5px;border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:#f1eef8}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}

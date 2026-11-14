@@ -15,17 +15,17 @@
 
 ## Purpose
 
-Checks whether an address appears technically deliverable without sending mail. Returns Valid, Risky, Invalid, or Unknown, plus individual check results and a heuristic confidence score.
+Checks whether an address appears technically deliverable without sending mail. Returns Valid, Risky, or Invalid, plus individual check results and a heuristic confidence score.
 
 ## How it works (current desktop)
 
-1. Import or paste addresses on Email Validation.
-2. Preflight outbound port 25; stop immediately if blocked.
-3. Normalize syntax; resolve domain and MX in parallel across domains.
-4. Flag disposable and role-based addresses from local lists.
-5. Group remaining work by primary MX host; one SMTP connection per host with proactive STARTTLS when advertised, pacing, and a connect breaker.
-6. Probe catch-all once per domain; if a random mailbox is accepted, remaining addresses on that domain are marked Risky without extra RCPT noise. Classify status from verification signals first, then clamp a heuristic deliverability score into that status band. Unroutable MAIL FROM identities fail fast with a Preferences hint.
-7. Stream results to the UI. Click a row for the check breakdown. Retry Unknown re-runs greylist/timeout/unreachable/needs_tls rows.
+1. Import or paste addresses on Email Validation. Preferences > Email Validation choose every confidence signal: Syntax, Domain, MX, SMTP, Disposable, Role-based, and Catch-all. Catch-all needs SMTP; SMTP needs MX; MX needs Domain.
+2. When SMTP is on, preflight outbound port 25; stop immediately if blocked. Port 25 preflight is skipped when SMTP is off.
+3. Normalize syntax when that check is on; otherwise keep a minimal local@domain parse. Resolve domain and MX in parallel when Domain, MX, or SMTP is on.
+4. Flag disposable and role-based addresses from local lists only when those checks are enabled.
+5. When SMTP is on, group remaining work by primary MX host; one SMTP connection per host with proactive STARTTLS when advertised, pacing, and a connect breaker.
+6. Probe catch-all once per domain when Catch-all is on; if a random mailbox is accepted, remaining addresses on that domain are marked Risky without extra RCPT noise. Classify status and confidence only from enabled checks, then clamp the score into that status band. Unroutable MAIL FROM identities fail fast with a Preferences hint. Soft SMTP outcomes (provider hide, block, temp, skipped) are labeled Valid; the reason/code still records what happened.
+7. Stream results to the UI. Click a row for the check breakdown. Retry soft re-runs greylist/timeout/unreachable/needs_tls rows.
 
 ## Status and score
 
@@ -39,11 +39,11 @@ Status is a business decision from signals; the score never reclassifies it.
 | Catch-all domain | Risky |
 | Mailbox full | Risky |
 | SMTP accepted with no disposable/catch-all flags | Valid |
-| SMTP temporary, blocked, unverifiable, or skipped | Unknown |
+| SMTP temporary, blocked, unverifiable, or skipped | Valid (reason/code keeps the soft signal) |
 
-Role-based addresses keep their SMTP-driven status and only apply a score penalty; they are not auto-Risky or Invalid. Accepted RCPT TO is not proof of inbox ownership or final delivery—especially on catch-all domains.
+Role-based addresses keep their SMTP-driven status and only apply a score penalty; they are not auto-Risky or Invalid. Accepted RCPT TO is not proof of inbox ownership or final delivery—especially on catch-all domains. Soft Valid rows (for example Outlook `provider_unverifiable`) are usable leads, not mailbox-proven accepts.
 
-Score weights: base 45; SMTP accepted +40, temporary +10, unverifiable/skipped +8, blocked +5, rejected capped at 15; disposable −40, catch-all −40, role-based −15. After status is set, the score is clamped: Valid 85–100, Risky 25–60, Unknown 10–55, Invalid 0–20. Those ranges overlap on purpose and are clamps, not classifiers.
+Score weights: base 45; SMTP accepted +40, temporary +10, unverifiable/skipped +8, blocked +5, rejected capped at 15; disposable −40, catch-all −40, role-based −15. After status is set, the score is clamped: Valid 85–100, Risky 25–60, Invalid 0–20. Those ranges are clamps, not classifiers.
 
 ## Dependencies and requirements
 
@@ -51,19 +51,19 @@ node:dns/promises, node:net, node:tls in Electron main; Zod IPC contracts in `@l
 
 ## Interface behavior
 
-Two-panel layout with parallel mail servers control, status filters, score column, modal check detail for a selected row, copy/CSV, and Retry Unknown.
+Two-panel layout with parallel mail servers control, status filters, score column, modal check detail for a selected row, copy/CSV, and Retry soft.
 
 ## User value
 
 - Multi-signal verification instead of a single SMTP answer.
-- Policy blocks and hidden providers stay Unknown instead of deleting good leads.
+- Policy blocks and hidden providers stay in Valid so lists are not split into an Unconfirmed bucket.
 - Catch-all and disposable addresses surface as Risky; role-based is flagged in checks without forcing status.
 
 ## Edge cases and limits
 
 - Port 25 is often blocked on home/office networks; preflight reports that once.
 - Accepted RCPT TO is not proof of inbox ownership or final delivery.
-- Outlook, Yahoo, and some gateways stay Unknown / provider_unverifiable.
+- Outlook, Yahoo, and some gateways may still show Valid with `provider_unverifiable` in the reason/code.
 - Confidence is a local heuristic, not a statistical guarantee.
 
 ## Related requirements
