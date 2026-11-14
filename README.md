@@ -24,7 +24,7 @@ The sidebar groups Crawler, New Search, Niche Library, and **Email Filtering** u
 
 ### Run history and CSV files
 
-Each run records its name and provider, selected niches and states, first and last selected state numbers, query count, next query position, start and finish times, filtered business rows, and website page queue. After an app restart, in-flight pages return to the queue. **Resume** on Pipeline, Runs, or Exports retries the current Maps query or continues the unfinished website queue. Pipeline's home page lists saved pipelines for resumption or deletion. The automatic CSV is written to `Documents/LeadsGhr/exports` with niche, run date, and time in its filename. It includes the business fields, source, and collected emails. Dashboard shows saved runs in one Latest pipelines table. Runs and Exports show progress, filenames, entry counts, paths, file sizes, and re-export actions. The separate Crawler test remains unsaved.
+Each run records its name and provider, selected niches and states, first and last selected state numbers, query count, next query position, start and finish times, filtered business rows, and website page queue. After an app restart, in-flight pages return to the queue. **Resume** on Pipeline, Runs, or Exports retries the current Maps query or continues the unfinished website queue. Pipeline's home page lists saved pipelines for resumption or deletion. The automatic CSV is written to `C:\LeadsGhr\exports` (on non-Windows systems, `Documents/LeadsGhr/exports`) with niche, run date, and time in its filename. It includes the business fields, source, and collected emails. Dashboard shows saved runs in one Latest pipelines table. Runs and Exports show progress, filenames, entry counts, paths, file sizes, and re-export actions. The separate Crawler test remains unsaved.
 
 ## Responsible use
 
@@ -35,7 +35,7 @@ Collect public data only. Respect robots.txt and polite delays, pause on challen
 - TypeScript, React, Node.js, pnpm workspaces, Turborepo.
 - Electron and electron-vite for the desktop UI; context isolation, disabled Node integration, Zod-validated IPC, electron-builder and electron-updater.
 - Local SQLite through better-sqlite3 for leads, scan history and queued jobs. Exports are files on disk.
-- Supabase Auth and an RLS-protected user profile table for account data; an optional Edge Function stores opaque mail-tracking tokens and image-load counts.
+- Supabase Auth and an RLS-protected user profile table for account data; an optional Edge Function stores opaque mail-tracking tokens, image-load counts, and load timestamps.
 - Shared packages: core, extract, crawler, quality, export, schemas, ui, app and platform. Extractors accept HTML strings and use Cheerio and libphonenumber-js.
 
 ## Repository
@@ -45,14 +45,23 @@ apps/desktop/  Electron main, preload and React renderer
 apps/extension/  Gmail mail Chrome MV3 extension (sending + tracking) and downloadable ZIP
 packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
 supabase/     Account/profile schema and optional mail-tracking function/migration
+.github/workflows/  Supabase deploy: applies migrations and deploys Edge Functions on every branch push
 docs/         Current desktop guides and preserved original specification
 ```
 
 Legacy web, API, and worker folders remain inactive reference code. `apps/extension` is an active Gmail mail build in the pnpm workspace.
 
-## Gmail mail extension
+## Supabase deployment
 
-Open **Email Sending** or **Email Tracking → Get Chrome extension** in the desktop app to save the ZIP and view Chrome installation steps. The source build is `pnpm --filter @leadsghr/extension build`. The Sending tab loads a template, imports a CSV, takes an inclusive recipient range, and sends one message at a time through the open Gmail tab. The Tracking tab still adds compose tracking controls and sent-row image-load indicators; real recipient-side loads require the public HTTPS tracking function. See [Email Sending](docs/EMAIL_SENDING_README.md) and [Email Tracking](docs/EMAIL_TRACKING_README.md).
+`.github/workflows/supabase-deploy.yml` runs on GitHub Actions when a push to any branch changes `supabase/migrations/`, `supabase/functions/`, or `supabase/config.toml`. It applies migrations not yet recorded in the hosted project's migration history (`supabase db push`) and deploys every function in `supabase/functions/` without Docker. It needs the repository secret `SUPABASE_ACCESS_TOKEN` (a Supabase personal access token) and the repository variable `SUPABASE_PROJECT_ID` (the project ref). Function secrets such as `MAIL_TRACKING_REGISTRATION_KEY` stay in the Supabase dashboard. It can also be run manually from the Actions tab, with a dry-run option and a one-time option to record migrations that were already applied by hand in the SQL Editor. There is one hosted project, so the most recent push from any branch is what runs live, and a migration applied from a branch stays applied even if that branch is abandoned. Keep migrations additive and safe to re-run.
+
+## Gmail tracking extension
+
+Open **Email Tracking** in the desktop app to download the ZIP and read how to install the extension and how tracking works. The source build is `pnpm --filter @leadsghr/extension build`. The extension displays a tracking control in Gmail compose, a LeadsGhr toolbar entry, gray or purple double ticks in matched sent rows with a hover card showing observed image-load counts and times, an observed-load history, and Chrome notifications for new loads. Gmail's image cache can hide repeat opens, so counts are observed loads, not exact opens. Real recipient-side loads require deploying the included public HTTPS tracking function and configuring its endpoint in extension settings. See the [Email Tracking guide](docs/EMAIL_TRACKING_README.md) for setup, behavior, and limits.
+
+## Gmail email sending
+
+Open **Email Sending** in the desktop app to download the same extension ZIP and read the sending steps. In the extension's full settings, the **Sending** tab loads a subject/body template (with `{{field}}` placeholders), imports a recipient CSV, takes an inclusive From/To range, and sends one message at a time through the open Gmail tab with a polite delay (5–120 seconds) and Pause, Resume, and Cancel. Campaign recipients and bodies stay in the Chrome profile. When tracking is on, each campaign message gets its own tracking pixel like any other Gmail send. See [Email Sending](docs/EMAIL_SENDING_README.md).
 
 ## Run the desktop app
 

@@ -1,18 +1,18 @@
 import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { readFile, writeFile, copyFile } from 'node:fs/promises'
+import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises'
 import Database from 'better-sqlite3'
 import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, applyEmailVerifyChecksToPreferences, type DesktopPreferences } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
+import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory } from './paths'
 import { registerCrawlerTest } from './crawler-test'
 import { autoUpdater } from 'electron-updater'
 import { scanMaps } from './maps-scan'
 import { createCrawlRunStore, registerCrawlRunIpc } from './crawl-runs'
 import { registerPipelinePages } from './pipeline-pages'
 import { abortActiveEmailVerify, registerEmailVerifyIpc } from './email-verify'
-import { closeLocalEmailTracking, registerLocalEmailTracking } from './local-email-tracking'
 
 let db: Database.Database | undefined
 let adapters: ReturnType<typeof createDesktopAdapters> | undefined
@@ -39,7 +39,7 @@ async function readPreferences(): Promise<DesktopPreferences> {
 function localStore() {
   if (!db) {
     db = new Database(join(app.getPath('userData'), 'leadsghr.sqlite'))
-    adapters = createDesktopAdapters(db, app.getPath('userData'))
+    adapters = createDesktopAdapters(db, leadsGhrExportsDirectory())
   }
   return { db, adapters: adapters! }
 }
@@ -84,12 +84,13 @@ app.whenReady().then(async () => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
   registerEmailVerifyIpc(localStore().db)
-  await registerLocalEmailTracking(localStore().db)
   ipcMain.handle('leadsghr:tracking:download-extension', async () => {
     const source = app.isPackaged
       ? join(process.resourcesPath, 'leadsghr-mail-tracking.zip')
       : join(app.getAppPath(), '../../apps/extension/leadsghr-mail-tracking.zip')
-    const result = await dialog.showSaveDialog({ defaultPath: 'leadsghr-mail-tracking.zip', filters: [{ name: 'ZIP archive', extensions: ['zip'] }] })
+    const directory = leadsGhrExtensionsDirectory()
+    await mkdir(directory, { recursive: true })
+    const result = await dialog.showSaveDialog({ defaultPath: join(directory, 'leadsghr-mail-tracking.zip'), filters: [{ name: 'ZIP archive', extensions: ['zip'] }] })
     if (result.canceled || !result.filePath) return null
     await copyFile(source, result.filePath)
     return result.filePath
@@ -177,7 +178,7 @@ app.whenReady().then(async () => {
   createWindow(crawlStore)
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
-app.on('before-quit', () => { activeMapsScan?.controller.abort(); abortActiveEmailVerify(); closeLocalEmailTracking(); db?.close() })
+app.on('before-quit', () => { activeMapsScan?.controller.abort(); abortActiveEmailVerify(); db?.close() })
 
 
 

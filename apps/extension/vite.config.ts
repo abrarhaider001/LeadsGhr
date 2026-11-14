@@ -13,6 +13,7 @@ export default defineConfig({
     cssCodeSplit: false,
     rollupOptions: {
       input: {
+        popup: resolve(root, 'popup.html'),
         sidepanel: resolve(root, 'sidepanel.html'),
         background: resolve(root, 'src/background.ts'),
         gmail: resolve(root, 'src/gmail.ts'),

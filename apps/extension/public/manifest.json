@@ -3,7 +3,7 @@
   "name": "LeadsGhr Mail",
   "version": "0.2.1",
   "description": "Send templated Gmail campaigns from a CSV range and track image loads on sent messages.",
-  "permissions": ["storage", "alarms", "tabs", "scripting"],
+  "permissions": ["storage", "alarms", "notifications", "tabs", "scripting"],
   "host_permissions": ["https://mail.google.com/*"],
   "web_accessible_resources": [{ "resources": ["icon.svg"], "matches": ["https://mail.google.com/*"] }],
   "optional_host_permissions": ["https://*/*"],
@@ -11,5 +11,5 @@
   "content_scripts": [{ "matches": ["https://mail.google.com/*"], "js": ["gmail.js"], "run_at": "document_idle" }],
   "options_page": "sidepanel.html",
   "icons": { "16": "icon.png", "32": "icon.png", "128": "icon.png" },
-  "action": { "default_title": "LeadsGhr Mail" }
+  "action": { "default_title": "LeadsGhr Mail", "default_popup": "popup.html" }
 }
