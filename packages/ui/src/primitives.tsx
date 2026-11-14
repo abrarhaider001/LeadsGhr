@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 export type IconName = 'selectAll' | 'clear' | 'add' | 'pipeline' | 'dashboard' | 'search' | 'spider' | 'leads' | 'runs' | 'profiles' | 'exports' | 'shield' | 'settings' | 'arrow' | 'download' | 'mail' | 'mailSend' | 'mailTracking' | 'mailCheck' | 'spamCheck' | 'bell' | 'chevron' | 'info' | 'library' | 'back' | 'play' | 'pause' | 'resume' | 'stop'
 const paths: Record<IconName, ReactNode> = {
@@ -35,12 +35,4 @@ const paths: Record<IconName, ReactNode> = {
 
 export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
-}
-
-export function Button({ children, className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return <button className={`la-button ${className}`} {...props}>{children}</button>
-}
-
-export function Card({ children, className = '', ...props }: HTMLAttributes<HTMLElement>) {
-  return <section className={`la-card ${className}`} {...props}>{children}</section>
 }

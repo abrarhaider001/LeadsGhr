@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./globals.css": "./src/globals.css",
     "./styles.css": "./src/styles.css"
   },
   "scripts": {
@@ -13,9 +14,17 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^19.2.0"
+    "@radix-ui/react-slot": "^1.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "react": "^19.2.0",
+    "tailwind-merge": "^3.7.0"
   },
   "peerDependencies": {
     "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "tailwindcss": "^4.3.5"
   }
 }

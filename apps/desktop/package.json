@@ -28,15 +28,17 @@
         "zod": "^4.1.12"
     },
     "devDependencies": {
+        "@electron/rebuild": "^4.2.1",
+        "@tailwindcss/vite": "^4.3.5",
         "@types/better-sqlite3": "^7.6.13",
         "@types/node": "^22.10.2",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.0",
         "@vitejs/plugin-react": "^5.0.0",
-        "@electron/rebuild": "^4.2.1",
         "electron": "^38.0.0",
         "electron-builder": "^26.0.0",
-        "electron-vite": "^4.0.0"
+        "electron-vite": "^4.0.0",
+        "tailwindcss": "^4.3.5"
     },
     "main": "./out/main/main.cjs"
 }

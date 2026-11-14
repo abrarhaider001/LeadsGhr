@@ -14,7 +14,7 @@ LeadsGhr is a light-only desktop app. The sidebar, Dashboard header, and workspa
 | Muted text | `#675E76` | Supporting labels and descriptions |
 | Border | `#DFD9EC` | Input, card and table dividers |
 
-The token definitions and final component overrides live in `packages/ui/src/styles.css`. The app does not offer a dark-mode switch. The sidebar and Dashboard header use white backgrounds. The sidebar uses the light-background `public/leadsghr-logo-v1.svg` wordmark. Reference-site logos, product copy, awards, and marketing forms are not part of LeadsGhr.
+Token definitions and screen layout rules live in `packages/ui/src/styles.css`, loaded through `packages/ui/src/globals.css` with Tailwind CSS (no Preflight) and the shadcn theme variables. The desktop renderer imports `@leadsghr/ui/globals.css` and does not import `styles.css` directly. Shared controls come from shadcn-style components in `packages/ui/src/components/ui/`. The app does not offer a dark-mode switch. The sidebar and Dashboard header use white backgrounds. The sidebar uses the light-background `public/leadsghr-logo-v1.svg` wordmark. Reference-site logos, product copy, awards, and marketing forms are not part of LeadsGhr.
 
 ## Layout and components
 

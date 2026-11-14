@@ -23,8 +23,13 @@ let criteriaWrite = Promise.resolve()
 
 async function readPreferences(): Promise<DesktopPreferences> {
   await preferencesWrite.catch(() => undefined)
-  try { return { ...desktopPreferencesSchema.parse(JSON.parse(await readFile(join(app.getPath('userData'), 'preferences.json'), 'utf8'))), scanPublicWebsites: false } }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultDesktopPreferences; throw error }
+  try {
+    const raw = JSON.parse(await readFile(join(app.getPath('userData'), 'preferences.json'), 'utf8')) as Record<string, unknown>
+    const preferences = desktopPreferencesSchema.parse({ ...defaultDesktopPreferences, ...raw })
+    if (/@(?:localhost|.+\.invalid)$/i.test(preferences.emailVerifyMailFrom)) preferences.emailVerifyMailFrom = defaultDesktopPreferences.emailVerifyMailFrom
+    if (/^(?:localhost|.*\.invalid)$/i.test(preferences.emailVerifyEhlo)) preferences.emailVerifyEhlo = defaultDesktopPreferences.emailVerifyEhlo
+    return { ...preferences, scanPublicWebsites: false }
+  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultDesktopPreferences; throw error }
 }
 
 
@@ -75,7 +80,7 @@ function createWindow(crawlStore: ReturnType<typeof createCrawlRunStore>) {
 app.whenReady().then(async () => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
-  registerEmailVerifyIpc()
+  registerEmailVerifyIpc(localStore().db)
   ipcMain.handle('leadsghr:tracking:download-extension', async () => {
     const source = app.isPackaged
       ? join(process.resourcesPath, 'leadsghr-mail-tracking.zip')

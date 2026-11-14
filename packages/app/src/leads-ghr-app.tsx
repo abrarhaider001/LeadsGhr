@@ -203,7 +203,7 @@ export function LeadsGhrApp() {
         {page === 'Dashboard' ? <DashboardPage onNavigate={(next) => void showPage(next)} crawlRuns={crawlRuns} exportCount={crawlExports.length} onExport={(id) => void exportCrawl(id)} />
           : page === 'Crawler' ? <CrawlerPage preferences={preferences} />
           : page === 'Email Filtering' ? <EmailFilteringPage />
-          : page === 'Email Validation' ? <EmailValidationPage />
+          : page === 'Email Validation' ? <EmailValidationPage preferences={preferences} />
           : page === 'Email Spam Check' ? <EmailSpamEnginePage />
           : page === 'Email Sending' ? <Card className="la-local-page"><h2>Email Sending</h2><p>Planned feature. Email campaigns and sending are not available in the desktop app yet.</p></Card>
           : page === 'Email Tracking' ? <EmailTrackingPage />
