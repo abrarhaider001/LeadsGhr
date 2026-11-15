@@ -83,11 +83,11 @@ app.whenReady().then(async () => {
   registerEmailVerifyIpc(localStore().db)
   ipcMain.handle('leadsghr:tracking:download-extension', async () => {
     const source = app.isPackaged
-      ? join(process.resourcesPath, 'leadsghr-mail-tracking.zip')
-      : join(app.getAppPath(), '../../apps/extension/leadsghr-mail-tracking.zip')
+      ? join(process.resourcesPath, 'leadsghr-tracker.zip')
+      : join(app.getAppPath(), '../../apps/extension/leadsghr-tracker.zip')
     const directory = leadsGhrExtensionsDirectory()
     await mkdir(directory, { recursive: true })
-    const result = await dialog.showSaveDialog({ defaultPath: join(directory, 'leadsghr-mail-tracking.zip'), filters: [{ name: 'ZIP archive', extensions: ['zip'] }] })
+    const result = await dialog.showSaveDialog({ defaultPath: join(directory, 'leadsghr-tracker.zip'), filters: [{ name: 'ZIP archive', extensions: ['zip'] }] })
     if (result.canceled || !result.filePath) return null
     await copyFile(source, result.filePath)
     return result.filePath

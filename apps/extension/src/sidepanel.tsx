@@ -150,7 +150,7 @@ function Options() {
     const result = await chrome.runtime.sendMessage({ kind: 'tracking:refresh' }) as { error?: string }
     setMessage(result?.error ?? 'Observed image loads refreshed.')
   }
-  return <main><style>{style}</style><h1>LeadsGhr Mail Tracking</h1><p>Gmail compose tracking and image-load indicators. A public tracking endpoint must be configured before real email tracking can work.</p>
+  return <main><style>{style}</style><h1>LeadsGhr Tracker</h1><p>Gmail compose tracking and image-load indicators. A public tracking endpoint must be configured before real email tracking can work.</p>
     <section><h2>Tracking settings</h2><label>Public HTTPS endpoint<input type="text" value={endpoint} onChange={event => setEndpoint(event.target.value)} placeholder="https://YOUR_PROJECT.supabase.co/functions/v1/mail-tracking" /></label><label>Registration key<input type="password" value={registrationKey} onChange={event => setRegistrationKey(event.target.value)} placeholder="Server registration key" /></label><label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Enable tracking by default</label><button onClick={() => void save()}>Save settings</button><p className="muted">Only opaque pixel tokens are stored online. Recipient and subject stay in this Chrome profile. An image load can come from a mail proxy or preview and does not prove a person read the email. Gmail fetches the image through its proxy and may reuse a cached copy, so repeat opens can go unobserved; counts are observed image loads, not exact opens.</p></section>
     <EmailReport records={records} onRefresh={() => void refresh()} focus={focus}/>
     {message && <p role="status">{message}</p>}</main>

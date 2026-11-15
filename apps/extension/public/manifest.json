@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "LeadsGhr Mail Tracking",
+  "name": "LeadsGhr Tracker",
   "version": "0.1.0",
   "description": "Track image loads for messages you send from Gmail.",
   "permissions": ["storage", "alarms", "notifications"],
@@ -11,5 +11,5 @@
   "content_scripts": [{ "matches": ["https://mail.google.com/*"], "js": ["gmail.js"], "run_at": "document_idle" }],
   "options_page": "sidepanel.html",
   "icons": { "16": "icon.png", "32": "icon.png", "128": "icon.png" },
-  "action": { "default_title": "LeadsGhr Mail Tracking", "default_popup": "popup.html" }
+  "action": { "default_title": "LeadsGhr Tracker", "default_popup": "popup.html" }
 }

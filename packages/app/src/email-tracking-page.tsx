@@ -27,9 +27,9 @@ function Ticks({ state }: { state: 'untracked' | 'sent' | 'loaded' }) {
 
 const installSteps: { kind: IconKind; title: string; body: ReactNode }[] = [
   { kind: 'download', title: 'Download', body: <>Select <strong>Download extension ZIP</strong>. The save window opens in <code>C:\LeadsGhr\extensions</code>; keep that location.</> },
-  { kind: 'folder', title: 'Extract', body: <>Right-click the ZIP, choose <strong>Extract All</strong>, and extract to <code>C:\LeadsGhr\extensions\leadsghr-mail-tracking</code>. Chrome loads this folder, not the ZIP.</> },
+  { kind: 'folder', title: 'Extract', body: <>Right-click the ZIP, choose <strong>Extract All</strong>, and extract to <code>C:\LeadsGhr\extensions\leadsghr-tracker</code>. Chrome loads this folder, not the ZIP.</> },
   { kind: 'chrome', title: 'Load in Chrome', body: <>Open <code>chrome://extensions</code>, turn on <strong>Developer mode</strong>, select <strong>Load unpacked</strong>, and choose the extracted folder. Pin LeadsGhr from the puzzle icon.</> },
-  { kind: 'key', title: 'Connect', body: <>Select the LeadsGhr icon, then <strong>Open full settings</strong>. Enter the tracking endpoint and registration key, select <strong>Save settings</strong>, allow access, and reload Gmail.</> },
+  { kind: 'key', title: 'Connect', body: <>Select the LeadsGhr Tracker icon, then <strong>Open full settings</strong>. Enter the tracking endpoint and registration key, select <strong>Save settings</strong>, allow access, and reload Gmail.</> },
 ]
 
 const flow: { kind: IconKind; title: string; body: string }[] = [
@@ -73,7 +73,7 @@ export function EmailTrackingPage() {
       <div className="la-extension-hero-copy">
         <span className="la-extension-eyebrow">LEADSGHR MAIL TRACKING · CHROME EXTENSION</span>
         <h2>Track email opens in Gmail</h2>
-        <p>Install the LeadsGhr Chrome extension to add a tracking image to emails you send from Gmail, see when each one is opened, and get a notification when it happens.</p>
+        <p>Install the LeadsGhr Tracker Chrome extension to add a tracking image to emails you send from Gmail, see when each one is opened, and get a notification when it happens.</p>
         <small>Saves to C:\LeadsGhr\extensions · Works in Google Chrome</small>
         {message && <p className="la-extension-status" role="status">{message}</p>}
       </div>
@@ -86,7 +86,7 @@ export function EmailTrackingPage() {
       <h4>{step.title}</h4><p>{step.body}</p>
     </li>)}</ol>
 
-    <div className="la-tracking-callout"><Icon kind="refresh"/><p><strong>Updating the extension.</strong> Extract the new ZIP into the same <code>leadsghr-mail-tracking</code> folder, replace the files, then select <strong>Reload</strong> on LeadsGhr in <code>chrome://extensions</code>. Using the same folder keeps your settings and tracked emails.</p></div>
+    <div className="la-tracking-callout"><Icon kind="refresh"/><p><strong>Updating the extension.</strong> Extract the new ZIP into the same <code>leadsghr-tracker</code> folder, replace the files, then select <strong>Reload</strong> on LeadsGhr in <code>chrome://extensions</code>. Using the same folder keeps your settings and tracked emails.</p></div>
 
     <div className="la-extension-steps-heading"><div><h3>How tracking works</h3><p>From compose to notification.</p></div></div>
     <ol className="la-tracking-flow">{flow.map((item, index) => <li key={item.title}>

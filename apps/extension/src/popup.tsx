@@ -85,7 +85,7 @@ function Popup() {
   const opened = records.filter(record => record.loads > 0).length
   const loads = records.reduce((total, record) => total + record.loads, 0)
   return <><style>{styles}</style>
-    <header className="top"><div className="brand"><img src="/icon.png" alt=""/><strong>LeadsGhr</strong></div><span className="version">v{chrome.runtime.getManifest().version}</span></header>
+    <header className="top"><div className="brand"><img src="/icon.png" alt=""/><strong>LeadsGhr Tracker</strong></div><span className="version">v{chrome.runtime.getManifest().version}</span></header>
     <nav className="nav" aria-label="Extension sections"><button type="button" aria-selected={tab === 'report'} onClick={() => setTab('report')}><Icon kind="report"/>Tracking report</button><button type="button" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}><Icon kind="settings"/>Settings</button></nav>
     <main className="content">{tab === 'report' ? <><p className="eyebrow">Image-load activity</p><div className="metrics"><div className="metric"><strong>{records.length}</strong><span>Tracked</span></div><div className="metric"><strong>{opened}</strong><span>With loads</span></div><div className="metric"><strong>{loads}</strong><span>Observed loads</span></div></div><div className="recent"><h2>Recent messages</h2>{records.slice(0, 3).map(record => {
       const events = record.events ?? []
