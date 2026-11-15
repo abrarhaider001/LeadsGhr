@@ -4,7 +4,7 @@
 
 LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase is reserved for user authentication and account/profile data; it does not store extracted leads.
 
-A separate Chrome extension may be built later for sending emails and manually extracting emails from an opened page. It is not part of this application.
+**LeadsGhr Mailer** is a separate Chrome extension (`apps/mailer-extension`) for sending saved email templates to CSV or Excel recipient ranges through the user's Gmail session; the desktop **Email Sending** page downloads it. Manual email extraction from an opened page remains future extension work.
 
 [Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
 
@@ -42,12 +42,17 @@ Collect public data only. Respect robots.txt and polite delays, pause on challen
 
 ```text
 apps/desktop/  Electron main, preload and React renderer
+apps/mailer-extension/  LeadsGhr Mailer: Gmail sending Chrome extension and downloadable ZIP
 packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
 supabase/     Account/profile-only migration
 docs/         Current desktop guides and preserved original specification
 ```
 
-Legacy web, API, worker and extension source folders remain in the repository as inactive reference code. They are excluded from the pnpm workspace and all active scripts.
+Legacy web, API, worker and extension (`apps/extension`) source folders remain in the repository as inactive reference code. They are excluded from the pnpm workspace and all active scripts.
+
+## LeadsGhr Mailer (Gmail sending)
+
+Open **Email Sending** in the desktop app and select **Download extension ZIP**; an **Extension saved** dialog shows where `leadsghr-mailer.zip` was saved. Extract it to a `leadsghr-mailer` folder and load it with **Load unpacked** in `chrome://extensions`. Save templates on the Mailer's settings page (popup gear button), then click the toolbar icon in Gmail: pick a template, upload a CSV or Excel file, set Start, End, and a 5–120 second delay, and use Start, Pause, Resume, and Stop. Rebuild with `pnpm.cmd build:mailer-extension`. See [Email Sending](docs/EMAIL_SENDING_README.md).
 
 ## Run the desktop app
 

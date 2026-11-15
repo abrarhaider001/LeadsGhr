@@ -12,13 +12,15 @@ apps/desktop/
   src/email-verify.ts Email Validation IPC and job control
   src/email-verify/ Pipeline, DNS, SMTP client, and Valid/Invalid SQLite cache
   src/renderer.tsx  Shared React app
+apps/mailer-extension/  LeadsGhr Mailer: MV3 Gmail sending extension (popup, settings, sending queue)
+  src/email-sending/ Campaign CSV/Excel, saved templates, range, queue, and compose helpers
 packages/
   app/              Desktop pages, splash, niche and location JSON data
   ui/               shadcn components, Tailwind globals, tokens and light-only styles
   schemas/          Zod contracts
   core/ extract/ crawler/ quality/ export/  Reusable product logic
   platform/         Adapter interfaces
-supabase/migrations/ Account/profile-only schema with RLS
+supabase/migrations/ Account/profile schema with RLS; public assets bucket (email-assets/ folder for email images)
 docs/              Current guides plus historical specification archive
 ```
 

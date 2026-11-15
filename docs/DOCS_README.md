@@ -1,10 +1,11 @@
 # LeadsGhr documentation
 
-The source is the 90-page original "LeadAtlas Complete Specification" (version 3.0, October 2026). The transcriptions preserve historical source requirements. The active product is desktop-only: SQLite and disk hold extraction data, while Supabase holds account data only. Extension features are future work in a separate project.
+The source is the 90-page original "LeadAtlas Complete Specification" (version 3.0, October 2026). The transcriptions preserve historical source requirements. The active product is desktop-only: SQLite and disk hold extraction data, while Supabase holds account data only. LeadsGhr Mailer (`apps/mailer-extension`) is the active Chrome extension for Gmail sending, documented in [Email Sending](EMAIL_SENDING_README.md); other extension features are future work.
 
 ## Project guides
 
 - [Feature implementation status](features/FEATURE_STATUS_README.md)
+- [Email Sending: LeadsGhr Mailer extension](EMAIL_SENDING_README.md)
 
 - [Crawler test page](crawler/CRAWLER_README.md)
 

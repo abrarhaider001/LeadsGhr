@@ -5,8 +5,8 @@ Snapshot: 2026-11-07. This compares the original feature guides with the active 
 | Status | Count |
 | --- | ---: |
 | Implemented for desktop local flow | 1 |
-| Partially implemented on desktop | 23 |
-| Not implemented on desktop | 20 |
+| Partially implemented on desktop | 24 |
+| Not implemented on desktop | 19 |
 | Deferred to a separate Chrome extension | 10 |
 
 ## Desktop features
@@ -53,7 +53,7 @@ Snapshot: 2026-11-07. This compares the original feature guides with the active 
 | [G1: Dashboard](G1-Dashboard/FEATURES-G1-README.md) | Partial | Latest pipelines uses local run records with CSV export; metric totals and chart use local run and export data. |
 | [G2: Live Run Console](G2-Live%20Run%20Console/FEATURES-G2-README.md) | Partial | Crawler activity and Maps result streaming exist; full run progress, speed and ETA console are missing. |
 | [G3: Lead Table Workspace](G3-Lead%20Table%20Workspace/FEATURES-G3-README.md) | Partial | Local lead table with search and status filter exists; editing, tagging and advanced grid tools are missing. |
-| [G4: Outreach Segments and Templates](G4-Outreach%20Segments%20and%20Templates/FEATURES-G4-README.md) | Not implemented | No outreach segmentation or template workflow. |
+| [G4: Outreach Segments and Templates](G4-Outreach%20Segments%20and%20Templates/FEATURES-G4-README.md) | Partial | Desktop segment builder remains unimplemented. The LeadsGhr Mailer extension supports saved templates, CSV or Excel recipients, inclusive ranges, and paced Gmail sends with Start/Pause/Resume/Stop; see [Email Sending](../EMAIL_SENDING_README.md). |
 | [G5: Compliance Center](G5-Compliance%20Center/FEATURES-G5-README.md) | Not implemented | No compliance center or suppression controls. |
 | [G6: Accounts, Billing and Plans](G6-Accounts%2C%20Billing%20and%20Plans/FEATURES-G6-README.md) | Partial | Local editable profile exists; Supabase account flow, billing, seats and password reset are missing. |
 | [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist for Crawler, Search, and Email Validation; team, roles and broader organisation settings are missing. |

@@ -8,16 +8,18 @@ Rules for coding agents working in this repository. LeadsGhr is a desktop applic
 | --- | --- | --- | --- |
 | Desktop app | `apps/desktop/` | Electron on the user's computer and IP | Local SQLite, user-data files, CSV exports |
 | React UI and shared logic | `packages/app/`, `packages/ui/`, other `packages/*` | Electron renderer or reusable TypeScript | No direct database or filesystem access from shared code |
-| Account backend | `supabase/migrations/` | Supabase when account features are connected | Authentication and user/profile data only |
+| LeadsGhr Mailer (Gmail sending extension) | `apps/mailer-extension/` | Chrome Manifest V3 | Saved templates, recipients, and campaign state in Chrome storage only |
+| Account backend | `supabase/migrations/` | Supabase when account features are connected | Authentication and user/profile data; the public `assets` storage bucket holds only public files such as images shown in outgoing emails, in purpose folders (`email-assets/`) |
 | Product documentation | `docs/` | Repository files | Current guides, feature status, and archived specification |
 
-The pnpm workspace includes `apps/desktop` and `packages/*`. `apps/web`, `apps/api`, `apps/worker`, and `apps/extension` remain inactive reference code. The future Chrome extension is a separate product, not a second active app in this repository. The feature specification describes intended behavior; `docs/features/FEATURE_STATUS_README.md` distinguishes that from implemented behavior.
+The pnpm workspace includes `apps/desktop`, `apps/mailer-extension`, and `packages/*`. `apps/web`, `apps/api`, `apps/worker`, and `apps/extension` remain inactive reference code. `apps/mailer-extension` is LeadsGhr Mailer, a Chrome extension that only sends saved templates through the user's Gmail session; its recipients and message bodies stay in Chrome storage. Other extension features (such as manual email extraction) remain future work. The feature specification describes intended behavior; `docs/features/FEATURE_STATUS_README.md` distinguishes that from implemented behavior.
 
 ## 2. Environments
 
 | Environment | How it is used | Data boundary |
 | --- | --- | --- |
 | Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences, SQLite, and local exports |
+| Chrome extension builds | `pnpm.cmd build:mailer-extension` from the repository root | `C:\LeadsGhr\extensions` holds each extension's ZIP and its extracted, ready-to-load folder side by side (for example `leadsghr-mailer.zip` and `leadsghr-mailer\`); each extension's user data lives in that folder's `data\` subfolder |
 | Packaged desktop build | `pnpm.cmd build` when packaging is needed | Runs on the user's PC; generated output is not source and stays ignored |
 | Supabase | Account authentication and profile schema, when connected | Never store extracted leads, crawl observations, queues, or exports |
 | GitHub | `abrarhaider001/LeadsGhr`, with `main` as the owner's branch | Agents do not commit, push, release, or deploy |
@@ -84,6 +86,12 @@ Do not silently rewrite the product to match an old specification. Explain any c
 **Migrations and data:** write schema changes as reviewable files and validate locally. Do not apply migrations to Supabase or alter a user's real extraction database. Preserve existing data and define how new local schema fields migrate.
 
 **Generated files:** do not edit `apps/desktop/out/`, installer output, `node_modules/`, `.turbo/`, or other ignored build artifacts as source.
+
+**Chrome extensions:** after any change to an extension, rebuild it with its packaging script (`pnpm.cmd build:mailer-extension` for LeadsGhr Mailer). The script must copy the ZIP to `C:\LeadsGhr\extensions\` and extract it into the same-named folder beside it (for example `C:\LeadsGhr\extensions\leadsghr-mailer\`), emptying that folder first. The owner never extracts anything by hand: the first time they choose that folder with **Load unpacked** in `chrome://extensions`, and after each rebuild they only select **Reload**. Always reuse the same folder path, because Chrome derives an unpacked extension's ID, and therefore its saved data, from the path. If a packaging script lacks the extract step, add it. Never extract or keep unpacked builds inside the repository. Report the ZIP and folder paths in the handoff.
+
+**Extension data:** data a user creates or chooses in an extension (saved templates, preferences, and similar records) is stored as files in that extension's own `data` folder, for example `C:\LeadsGhr\extensions\leadsghr-mailer\data\templates.json`, not in `chrome.storage`, `localStorage`, or IndexedDB, which Chrome can clear. Read the files through `chrome.runtime.getURL('data/<file>')`; write them through the folder the user grants once with the File System Access API (see `apps/mailer-extension/src/email-sending/data-folder.ts`). Packaging scripts must never delete or overwrite an extension's `data` folder. `chrome.storage.local` may hold only short-lived state such as a running job, a send log, or unsaved form input. When moving existing data out of Chrome storage, copy it into the data folder before removing it.
+
+**Supabase Storage:** use the single public bucket `assets` for every file the product stores in Supabase Storage. Do not create a separate bucket per feature. Put each file in a folder named for its purpose, for example `assets/email-assets/leadsghr-mailer-logo.png` for images shown in outgoing emails; add a new folder (such as `assets/<purpose>-assets/`) for a new purpose. Public URLs then take the form `https://<project-ref>.supabase.co/storage/v1/object/public/assets/<folder>/<file>`. Keep the source copy of each uploaded file in the repository (for example `apps/mailer-extension/email-assets/`), and only store public, non-sensitive files there: never leads, recipients, subjects, message bodies, exports, or credentials. Bucket changes go in an idempotent migration; uploading files to the live project is a service write that needs the owner's approval.
 
 ## 8. The change contract
 
