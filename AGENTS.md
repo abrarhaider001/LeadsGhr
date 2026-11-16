@@ -19,7 +19,7 @@ The pnpm workspace includes `apps/desktop`, `apps/extension`, `apps/mailer-exten
 
 | Environment | How it is used | Data boundary |
 | --- | --- | --- |
-| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences and SQLite; CSV exports go to `C:\LeadsGhr\exports` and the extension ZIP to `C:\LeadsGhr\extensions` (`apps/desktop/src/paths.ts`) |
+| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences and SQLite; CSV exports go to `C:\LeadsGhr\exports` the extension ZIPs to `C:\LeadsGhr\extensions`, and exported preference files to `C:\LeadsGhr\settings` (`apps/desktop/src/paths.ts`) |
 | Chrome extension builds | `pnpm.cmd build:extension` (Tracker) and `pnpm.cmd build:mailer-extension` (Mailer) from the repository root | `C:\LeadsGhr\extensions` holds each extension's ZIP and its extracted, ready-to-load folder side by side (`leadsghr-tracker.zip` and `leadsghr-tracker\`, `leadsghr-mailer.zip` and `leadsghr-mailer\`); each extension's user data lives in that folder's `data\` subfolder |
 | Packaged desktop build | `pnpm.cmd build` when packaging is needed | Runs on the user's PC; generated output is not source and stays ignored |
 | Supabase | Account profile schema and optional mail tracking endpoint | Never store extracted leads, crawl observations, queues, exports, message recipients, or subjects |

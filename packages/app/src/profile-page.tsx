@@ -3,6 +3,69 @@ import Avatar, { genConfig } from 'react-nice-avatar'
 import type { DesktopPreferences } from '@leadsghr/schemas'
 import { saveLocalAccount, type LocalAccount } from './account-data'
 
+type SettingsBridge = {
+  exportPreferences(): Promise<string>
+  importPreferences(): Promise<{ preferences: DesktopPreferences; path: string } | null>
+  showSettingsExport(path: string): Promise<void>
+}
+const settingsBridge = () => (window as Window & { leadsGhrDesktop?: Partial<SettingsBridge> }).leadsGhrDesktop
+
+type SettingsNotice =
+  | { kind: 'exported'; path: string }
+  | { kind: 'imported'; path: string }
+  | { kind: 'error'; message: string }
+
+const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path
+
+/** Export and import of all preferences as a JSON file, with a notice after each action. */
+function SettingsTransfer({ onImported }: { onImported(next: DesktopPreferences): void }) {
+  const [notice, setNotice] = useState<SettingsNotice | null>(null)
+  const [busy, setBusy] = useState<'export' | 'import' | null>(null)
+
+  async function exportSettings() {
+    const api = settingsBridge()
+    if (!api?.exportPreferences) { setNotice({ kind: 'error', message: 'Restart the desktop app to enable settings export.' }); return }
+    setBusy('export')
+    try { setNotice({ kind: 'exported', path: await api.exportPreferences() }) }
+    catch (error) { setNotice({ kind: 'error', message: error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(error) }) }
+    finally { setBusy(null) }
+  }
+
+  async function importSettings() {
+    const api = settingsBridge()
+    if (!api?.importPreferences) { setNotice({ kind: 'error', message: 'Restart the desktop app to enable settings import.' }); return }
+    setBusy('import')
+    try {
+      const result = await api.importPreferences()
+      if (!result) return
+      onImported(result.preferences)
+      setNotice({ kind: 'imported', path: result.path })
+    } catch (error) {
+      setNotice({ kind: 'error', message: error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(error) })
+    } finally { setBusy(null) }
+  }
+
+  return <div className="la-settings-transfer">
+    <div className="la-settings-transfer-bar">
+      <div><h2>Import and export</h2><p>Save every preference to a JSON file, or load a file someone sent you.</p></div>
+      <div className="la-settings-transfer-actions">
+        <button type="button" disabled={busy !== null} onClick={() => void importSettings()}>{busy === 'import' ? 'Importing…' : 'Import settings'}</button>
+        <button type="button" className="primary" disabled={busy !== null} onClick={() => void exportSettings()}>{busy === 'export' ? 'Exporting…' : 'Export settings'}</button>
+      </div>
+    </div>
+    {notice && <div className={`la-settings-notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
+      <span className="la-settings-notice-icon" aria-hidden="true">{notice.kind === 'error' ? '!' : '✓'}</span>
+      <div className="la-settings-notice-text">
+        {notice.kind === 'exported' && <><strong>Settings exported</strong><span>Saved as {fileName(notice.path)} in C:\LeadsGhr\settings. Send this file to share your settings.</span></>}
+        {notice.kind === 'imported' && <><strong>Settings imported successfully</strong><span>All preferences were updated from {fileName(notice.path)}.</span></>}
+        {notice.kind === 'error' && <><strong>Settings not changed</strong><span>{notice.message}</span></>}
+      </div>
+      {notice.kind === 'exported' && <button type="button" onClick={() => void settingsBridge()?.showSettingsExport?.(notice.path)}>Show in folder</button>}
+      <button type="button" className="la-settings-notice-close" aria-label="Dismiss" onClick={() => setNotice(null)}>×</button>
+    </div>}
+  </div>
+}
+
 type PreferenceKey = Exclude<keyof DesktopPreferences, 'crawlerEmailSource' | 'crawlerFetchMethod' | 'crawlerConcurrentPages' | 'emailVerifyMailFrom' | 'emailVerifyEhlo' | 'emailVerifyPerSession' | 'emailVerifyPaceMs'>
 const groups: { title: string; description: string; options: { key: PreferenceKey; title: string; detail: string }[] }[] = [
   { title: 'Crawler', description: 'Control the public webpage test view.', options: [
@@ -30,7 +93,7 @@ const groups: { title: string; description: string; options: { key: PreferenceKe
   ] },
 ]
 
-export function ProfilePage({ section, preferences, onPreferencesChange, saveMessage, account, onAccountChange, avatarSeed, onRegenerateAvatar }: { section: 'account' | 'preferences'; preferences: DesktopPreferences; onPreferencesChange(next: DesktopPreferences): void; saveMessage: string; account: LocalAccount; onAccountChange(next: LocalAccount): void; avatarSeed: string; onRegenerateAvatar(): void }) {
+export function ProfilePage({ section, preferences, onPreferencesChange, onPreferencesImported, saveMessage, account, onAccountChange, avatarSeed, onRegenerateAvatar }: { section: 'account' | 'preferences'; preferences: DesktopPreferences; onPreferencesChange(next: DesktopPreferences): void; onPreferencesImported(next: DesktopPreferences): void; saveMessage: string; account: LocalAccount; onAccountChange(next: LocalAccount): void; avatarSeed: string; onRegenerateAvatar(): void }) {
   const [preferenceCategory, setPreferenceCategory] = useState<'Crawler' | 'Search' | 'Email Validation'>('Crawler')
   const [draft, setDraft] = useState(account)
   const [accountMessage, setAccountMessage] = useState('')
@@ -48,6 +111,7 @@ export function ProfilePage({ section, preferences, onPreferencesChange, saveMes
       <p className="la-profile-note">These details are stored on this computer. Supabase authentication is not connected yet.</p></section>
       <section className="la-profile-account la-password-section"><div><h2>Reset Password</h2><p>Account password changes will be available when Supabase sign-in is connected.</p></div><div className="la-account-fields"><label>Current password<input type="password" autoComplete="current-password" disabled placeholder="Authentication required" /></label><label>New password<input type="password" autoComplete="new-password" disabled placeholder="Authentication required" /></label><label>Confirm new password<input type="password" autoComplete="new-password" disabled placeholder="Authentication required" /></label></div><button type="button" disabled>Reset password</button></section>
     </div> : <div className="la-profile-preferences" aria-label="Preferences">
+      <SettingsTransfer onImported={onPreferencesImported} />
       <div className="la-profile-tabs" role="tablist" aria-label="Preference categories">
         {(['Crawler', 'Search', 'Email Validation'] as const).map((category) => <button type="button" role="tab" id={`la-preference-tab-${category.toLowerCase().replace(/\s+/g, '-')}`} aria-controls="la-preference-panel" key={category} aria-selected={preferenceCategory === category} onClick={() => setPreferenceCategory(category)}>{category}</button>)}
       </div>

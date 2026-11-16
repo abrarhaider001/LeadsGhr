@@ -1364,3 +1364,27 @@ a { color: var(--la-accent); }
 .la-extension-requirement strong { color: var(--la-text); }
 @media (max-width: 1050px) { .la-extension-hero { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .la-extension-steps { grid-template-columns: 1fr; } .la-extension-hero { padding: 20px; } .la-extension-version { display: none; } .la-extension-hero-action { justify-content: flex-start; } }
+
+/* Preferences: import and export settings. */
+.la-settings-transfer { display: grid; gap: 10px; }
+.la-settings-transfer-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--la-line); border-radius: 12px; background: var(--la-card); }
+.la-settings-transfer-bar h2 { margin: 0 0 2px; font-size: 15px; }
+.la-settings-transfer-bar p { margin: 0; color: var(--la-muted); font-size: 12px; }
+.la-settings-transfer-actions { display: flex; flex: none; gap: 8px; }
+.la-settings-transfer-actions button { min-height: 36px; padding: 0 14px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; color: var(--la-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.la-settings-transfer-actions button:hover:not(:disabled) { background: #F7F4FF; }
+.la-settings-transfer-actions button.primary { border-color: #5B12C9; background: #5B12C9; color: #FFFFFF; }
+.la-settings-transfer-actions button.primary:hover:not(:disabled) { background: #4E0FB0; }
+.la-settings-transfer-actions button:disabled { opacity: .6; cursor: default; }
+.la-settings-notice { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid #BFE3CB; border-radius: 12px; background: #EEF8F1; }
+.la-settings-notice.error { border-color: #F3C4C0; background: #FDF0EF; }
+.la-settings-notice-icon { display: grid; flex: none; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #1D6B3A; color: #FFFFFF; font-size: 13px; font-weight: 700; }
+.la-settings-notice.error .la-settings-notice-icon { background: #B42318; }
+.la-settings-notice-text { display: grid; flex: 1; gap: 2px; min-width: 0; }
+.la-settings-notice-text strong { font-size: 13px; color: #1D6B3A; }
+.la-settings-notice.error .la-settings-notice-text strong { color: #B42318; }
+.la-settings-notice-text span { overflow-wrap: anywhere; color: var(--la-muted); font-size: 12px; }
+.la-settings-notice button { flex: none; min-height: 32px; padding: 0 12px; border: 1px solid #BFE3CB; border-radius: 8px; background: #FFFFFF; color: #1D6B3A; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.la-settings-notice button.la-settings-notice-close { min-height: 28px; width: 28px; padding: 0; border: 0; background: transparent; color: var(--la-muted); font-size: 18px; }
+@media (max-width: 760px) { .la-settings-transfer-bar { flex-direction: column; align-items: flex-start; } }
+

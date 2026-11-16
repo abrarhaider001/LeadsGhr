@@ -13,3 +13,5 @@ export function leadsGhrRoot(): string {
 
 export const leadsGhrExportsDirectory = (): string => join(leadsGhrRoot(), 'exports')
 export const leadsGhrExtensionsDirectory = (): string => join(leadsGhrRoot(), 'extensions')
+/** Exported preference files (Preferences → Export settings). */
+export const leadsGhrSettingsDirectory = (): string => join(leadsGhrRoot(), 'settings')
