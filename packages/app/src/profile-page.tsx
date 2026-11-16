@@ -57,7 +57,7 @@ function SettingsTransfer({ onImported }: { onImported(next: DesktopPreferences)
 
   return <div className="la-settings-transfer">
     <div className="la-settings-transfer-bar">
-      <div><h2>Import and export</h2><p>Save every preference to a JSON file, or load a file someone sent you.</p></div>
+      <div><h2>Set up in one click</h2><p>Import a teammate's settings instead of choosing every option again, or export yours to share.</p></div>
       <div className="la-settings-transfer-actions">
         <button type="button" disabled={busy !== null} onClick={() => void importSettings()}>{busy === 'import' ? 'Importing…' : 'Import settings'}</button>
         <button type="button" className="primary" disabled={busy !== null} onClick={() => void exportSettings()}>{busy === 'export' ? 'Exporting…' : 'Export settings'}</button>
