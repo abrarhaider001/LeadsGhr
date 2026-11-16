@@ -310,18 +310,28 @@ function normalizeSubject(value: string): string {
 const recordRecipients = (item: RecordEntry): string[] => item.recipient.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
 
 /**
- * Pick the tracked message for a row: same subject, same recipient address when Gmail exposes it,
- * closest send time within the window, and not already given to another row in this pass. The
- * recipient check separates same-subject emails sent seconds apart to different people.
+ * Pick the tracked message for a row. A Sent row is a whole conversation, and its date is the date
+ * of the newest message in it (which can be the recipient's reply), so:
+ * - when Gmail exposes the recipient's address, show the LATEST tracked email you sent to that
+ *   recipient in this conversation (same subject, ignoring Re:/Fwd:) up to the row's date;
+ * - when it does not, fall back to the tracked email sent closest to the row's date (within three
+ *   minutes), which keeps same-subject emails sent seconds apart to different people apart.
+ * A tracked email is given to at most one row in each pass.
  */
 function matchRecord(row: HTMLElement, text: string, used: Set<string>): RecordEntry | undefined {
   const addresses = rowRecipients(row)
   const bySubject = records.filter(item => !used.has(item.id) && normalizeSubject(item.subject) && text.includes(normalizeSubject(item.subject)))
   // The recipient only narrows same-subject candidates; a recipient read differently (or unknown) never blocks a match.
   const byRecipient = addresses.size ? bySubject.filter(item => recordRecipients(item).some(address => addresses.has(address))) : []
-  const candidates = byRecipient.length ? byRecipient : bySubject
-  if (!candidates.length) return undefined
   const time = rowTime(row)
+  if (byRecipient.length) {
+    const upTo = time === null ? Infinity : time + MATCH_WINDOW_MS
+    const sentBefore = byRecipient.filter(item => item.sentAt <= upTo)
+    const pool = sentBefore.length ? sentBefore : byRecipient
+    return pool.reduce((latest, item) => (item.sentAt > latest.sentAt ? item : latest))
+  }
+  const candidates = bySubject
+  if (!candidates.length) return undefined
   // Without a readable time, only an unambiguous subject is safe to match.
   if (time === null) return candidates.length === 1 ? candidates[0] : undefined
   let best: RecordEntry | undefined
@@ -524,17 +534,20 @@ function renderCard(target: HTMLElement, record: RecordEntry | undefined): void 
     target.append(rowWithIcon(CLOCK, element('strong', '', observedLoads(record.loads))))
     target.append(element('p', 'lg-card-note', 'Gmail may show a cached image on later opens, so repeat opens can go unobserved. Counts are observed image loads, not exact reads.'))
   }
-  const button = element('button', 'lg-card-button', 'View in LeadsGhr')
-  button.type = 'button'
-  button.addEventListener('click', () => { hideCard(); void chrome.runtime.sendMessage({ kind: 'tracking:open-report', id: record.id }).catch(() => undefined) })
-  target.append(button)
 }
 
+/**
+ * Opens the card to the right of the ticks, level with the row, so the ticks of the rows below stay
+ * free to hover. Falls back to the left side when there is no room on the right.
+ */
 function positionCard(target: HTMLElement, anchor: HTMLElement): void {
   const rect = anchor.getBoundingClientRect()
-  const left = Math.min(Math.max(8, rect.left - 12), window.innerWidth - target.offsetWidth - 8)
-  const below = rect.bottom + 6
-  const top = below + target.offsetHeight > window.innerHeight - 8 ? Math.max(8, rect.top - target.offsetHeight - 6) : below
+  const gap = 12
+  const width = target.offsetWidth
+  const height = target.offsetHeight
+  const roomRight = window.innerWidth - rect.right - gap - 8
+  const left = roomRight >= width ? rect.right + gap : Math.max(8, rect.left - gap - width)
+  const top = Math.min(Math.max(8, rect.top + rect.height / 2 - 24), window.innerHeight - height - 8)
   target.style.left = `${left}px`
   target.style.top = `${top}px`
 }

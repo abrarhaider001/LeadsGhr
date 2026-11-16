@@ -3,24 +3,58 @@ import { createRoot } from 'react-dom/client'
 
 type TrackingRecord = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
 
-const observedLoads = (count: number): string => count ? `${count} image load${count === 1 ? '' : 's'} observed` : 'No image load observed'
 const when = (value: string | number): string => new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-type PopupTab = 'report' | 'settings'
 
 const styles = `
-  *{box-sizing:border-box}body{width:340px;margin:0;background:#fff;color:#190B2D;font:13px Arial,sans-serif}button{font:inherit;cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid #29CBEA;outline-offset:2px}
-  .top{display:flex;align-items:center;justify-content:space-between;padding:17px 18px;border-bottom:1px solid #DFD9EC}.brand{display:flex;align-items:center;gap:10px}.brand img{width:30px;height:30px;object-fit:contain}.brand strong{font-size:17px;letter-spacing:-.03em}.version{padding:4px 7px;border-radius:12px;background:#ECE9FA;color:#675E76;font-size:10px}
-  .nav{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:13px 14px 0}.nav button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:39px;border:1px solid #DFD9EC;border-radius:9px;background:#fff;color:#675E76}.nav button[aria-selected=true]{background:#ECE9FA;border-color:#DFD9EC;color:#5B12C9;font-weight:700}.nav svg{width:16px;height:16px}
-  .content{min-height:205px;padding:20px 18px 18px}.eyebrow{margin:0 0 12px;color:#675E76;font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{padding:12px 10px;border:1px solid #DFD9EC;border-radius:10px;background:#F7F4FF}.metric strong{display:block;font-size:20px;line-height:1.2}.metric span{color:#675E76;font-size:10px}.empty{margin:14px 0;color:#675E76;line-height:1.5}.recent{margin-top:16px}.recent h2{margin:0 0 8px;font-size:12px}.record{padding:8px 0;border-top:1px solid #DFD9EC}.record-main{min-width:0}.record strong,.record small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.record strong{font-size:12px}.record small{margin-top:3px;color:#675E76;font-size:10px}.tick-count{display:inline-flex;flex:none;align-items:center;gap:4px;color:#675E76;font-size:11px;font-weight:700}.ticks{display:inline-block;width:20px;height:12px;vertical-align:middle;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.ticks.sent .tick-first,.ticks.open path{stroke:#5B12C9}.record-toggle{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;padding:0;border:0;background:none;color:inherit;text-align:left}.record-toggle:disabled{cursor:default}.history{margin:6px 0 2px;padding:8px 10px;border-radius:8px;background:#F7F4FF;color:#675E76;font-size:10px;line-height:1.6;list-style:none}.history li{display:flex;justify-content:space-between;gap:8px}.history-note{margin-top:4px;color:#675E76;font-size:10px;line-height:1.4}
-  .setting-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid #DFD9EC;border-radius:10px;background:#F7F4FF}.setting-row strong,.setting-row small{display:block}.setting-row small{margin-top:4px;color:#675E76;font-size:11px;line-height:1.35}.switch{position:relative;flex:none;width:37px;height:22px;appearance:none;border:1px solid #AAAAAA;border-radius:20px;background:#D9D9DE;cursor:pointer}.switch:checked{border-color:#5B12C9;background:#5B12C9}.switch:after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .15s}.switch:checked:after{transform:translateX(15px)}.setting-row+.setting-row{margin-top:8px}.connection{display:flex;align-items:center;gap:8px;margin:13px 1px;color:#675E76;font-size:11px}.dot{width:7px;height:7px;border-radius:50%;background:#AAAAAA}.dot.ready{background:#5B12C9}.note{margin:12px 0 0;color:#675E76;font-size:10px;line-height:1.5}
-  .footer{display:flex;gap:8px;padding:12px 18px 17px;border-top:1px solid #DFD9EC}.footer button{flex:1;min-height:36px;border:1px solid #DFD9EC;border-radius:8px;background:#fff;color:#190B2D}.footer button.primary{border-color:#5B12C9;background:#5B12C9;color:#fff;font-weight:700}.footer button:hover{filter:brightness(.95)}.status{margin:0 18px 14px;color:#5B12C9;font-size:11px;line-height:1.4}
+  @font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans.ttf') format('truetype');font-weight:400 700;font-display:swap}
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{width:360px;background:#fff;color:#190B2D;font:13px/1.4 'Instrument Sans',Arial,sans-serif}
+  button,input{font:inherit;color:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid #5B12C9;outline-offset:2px}
+  .app{display:flex;flex-direction:column;max-height:560px}
+  .top{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid #ECE8F2}
+  .top img{width:22px;height:22px}
+  .top strong{font-size:14px;font-weight:600}
+  .icons{display:flex;gap:2px;margin-left:auto}
+  .icon-btn{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:6px;background:none;color:#675E76}
+  .icon-btn:hover:not(:disabled){background:#F4F1F8;color:#190B2D}
+  .icon-btn:disabled{cursor:default}
+  .icon-btn svg{width:17px;height:17px}
+  .icon-btn.spinning svg{animation:spin .8s linear infinite;color:#5B12C9}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .body{flex:1;min-height:0;overflow-y:auto;padding:14px}
+  .label{margin:0 0 6px;font-size:12px;font-weight:600;color:#3A2E4D}
+  .group+.group{margin-top:16px}
+  .toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;cursor:pointer}
+  .toggle+.toggle{border-top:1px solid #ECE8F2}
+  .toggle small{display:block;color:#675E76;font-size:12px}
+  .switch{position:relative;flex:none;width:34px;height:20px;margin:0;appearance:none;border:0;border-radius:10px;background:#D3CDDC;cursor:pointer}
+  .switch:checked{background:#5B12C9}
+  .switch:after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+  .switch:checked:after{transform:translateX(14px)}
+  .setup{display:flex;align-items:center;gap:8px;margin:10px 0 0;padding:8px 10px;border-radius:6px;background:#FFF4E5;color:#8A4B00;font-size:12px}
+  .setup button{margin-left:auto;padding:0;border:0;background:none;color:#5B12C9;font-weight:600;text-decoration:underline}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .stat{padding:8px 10px;border:1px solid #ECE8F2;border-radius:6px}
+  .stat strong{display:block;font-size:17px;font-weight:600}
+  .stat span{color:#675E76;font-size:11px}
+  .list{margin:0;padding:0;list-style:none}
+  .row{display:flex;align-items:center;gap:10px;width:100%;padding:8px 0;border:0;border-top:1px solid #ECE8F2;background:none;text-align:left}
+  .row-main{flex:1;min-width:0}
+  .subject,.meta{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .subject{font-weight:600}
+  .meta{color:#675E76;font-size:12px}
+  .count{display:inline-flex;flex:none;align-items:center;gap:4px;color:#675E76;font-size:12px;font-weight:600}
+  .ticks{width:20px;height:12px;fill:none;stroke:#A0A4AA;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .ticks.sent .tick-first,.ticks.open path{stroke:#5B12C9}
+  .empty{margin:8px 0 0;color:#675E76}
+  .error{margin:8px 0 0;color:#B42318;font-size:12px}
+  .foot{padding:10px 14px;border-top:1px solid #ECE8F2}
+  .foot button{width:100%;height:34px;border:1px solid #DFD9EC;border-radius:6px;background:#fff;font-weight:600}
+  .foot button:hover{background:#F4F1F8}
 `
-
-function Icon({ kind }: { kind: 'report' | 'settings' }) {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {kind === 'report' ? <><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15l3-3 2 2 5-5"/></> : <><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></>}
-  </svg>
-}
 
 /** Both gray by default, first purple once the send is confirmed, both purple once an image load is observed. */
 function Ticks({ sent, loaded }: { sent: boolean; loaded: boolean }) {
@@ -28,13 +62,12 @@ function Ticks({ sent, loaded }: { sent: boolean; loaded: boolean }) {
 }
 
 function Popup() {
-  const [tab, setTab] = useState<PopupTab>('report')
   const [enabled, setEnabled] = useState(true)
   const [notify, setNotify] = useState(true)
-  const [expanded, setExpanded] = useState<string | null>(null)
-  const [configured, setConfigured] = useState(false)
+  const [configured, setConfigured] = useState(true)
   const [records, setRecords] = useState<TrackingRecord[]>([])
-  const [status, setStatus] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     void chrome.storage.local.get(['enabled', 'notify', 'endpoint', 'registrationKey', 'records']).then(data => {
@@ -42,7 +75,7 @@ function Popup() {
       setNotify(data.notify !== false)
       setConfigured(Boolean(data.endpoint && data.registrationKey))
       setRecords(Array.isArray(data.records) ? data.records : [])
-    }).catch(error => setStatus(String(error)))
+    }).catch(problem => setError(String(problem)))
     const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       if (area !== 'local') return
       if (changes.enabled) setEnabled(changes.enabled.newValue !== false)
@@ -56,52 +89,70 @@ function Popup() {
     return () => chrome.storage.onChanged.removeListener(onChanged)
   }, [])
 
-  async function changeEnabled(next: boolean) {
-    try {
-      await chrome.storage.local.set({ enabled: next })
-      setEnabled(next)
-      setStatus('Saved. Reload Gmail to update open compose windows.')
-    } catch (error) { setStatus(String(error)) }
-  }
-
-  async function changeNotify(next: boolean) {
-    try {
-      await chrome.storage.local.set({ notify: next })
-      setNotify(next)
-      setStatus(next ? 'Chrome will notify you when a new image load is observed.' : 'Image-load notifications are off.')
-    } catch (error) { setStatus(String(error)) }
+  async function save(values: Record<string, boolean>) {
+    try { await chrome.storage.local.set(values); setError('') } catch (problem) { setError(String(problem)) }
   }
 
   async function refresh() {
+    setRefreshing(true)
+    setError('')
     try {
       const result = await chrome.runtime.sendMessage({ kind: 'tracking:refresh' }) as { error?: string }
       if (result?.error) throw new Error(result.error)
-      const data = await chrome.storage.local.get('records')
-      setRecords(Array.isArray(data.records) ? data.records : [])
-      setStatus('Observed image loads refreshed.')
-    } catch (error) { setStatus(String(error)) }
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : String(problem))
+    } finally { setRefreshing(false) }
   }
 
-  const opened = records.filter(record => record.loads > 0).length
+  const sent = records.filter(record => record.sent !== false)
+  const opened = sent.filter(record => record.loads > 0).length
   const loads = records.reduce((total, record) => total + record.loads, 0)
-  return <><style>{styles}</style>
-    <header className="top"><div className="brand"><img src="/icon.png" alt=""/><strong>LeadsGhr</strong></div><span className="version">v{chrome.runtime.getManifest().version}</span></header>
-    <nav className="nav" aria-label="Extension sections"><button type="button" aria-selected={tab === 'report'} onClick={() => setTab('report')}><Icon kind="report"/>Tracking report</button><button type="button" aria-selected={tab === 'settings'} onClick={() => setTab('settings')}><Icon kind="settings"/>Settings</button></nav>
-    <main className="content">{tab === 'report' ? <><p className="eyebrow">Image-load activity</p><div className="metrics"><div className="metric"><strong>{records.length}</strong><span>Tracked</span></div><div className="metric"><strong>{opened}</strong><span>With loads</span></div><div className="metric"><strong>{loads}</strong><span>Observed loads</span></div></div><div className="recent"><h2>Recent messages</h2>{records.slice(0, 3).map(record => {
-      const events = record.events ?? []
-      const open = expanded === record.id
-      return <div className="record" key={record.id}>
-        <button type="button" className="record-toggle" disabled={!record.loads} aria-expanded={record.loads ? open : undefined} onClick={() => setExpanded(open ? null : record.id)}>
-          <span className="record-main"><strong>{record.subject}</strong><small>{record.recipient} · {record.sent === false ? 'Not sent yet' : observedLoads(record.loads)}{record.lastLoad ? ` · last ${when(record.lastLoad)}` : ''}</small></span>
-          <span className="tick-count" aria-hidden="true"><Ticks sent={record.sent !== false} loaded={record.loads > 0}/>{record.loads || ''}</span>
+
+  return <div className="app">
+    <style>{styles}</style>
+    <header className="top">
+      <img src="/icon.png" alt=""/>
+      <strong>LeadsGhr Tracker</strong>
+      <span className="icons">
+        <button type="button" className={`icon-btn ${refreshing ? 'spinning' : ''}`} aria-label={refreshing ? 'Refreshing counts' : 'Refresh counts'} title="Refresh counts" disabled={refreshing} onClick={() => void refresh()}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
         </button>
-        {open && <>{events.length > 0 && <ol className="history" aria-label={`Observed image-load history for ${record.subject}`}>{events.map((event, index) => <li key={`${event}-${index}`}><span>Load {record.loads - index}</span><span>{when(event)}</span></li>)}</ol>}
-          <p className="history-note">{events.length ? '' : 'Load times are not available for this message yet. '}Gmail may serve a cached image on later opens, so repeat opens can go unobserved.</p></>}
+        <button type="button" className="icon-btn" aria-label="Settings" title="Settings" onClick={() => void chrome.runtime.openOptionsPage()}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+      </span>
+    </header>
+
+    <div className="body">
+      <div className="group">
+        <label className="toggle"><span>Track new emails<small>Adds a tracking image when you send from Gmail.</small></span><input className="switch" type="checkbox" checked={enabled} onChange={event => { setEnabled(event.target.checked); void save({ enabled: event.target.checked }) }} aria-label="Track new emails"/></label>
+        <label className="toggle"><span>Open notifications<small>A Chrome notification when an email is opened.</small></span><input className="switch" type="checkbox" checked={notify} onChange={event => { setNotify(event.target.checked); void save({ notify: event.target.checked }) }} aria-label="Open notifications"/></label>
+        {!configured && <p className="setup">Tracking endpoint not set up.<button type="button" onClick={() => void chrome.runtime.openOptionsPage()}>Set up</button></p>}
       </div>
-    })}{records.length === 0 && <p className="empty">No tracked messages yet. Set up tracking, then send a message from Gmail.</p>}</div></> : <><p className="eyebrow">Basic settings</p><label className="setting-row"><span><strong>Tracking by default</strong><small>Start new Gmail drafts with tracking on.</small></span><input className="switch" type="checkbox" checked={enabled} onChange={event => void changeEnabled(event.target.checked)} aria-label="Enable tracking by default"/></label><label className="setting-row"><span><strong>Image-load notifications</strong><small>Show a Chrome notification when a new image load is observed.</small></span><input className="switch" type="checkbox" checked={notify} onChange={event => void changeNotify(event.target.checked)} aria-label="Notify on observed image loads"/></label><p className="connection"><span className={`dot ${configured ? 'ready' : ''}`}/>{configured ? 'Public endpoint configured' : 'Public endpoint needs setup'}</p><p className="note">Configure the HTTPS endpoint and registration key in full settings. Image loads do not prove a person read the email, and Gmail's image cache can hide repeat opens.</p></>}</main>
-    <footer className="footer">{tab === 'report' && <button type="button" onClick={() => void refresh()}>Refresh counts</button>}<button className="primary" type="button" onClick={() => void chrome.runtime.openOptionsPage()}>Open full settings</button></footer>
-    {status && <p className="status" role="status">{status}</p>}
-  </>
+
+      <div className="group">
+        <p className="label">Overview</p>
+        <div className="stats">
+          <div className="stat"><strong>{sent.length}</strong><span>Tracked</span></div>
+          <div className="stat"><strong>{opened}</strong><span>Opened</span></div>
+          <div className="stat"><strong>{loads}</strong><span>Image loads</span></div>
+        </div>
+      </div>
+
+      <div className="group">
+        <p className="label">Recent emails</p>
+        <ul className="list">{records.slice(0, 5).map(record => <li key={record.id}>
+          <div className="row">
+            <span className="row-main"><span className="subject">{record.subject}</span><span className="meta">{record.recipient} · {record.sent === false ? 'not sent' : when(record.sentAt)}</span></span>
+            <span className="count"><Ticks sent={record.sent !== false} loaded={record.loads > 0}/>{record.loads || ''}</span>
+          </div>
+        </li>)}</ul>
+        {records.length === 0 && <p className="empty">No tracked emails yet. Send an email from Gmail with tracking on.</p>}
+        {error && <p className="error" role="alert">{error}</p>}
+      </div>
+    </div>
+
+  </div>
 }
 
 createRoot(document.getElementById('root')!).render(<React.StrictMode><Popup /></React.StrictMode>)
