@@ -12,17 +12,20 @@ apps/desktop/
   src/email-verify.ts Email Validation IPC and job control
   src/email-verify/ Pipeline, DNS, SMTP client, and Valid/Invalid SQLite cache
   src/renderer.tsx  Shared React app
+apps/extension/     LeadsGhr Tracker: MV3 Gmail open-tracking extension
+apps/mailer-extension/  LeadsGhr Mailer: MV3 Gmail sending extension (popup, settings, sending queue)
+  src/email-sending/ Campaign CSV/Excel, saved templates, range, queue, and compose helpers
 packages/
   app/              Desktop pages, splash, niche and location JSON data
   ui/               shadcn components, Tailwind globals, tokens and light-only styles
   schemas/          Zod contracts
   core/ extract/ crawler/ quality/ export/  Reusable product logic
   platform/         Adapter interfaces
-supabase/migrations/ Account/profile-only schema with RLS
+supabase/migrations/ Account/profile schema with RLS; public assets bucket (email-assets/ folder for email images)
 docs/              Current guides plus historical specification archive
 ```
 
-All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data; the optional mail-tracking function stores opaque pixel tokens, image-load counts, and load timestamps only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker folders are inactive. `apps/extension` is an active MV3 Gmail tracking build in the pnpm workspace.
+All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data and the public `assets` bucket for email images; the optional mail-tracking function stores opaque pixel tokens, image-load counts, and load timestamps only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker folders are inactive. `apps/extension` is an active MV3 Gmail tracking build in the pnpm workspace.
 
 The New Search page has a niche/state step and a separate location step with numbered chips and inclusive page and location-number range controls. It reads `packages/app/data/niches.json` and `packages/app/data/us-states-locations.json`. Electron main validates and stores custom niches and selections in a local `search-criteria.json` file under the app user-data directory.
 

@@ -24,6 +24,7 @@ import { GrSearchAdvanced } from 'react-icons/gr'
 import { TbFilterBolt } from 'react-icons/tb'
 import { FiSettings } from 'react-icons/fi'
 import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed } from './account-data'
+import { EmailSendingPage } from './email-sending-page'
 
 const sidebarWordmark = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 const mark = new URL('../../../public/logo-leadsghr.svg', import.meta.url).href
@@ -205,7 +206,7 @@ export function LeadsGhrApp() {
           : page === 'Email Filtering' ? <EmailFilteringPage />
           : page === 'Email Validation' ? <EmailValidationPage preferences={preferences} />
           : page === 'Email Spam Check' ? <EmailSpamEnginePage />
-          : page === 'Email Sending' ? <Card className="la-local-page"><h2>Email Sending</h2><p>Planned feature. Email campaigns and sending are not available in the desktop app yet.</p></Card>
+          : page === 'Email Sending' ? <EmailSendingPage />
           : page === 'Email Tracking' ? <EmailTrackingPage />
           : page === 'Niche Library' ? <NicheLibraryPage useNicheKeywords={preferences.useNicheKeywords} onStartSearch={() => void showPage('New Search')} />
           : page === 'Pipeline' ? <PipelineOverviewPage runs={crawlRuns} onCreate={(draft, start) => { setSearchOrigin('Pipeline'); setPipelineDraft(draft); setPipelineDetails({ name: draft.name, provider: draft.provider }); setRunDetail(null); setSearchCriteria(draft.criteria); setPage(start ? 'Crawl Results' : 'New Pipeline') }} onResume={(id) => void resumeCrawl(id)} onDelete={(id) => void deletePipeline(id)} />

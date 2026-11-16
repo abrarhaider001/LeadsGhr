@@ -4,7 +4,9 @@
 
 LeadsGhr is a desktop application for discovering businesses by niche and location, collecting publicly available company and contact information, reviewing quality, organizing local lead lists, and exporting them. The app runs in Electron on the user's computer and IP. Extraction data, scan runs, page observations, and exports stay on that computer in SQLite and local files. Supabase holds account/profile data and, when deployed, opaque email-tracking pixel tokens and image-load counts; it does not store extracted leads.
 
-A companion Gmail tracking extension is available as a downloadable MV3 ZIP from the desktop Email Tracking page. It needs a separately deployed public HTTPS pixel endpoint to observe recipient-side image loads. Manual email extraction in the extension remains planned.
+A companion Gmail tracking extension, **LeadsGhr Tracker**, is available as a downloadable MV3 ZIP from the desktop Email Tracking page. It needs a separately deployed public HTTPS pixel endpoint to observe recipient-side image loads. Manual email extraction in the extension remains planned.
+
+**LeadsGhr Mailer** is a separate Chrome extension (`apps/mailer-extension`) for sending saved email templates to CSV or Excel recipient ranges through the user's Gmail session; the desktop **Email Sending** page downloads it.
 
 [Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
 
@@ -43,13 +45,18 @@ Collect public data only. Respect robots.txt and polite delays, pause on challen
 ```text
 apps/desktop/  Electron main, preload and React renderer
 apps/extension/  Gmail tracking Chrome MV3 extension and downloadable ZIP
+apps/mailer-extension/  LeadsGhr Mailer: Gmail sending Chrome extension and downloadable ZIP
 packages/     Shared domain, extraction, crawling, quality, export, schemas, UI and adapters
 supabase/     Account/profile schema and optional mail-tracking function/migration
 .github/workflows/  Supabase deploy: applies migrations and deploys Edge Functions on every branch push
 docs/         Current desktop guides and preserved original specification
 ```
 
-Legacy web, API, and worker folders remain inactive reference code. `apps/extension` is an active Gmail tracking build in the pnpm workspace.
+Legacy web, API, and worker folders remain inactive reference code. `apps/extension` (LeadsGhr Tracker) and `apps/mailer-extension` (LeadsGhr Mailer) are active, separate Chrome extension builds in the pnpm workspace.
+
+## LeadsGhr Mailer (Gmail sending)
+
+Open **Email Sending** in the desktop app and select **Download extension ZIP**; an **Extension saved** dialog shows where `leadsghr-mailer.zip` was saved. Extract it to a `leadsghr-mailer` folder and load it with **Load unpacked** in `chrome://extensions`. Save templates on the Mailer's settings page (popup gear button), then click the toolbar icon in Gmail: pick a template, upload a CSV or Excel file, set Start, End, and a 5–120 second delay, and use Start, Pause, Resume, and Stop. Rebuild with `pnpm.cmd build:mailer-extension`. See [Email Sending](docs/EMAIL_SENDING_README.md).
 
 ## Supabase deployment
 

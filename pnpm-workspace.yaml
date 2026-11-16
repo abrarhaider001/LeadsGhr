@@ -1,6 +1,7 @@
 packages:
   - apps/desktop
   - apps/extension
+  - apps/mailer-extension
   - packages/*
 onlyBuiltDependencies:
   - better-sqlite3

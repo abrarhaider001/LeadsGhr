@@ -81,6 +81,34 @@ app.whenReady().then(async () => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
   registerEmailVerifyIpc(localStore().db)
+  // Email Sending: save the LeadsGhr Mailer extension ZIP (in C:\LeadsGhr\extensions), then confirm with an information dialog.
+  ipcMain.handle('leadsghr:mailer:download-extension', async (event) => {
+    const source = app.isPackaged
+      ? join(process.resourcesPath, 'leadsghr-mailer.zip')
+      : join(app.getAppPath(), '../../apps/mailer-extension/leadsghr-mailer.zip')
+    const directory = leadsGhrExtensionsDirectory()
+    await mkdir(directory, { recursive: true })
+    const owner = BrowserWindow.fromWebContents(event.sender)
+    const saveOptions = { defaultPath: join(directory, 'leadsghr-mailer.zip'), filters: [{ name: 'ZIP archive', extensions: ['zip'] }] }
+    const result = owner ? await dialog.showSaveDialog(owner, saveOptions) : await dialog.showSaveDialog(saveOptions)
+    if (result.canceled || !result.filePath) return null
+    await copyFile(source, result.filePath)
+    const infoOptions = {
+      type: 'info' as const,
+      title: 'Extension saved',
+      message: 'LeadsGhr Mailer extension saved',
+      detail: `Saved to ${result.filePath}
+
+Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://extensions, turn on Developer mode, select Load unpacked, and choose that folder.`,
+      buttons: ['Show in folder', 'OK'],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true,
+    }
+    const info = owner ? await dialog.showMessageBox(owner, infoOptions) : await dialog.showMessageBox(infoOptions)
+    if (info.response === 0) shell.showItemInFolder(result.filePath)
+    return result.filePath
+  })
   ipcMain.handle('leadsghr:tracking:download-extension', async () => {
     const source = app.isPackaged
       ? join(process.resourcesPath, 'leadsghr-tracker.zip')
