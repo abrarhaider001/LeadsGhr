@@ -19,7 +19,7 @@ The pnpm workspace includes `apps/desktop`, `apps/extension`, `apps/mailer-exten
 
 | Environment | How it is used | Data boundary |
 | --- | --- | --- |
-| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences and SQLite; CSV exports go to `C:\LeadsGhr\exports` and the extension ZIP to `C:\LeadsGhr\extensions` (`apps/desktop/src/paths.ts`) |
+| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences and SQLite; CSV exports go to `C:\LeadsGhr\exports` the extension ZIPs to `C:\LeadsGhr\extensions`, and exported preference files to `C:\LeadsGhr\settings` (`apps/desktop/src/paths.ts`) |
 | Chrome extension builds | `pnpm.cmd build:extension` (Tracker) and `pnpm.cmd build:mailer-extension` (Mailer) from the repository root | `C:\LeadsGhr\extensions` holds each extension's ZIP and its extracted, ready-to-load folder side by side (`leadsghr-tracker.zip` and `leadsghr-tracker\`, `leadsghr-mailer.zip` and `leadsghr-mailer\`); each extension's user data lives in that folder's `data\` subfolder |
 | Packaged desktop build | `pnpm.cmd build` when packaging is needed | Runs on the user's PC; generated output is not source and stays ignored |
 | Supabase | Account profile schema and optional mail tracking endpoint | Never store extracted leads, crawl observations, queues, exports, message recipients, or subjects |
@@ -87,6 +87,15 @@ Do not silently rewrite the product to match an old specification. Explain any c
 
 **Migrations and data:** write schema changes as reviewable files and validate locally. Do not apply migrations to Supabase or alter a user's real extraction database. Preserve existing data and define how new local schema fields migrate.
 
+**Preferences file (import/export):** Settings → Preferences → Export settings / Import settings use the JSON file defined in `packages/schemas/src/preferences-file.ts` (`buildPreferencesFile`, `applyPreferencesFile`). Whenever a preference is added, changed, renamed, or removed in `desktopPreferencesSchema`/`defaultDesktopPreferences`, update that file format in the same change so exported files keep working across versions:
+- **Added:** give it a default in `defaultDesktopPreferences` and add it, with a label, to its section in `PREFERENCE_SECTIONS` so it appears in **Choose what to export** (the test fails until it is listed exactly once); import applies it when present.
+- **Renamed:** add `oldName: 'newName'` to `PREFERENCE_RENAMES` so files from older versions still set it.
+- **Allowed values changed:** add a conversion to `PREFERENCE_VALUE_UPGRADES` when an old value has a clear new equivalent; otherwise the old value is skipped and the current setting is kept.
+- **Removed:** remove it from `PREFERENCE_SECTIONS` (older files that still contain it are ignored for that key); mention the removal in the user guide.
+- **File structure changed** (not just the list of preferences): bump `PREFERENCES_FILE_VERSION` and keep reading older versions.
+
+Import must stay version-tolerant: apply only the preferences present in the file that this version accepts, keep every other preference at its current value, and ignore entries this version does not know, so a file from an older or newer LeadsGhr imports as far as both versions agree. Extend `packages/schemas/tests/preferences-file.test.ts` (run with `pnpm.cmd --filter @leadsghr/schemas test`) for every rename, value upgrade, or structure change, and update the README's import/export paragraph.
+
 **Generated files:** do not edit `apps/desktop/out/`, installer output, `node_modules/`, `.turbo/`, or other ignored build artifacts as source.
 
 **Chrome extensions:** after any change to an extension, rebuild it with its packaging script (`pnpm.cmd build:mailer-extension` for LeadsGhr Mailer). The script must copy the ZIP to `C:\LeadsGhr\extensions\` and extract it into the same-named folder beside it (for example `C:\LeadsGhr\extensions\leadsghr-mailer\`), emptying that folder first. The owner never extracts anything by hand: the first time they choose that folder with **Load unpacked** in `chrome://extensions`, and after each rebuild they only select **Reload**. Always reuse the same folder path, because Chrome derives an unpacked extension's ID, and therefore its saved data, from the path. If a packaging script lacks the extract step, add it. Never extract or keep unpacked builds inside the repository. Report the ZIP and folder paths in the handoff.
@@ -103,7 +112,7 @@ Update the matching documentation in the same working-tree change whenever behav
 | --- | --- |
 | New or changed screen | Relevant feature README and `docs/components/COMPONENTS_README.md` when the component inventory changes |
 | Crawler or pipeline behavior | `docs/crawler/CRAWLER_README.md`, relevant feature README, and architecture guide as needed |
-| Preference or schema change | Zod contract, persistence/load path, relevant user guide, and migration notes if local data changes |
+| Preference or schema change | Zod contract, persistence/load path, the preferences import/export file (`packages/schemas/src/preferences-file.ts` and its test), relevant user guide, and migration notes if local data changes |
 | Theme, font, icon, or component change | `docs/theme/THEME_README.md`, `docs/icons/ICONS_README.md`, or `docs/components/COMPONENTS_README.md` as applicable |
 | Feature status change | `docs/features/FEATURE_STATUS_README.md` and its feature README |
 | Removed or retired behavior | Current guide plus a short explanation of what replaced it; do not leave active docs claiming it still works |
