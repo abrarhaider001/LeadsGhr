@@ -122,17 +122,21 @@ void connectRealtime()
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'local' && (changes.endpoint || changes.registrationKey)) { closeRealtime(); void connectRealtime() }
 })
-/** Open the full settings page scrolled to one email in the Email report. */
-async function openReport(id?: string): Promise<void> {
-  if (id) await chrome.storage.local.set({ focusEmail: { id, at: Date.now() } })
-  await chrome.runtime.openOptionsPage()
+/** Bring the user to Gmail's Sent folder: reuse an open Gmail tab, or open one. */
+async function openGmailSent(): Promise<void> {
+  const [tab] = await chrome.tabs.query({ url: 'https://mail.google.com/*' })
+  if (tab?.id) {
+    await chrome.tabs.update(tab.id, { active: true, url: tab.url?.replace(/#.*$/, '') + '#sent' })
+    if (tab.windowId != null) await chrome.windows.update(tab.windowId, { focused: true }).catch(() => undefined)
+    return
+  }
+  await chrome.tabs.create({ url: 'https://mail.google.com/mail/u/0/#sent' })
 }
 
 chrome.notifications.onClicked.addListener((notificationId) => {
   if (!notificationId.startsWith(NOTIFICATION_PREFIX)) return
   void chrome.notifications.clear(notificationId)
-  // Notification ids are `${prefix}${recordId}-${loads}`.
-  void openReport(notificationId.slice(NOTIFICATION_PREFIX.length).replace(/-\d+$/, ''))
+  void openGmailSent()
 })
 
 // A load whose server time falls in this window around a sender view is treated as the sender's own.
@@ -269,11 +273,6 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
     chrome.notifications.create(`leadsghr-skipped-${Date.now()}`, { type: 'basic', iconUrl: chrome.runtime.getURL('icon.png'), title: 'Email sent without tracking', message: reason, priority: 1 })
     respond({ ok: true })
     return
-  }
-  if (message.kind === 'tracking:open-report') {
-    const id = 'id' in message && typeof message.id === 'string' ? message.id : undefined
-    void openReport(id).then(() => respond({ ok: true }), error => respond({ error: String(error) }))
-    return true
   }
   if (message.kind === 'tracking:own-view' && 'id' in message && typeof message.id === 'string') {
     const id = message.id

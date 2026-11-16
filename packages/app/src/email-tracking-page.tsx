@@ -98,7 +98,7 @@ export function EmailTrackingPage() {
       <section className="la-tracking-panel" aria-labelledby="la-tracking-ticks-title">
         <h3 id="la-tracking-ticks-title">Reading the ticks</h3>
         <ul className="la-tracking-legend">{tickStates.map(item => <li key={item.state}><Ticks state={item.state}/><div><strong>{item.title}</strong><span>{item.body}</span></div></li>)}</ul>
-        <p className="la-tracking-panel-note">Ticks appear in the Sent list and beside each message you sent inside a conversation, so every reply has its own status. Hover the ticks to see when the image was last loaded, how soon after sending it was first loaded, and every load time. <strong>Open full settings → Email report</strong> lists every tracked email.</p>
+        <p className="la-tracking-panel-note">Ticks appear in the Sent list and beside each message you sent inside a conversation, so every reply has its own status. Hover the ticks to see when the image was last loaded and how soon after sending it was first loaded. The Sent list shows the latest email you sent in each conversation.</p>
       </section>
       <section className="la-tracking-panel" aria-labelledby="la-tracking-notes-title">
         <h3 id="la-tracking-notes-title">Good to know</h3>

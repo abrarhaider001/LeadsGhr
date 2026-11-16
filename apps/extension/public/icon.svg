@@ -1,18 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 1024 1024" role="img" aria-label="LeadsGhr Tracker logo">
   <defs>
-    <linearGradient id="tick" x1="980" y1="230" x2="360" y2="820" gradientUnits="userSpaceOnUse">
+    <!-- Both LeadsGhr Mailer plane colours in one gradient: the upper wing's purples flowing into the lower wing's deep purple. -->
+    <linearGradient id="g" x1="928" y1="96" x2="96" y2="928" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#6E0CF2"/>
-      <stop offset="0.6" stop-color="#6403E8"/>
-      <stop offset="1" stop-color="#3B0197"/>
+      <stop offset="0.35" stop-color="#6403E8"/>
+      <stop offset="0.7" stop-color="#3B0197"/>
+      <stop offset="1" stop-color="#1B003A"/>
     </linearGradient>
-    <!-- Cut a gap out of the first tick where the second crosses it, like the gap between the plane's wings. -->
-    <mask id="gap" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+    <!-- The double tick is cut out, so the background shows through. -->
+    <mask id="cut" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
       <rect width="1024" height="1024" fill="#fff"/>
-      <polyline points="420,600 560,740 960,250" fill="none" stroke="#000" stroke-width="250" stroke-linejoin="miter" stroke-miterlimit="10"/>
+      <path d="M250 560 L380 690 L600 430 M520 640 L570 690 L790 430" fill="none" stroke="#000" stroke-width="92" stroke-linecap="round" stroke-linejoin="round"/>
     </mask>
   </defs>
-  <!-- First tick: the deep purple of the LG monogram. -->
-  <polyline mask="url(#gap)" points="64,560 270,766 670,276" fill="none" stroke="#1B003A" stroke-width="150" stroke-linejoin="miter" stroke-miterlimit="10"/>
-  <!-- Second tick: the purple gradient. -->
-  <polyline points="420,600 560,740 960,250" fill="none" stroke="url(#tick)" stroke-width="150" stroke-linejoin="miter" stroke-miterlimit="10"/>
+  <rect x="96" y="96" width="832" height="832" rx="150" fill="url(#g)" mask="url(#cut)"/>
 </svg>
