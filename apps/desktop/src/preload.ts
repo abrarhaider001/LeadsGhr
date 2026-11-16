@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   onMapsScanEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:maps-scan:event', listener); return () => ipcRenderer.removeListener('leadsghr:maps-scan:event', listener) },
   loadPreferences: () => ipcRenderer.invoke('leadsghr:preferences:load'),
   savePreferences: (input: unknown) => ipcRenderer.invoke('leadsghr:preferences:save', desktopPreferencesSchema.parse(input)),
+  exportPreferences: (keys?: unknown) => ipcRenderer.invoke('leadsghr:preferences:export', Array.isArray(keys) ? keys.filter((key) => typeof key === 'string').slice(0, 100) : undefined),
+  importPreferences: () => ipcRenderer.invoke('leadsghr:preferences:import'),
+  showSettingsExport: (path: unknown) => ipcRenderer.invoke('leadsghr:preferences:show-export', String(path)),
   loadSearchCriteria: () => ipcRenderer.invoke('leadsghr:search-criteria:load'),
   saveSearchCriteria: (input: unknown) => ipcRenderer.invoke('leadsghr:search-criteria:save', searchCriteriaSchema.parse(input)),
   prepareCrawlerTest: (input: unknown) => ipcRenderer.invoke('leadsghr:crawler-test:prepare', scanRequestSchema.parse(input)),
@@ -34,5 +37,6 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   stopEmailVerify: (id: unknown) => ipcRenderer.invoke('leadsghr:email-verify:stop', emailVerifyJobIdSchema.parse(id)),
   onEmailVerifyEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:email-verify:event', listener); return () => ipcRenderer.removeListener('leadsghr:email-verify:event', listener) },
   downloadTrackingExtension: () => ipcRenderer.invoke('leadsghr:tracking:download-extension'),
+  downloadMailerExtension: () => ipcRenderer.invoke('leadsghr:mailer:download-extension'),
 })
 

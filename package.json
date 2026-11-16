@@ -11,6 +11,7 @@
     "build:extension": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1",
     "clear:crawl-history": "node scripts/clear-local-crawl-history.mjs",
     "build": "pnpm --filter @leadsghr/desktop build",
+    "build:mailer-extension": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-mailer-extension.ps1",
     "typecheck": "turbo typecheck",
     "lint": "turbo lint"
   },

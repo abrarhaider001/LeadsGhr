@@ -24,6 +24,7 @@ import { GrSearchAdvanced } from 'react-icons/gr'
 import { TbFilterBolt } from 'react-icons/tb'
 import { FiSettings } from 'react-icons/fi'
 import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed } from './account-data'
+import { EmailSendingPage } from './email-sending-page'
 
 const sidebarWordmark = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 const mark = new URL('../../../public/logo-leadsghr.svg', import.meta.url).href
@@ -205,7 +206,7 @@ export function LeadsGhrApp() {
           : page === 'Email Filtering' ? <EmailFilteringPage />
           : page === 'Email Validation' ? <EmailValidationPage preferences={preferences} />
           : page === 'Email Spam Check' ? <EmailSpamEnginePage />
-          : page === 'Email Sending' ? <Card className="la-local-page"><h2>Email Sending</h2><p>Planned feature. Email campaigns and sending are not available in the desktop app yet.</p></Card>
+          : page === 'Email Sending' ? <EmailSendingPage />
           : page === 'Email Tracking' ? <EmailTrackingPage />
           : page === 'Niche Library' ? <NicheLibraryPage useNicheKeywords={preferences.useNicheKeywords} onStartSearch={() => void showPage('New Search')} />
           : page === 'Pipeline' ? <PipelineOverviewPage runs={crawlRuns} onCreate={(draft, start) => { setSearchOrigin('Pipeline'); setPipelineDraft(draft); setPipelineDetails({ name: draft.name, provider: draft.provider }); setRunDetail(null); setSearchCriteria(draft.criteria); setPage(start ? 'Crawl Results' : 'New Pipeline') }} onResume={(id) => void resumeCrawl(id)} onDelete={(id) => void deletePipeline(id)} />
@@ -213,7 +214,7 @@ export function LeadsGhrApp() {
           : page === 'Crawl Results' && searchCriteria ? <SearchResultsPage key={runDetail?.id ?? 'new'} criteria={runDetail?.criteria ?? searchCriteria} preferences={runDetail?.preferences ?? preferences} initialRun={runDetail} pipelineMode={searchOrigin === 'Pipeline'} pipelineName={pipelineDetails?.name} provider={pipelineDetails?.provider ?? 'google-maps'} onBack={() => void showPage(searchOrigin === 'Pipeline' ? 'New Pipeline' : 'New Search')} onSaved={() => void refreshCrawlHistory()} onFinished={(item) => { setFinishedExport(item); setPage('Pipeline Export'); void refreshCrawlHistory() }} />
           : page === 'Pipeline Export' && finishedExport ? <><PipelineTimeline current={5}/><PipelineExportPage item={finishedExport} onPipeline={() => void showPage('Pipeline')} onExports={() => void showPage('Exports')} /></>
           : page === 'Runs' || page === 'Exports' ? <ExportsPage runs={crawlRuns} exports={crawlExports} showExportHistory={page === 'Exports'} onRefresh={refreshCrawlHistory} onResume={(id) => void resumeCrawl(id)} />
-          : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} preferences={preferences} onPreferencesChange={updatePreferences} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
+          : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} preferences={preferences} onPreferencesChange={updatePreferences} onPreferencesImported={(next) => { setPreferences(next); setPreferencesMessage('') }} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
           : page === 'Leads' ? <section className="la-records">
             <div className="la-records-toolbar">
               <label className="la-records-search"><Icon name="search" size={17}/><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search companies, sources, emails..." aria-label={`Search ${page.toLowerCase()}`} /></label>

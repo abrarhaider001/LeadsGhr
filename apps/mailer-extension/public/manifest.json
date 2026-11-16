@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "LeadsGhr Mailer",
+  "version": "0.3.0",
+  "description": "Send saved email templates to CSV or Excel recipient ranges through your Gmail session.",
+  "permissions": ["storage", "alarms", "tabs", "scripting"],
+  "host_permissions": ["https://mail.google.com/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_scripts": [{ "matches": ["https://mail.google.com/*"], "js": ["gmail.js"], "run_at": "document_idle" }],
+  "options_page": "settings.html",
+  "icons": { "16": "icon.png", "32": "icon.png", "128": "icon.png" },
+  "action": { "default_title": "LeadsGhr Mailer", "default_popup": "popup.html" }
+}

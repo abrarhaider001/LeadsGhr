@@ -1,12 +1,12 @@
 import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, copyFile, mkdir, stat } from 'node:fs/promises'
 import Database from 'better-sqlite3'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, type DesktopPreferences } from '@leadsghr/schemas'
+import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, buildPreferencesFile, applyPreferencesFile, type DesktopPreferences } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
-import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory } from './paths'
+import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory, leadsGhrSettingsDirectory } from './paths'
 import { registerCrawlerTest } from './crawler-test'
 import { autoUpdater } from 'electron-updater'
 import { scanMaps } from './maps-scan'
@@ -81,6 +81,34 @@ app.whenReady().then(async () => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
   registerEmailVerifyIpc(localStore().db)
+  // Email Sending: save the LeadsGhr Mailer extension ZIP (in C:\LeadsGhr\extensions), then confirm with an information dialog.
+  ipcMain.handle('leadsghr:mailer:download-extension', async (event) => {
+    const source = app.isPackaged
+      ? join(process.resourcesPath, 'leadsghr-mailer.zip')
+      : join(app.getAppPath(), '../../apps/mailer-extension/leadsghr-mailer.zip')
+    const directory = leadsGhrExtensionsDirectory()
+    await mkdir(directory, { recursive: true })
+    const owner = BrowserWindow.fromWebContents(event.sender)
+    const saveOptions = { defaultPath: join(directory, 'leadsghr-mailer.zip'), filters: [{ name: 'ZIP archive', extensions: ['zip'] }] }
+    const result = owner ? await dialog.showSaveDialog(owner, saveOptions) : await dialog.showSaveDialog(saveOptions)
+    if (result.canceled || !result.filePath) return null
+    await copyFile(source, result.filePath)
+    const infoOptions = {
+      type: 'info' as const,
+      title: 'Extension saved',
+      message: 'LeadsGhr Mailer extension saved',
+      detail: `Saved to ${result.filePath}
+
+Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://extensions, turn on Developer mode, select Load unpacked, and choose that folder.`,
+      buttons: ['Show in folder', 'OK'],
+      defaultId: 1,
+      cancelId: 1,
+      noLink: true,
+    }
+    const info = owner ? await dialog.showMessageBox(owner, infoOptions) : await dialog.showMessageBox(infoOptions)
+    if (info.response === 0) shell.showItemInFolder(result.filePath)
+    return result.filePath
+  })
   ipcMain.handle('leadsghr:tracking:download-extension', async () => {
     const source = app.isPackaged
       ? join(process.resourcesPath, 'leadsghr-tracker.zip')
@@ -162,6 +190,51 @@ app.whenReady().then(async () => {
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
     return preferences
+  })
+  // Preferences → Export settings: write the current preferences to C:\LeadsGhr\settings and return the file path.
+  ipcMain.handle('leadsghr:preferences:export', async (event, input: unknown) => {
+    if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    // The sender's choice of preferences; buildPreferencesFile keeps only known, exportable keys.
+    const keys = Array.isArray(input) ? input.filter((key): key is string => typeof key === 'string').slice(0, 100) : undefined
+    const preferences = await readPreferences()
+    const directory = leadsGhrSettingsDirectory()
+    await mkdir(directory, { recursive: true })
+    const stamp = new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '')
+    const path = join(directory, `leadsghr-settings-${stamp}.json`)
+    const file = buildPreferencesFile(preferences, app.getVersion(), keys)
+    await writeFile(path, JSON.stringify(file, null, 2) + '\n', 'utf8')
+    return path
+  })
+  // Preferences → Import settings: pick a JSON file, validate it, save it as the current preferences.
+  ipcMain.handle('leadsghr:preferences:import', async (event) => {
+    const owner = BrowserWindow.fromWebContents(event.sender)
+    if (!owner) throw new Error('Unexpected caller')
+    const result = await dialog.showOpenDialog(owner, {
+      title: 'Import LeadsGhr settings',
+      defaultPath: leadsGhrSettingsDirectory(),
+      properties: ['openFile'],
+      filters: [{ name: 'LeadsGhr settings', extensions: ['json'] }],
+    })
+    if (result.canceled || !result.filePaths[0]) return null
+    const path = result.filePaths[0]
+    if ((await stat(path)).size > 1_000_000) throw new Error('That file is too large to be a LeadsGhr settings file.')
+    let parsed: unknown
+    try { parsed = JSON.parse(await readFile(path, 'utf8')) } catch { throw new Error('That file is not valid JSON.') }
+    // Only preferences present in the file and accepted by this version are applied; the rest keep their values.
+    const imported = applyPreferencesFile(parsed, await readPreferences())
+    const preferences = { ...imported.preferences, scanPublicWebsites: false }
+    preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
+    await preferencesWrite
+    return { preferences, path, applied: imported.applied.length, skipped: imported.skipped.length, ignored: imported.ignored.length }
+  })
+  // "Show in folder" for an exported settings file (only files inside C:\LeadsGhr\settings).
+  ipcMain.handle('leadsghr:preferences:show-export', async (event, input: unknown) => {
+    if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    if (typeof input !== 'string' || input.length > 1000) throw new Error('Invalid path.')
+    const path = resolve(input)
+    const directory = resolve(leadsGhrSettingsDirectory())
+    if (!path.toLowerCase().startsWith(directory.toLowerCase() + '\\') && !path.toLowerCase().startsWith(directory.toLowerCase() + '/')) throw new Error('Not a settings export.')
+    shell.showItemInFolder(path)
   })
   ipcMain.handle('leadsghr:leads', () => localStore().adapters.storage.listLeads(localScope, 500))
   ipcMain.handle('leadsghr:runs', () => localStore().db.prepare('SELECT id,url,status,started_at AS startedAt,finished_at AS finishedAt,error FROM scan_runs ORDER BY started_at DESC LIMIT 100').all())
