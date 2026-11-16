@@ -5,15 +5,25 @@ import { saveLocalAccount, type LocalAccount } from './account-data'
 
 type SettingsBridge = {
   exportPreferences(): Promise<string>
-  importPreferences(): Promise<{ preferences: DesktopPreferences; path: string } | null>
+  importPreferences(): Promise<{ preferences: DesktopPreferences; path: string; applied: number; skipped: number; ignored: number } | null>
   showSettingsExport(path: string): Promise<void>
 }
 const settingsBridge = () => (window as Window & { leadsGhrDesktop?: Partial<SettingsBridge> }).leadsGhrDesktop
 
 type SettingsNotice =
   | { kind: 'exported'; path: string }
-  | { kind: 'imported'; path: string }
+  | { kind: 'imported'; path: string; applied: number; skipped: number; ignored: number }
   | { kind: 'error'; message: string }
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
+
+/** "12 settings updated", plus what was left unchanged when the file came from another version. */
+function importSummary(notice: { applied: number; skipped: number; ignored: number }): string {
+  const parts = [`${plural(notice.applied, 'setting')} updated`]
+  if (notice.skipped) parts.push(`${plural(notice.skipped, 'setting')} kept as before (value not supported)`)
+  if (notice.ignored) parts.push(`${plural(notice.ignored, 'setting')} from another version ignored`)
+  return parts.join('; ')
+}
 
 const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path
 
@@ -39,7 +49,7 @@ function SettingsTransfer({ onImported }: { onImported(next: DesktopPreferences)
       const result = await api.importPreferences()
       if (!result) return
       onImported(result.preferences)
-      setNotice({ kind: 'imported', path: result.path })
+      setNotice({ kind: 'imported', path: result.path, applied: result.applied ?? 0, skipped: result.skipped ?? 0, ignored: result.ignored ?? 0 })
     } catch (error) {
       setNotice({ kind: 'error', message: error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(error) })
     } finally { setBusy(null) }
@@ -57,7 +67,7 @@ function SettingsTransfer({ onImported }: { onImported(next: DesktopPreferences)
       <span className="la-settings-notice-icon" aria-hidden="true">{notice.kind === 'error' ? '!' : '✓'}</span>
       <div className="la-settings-notice-text">
         {notice.kind === 'exported' && <><strong>Settings exported</strong><span>Saved as {fileName(notice.path)} in C:\LeadsGhr\settings. Send this file to share your settings.</span></>}
-        {notice.kind === 'imported' && <><strong>Settings imported successfully</strong><span>All preferences were updated from {fileName(notice.path)}.</span></>}
+        {notice.kind === 'imported' && <><strong>Settings imported successfully</strong><span>{importSummary(notice)} from {fileName(notice.path)}.</span></>}
         {notice.kind === 'error' && <><strong>Settings not changed</strong><span>{notice.message}</span></>}
       </div>
       {notice.kind === 'exported' && <button type="button" onClick={() => void settingsBridge()?.showSettingsExport?.(notice.path)}>Show in folder</button>}

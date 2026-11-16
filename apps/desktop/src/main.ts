@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { readFile, writeFile, copyFile, mkdir, stat } from 'node:fs/promises'
 import Database from 'better-sqlite3'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, type DesktopPreferences } from '@leadsghr/schemas'
+import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, buildPreferencesFile, applyPreferencesFile, type DesktopPreferences } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
 import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory, leadsGhrSettingsDirectory } from './paths'
@@ -199,7 +199,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     await mkdir(directory, { recursive: true })
     const stamp = new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '')
     const path = join(directory, `leadsghr-settings-${stamp}.json`)
-    const file = { app: 'LeadsGhr', kind: 'preferences', version: 1, exportedAt: new Date().toISOString(), preferences }
+    const file = buildPreferencesFile(preferences, app.getVersion())
     await writeFile(path, JSON.stringify(file, null, 2) + '\n', 'utf8')
     return path
   })
@@ -218,17 +218,12 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     if ((await stat(path)).size > 1_000_000) throw new Error('That file is too large to be a LeadsGhr settings file.')
     let parsed: unknown
     try { parsed = JSON.parse(await readFile(path, 'utf8')) } catch { throw new Error('That file is not valid JSON.') }
-    // Accept an exported file ({ kind: 'preferences', preferences }) or a bare preferences object.
-    const body = parsed && typeof parsed === 'object' && 'preferences' in parsed ? (parsed as { preferences: unknown }).preferences : parsed
-    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('That file does not contain LeadsGhr settings.')
-    const known = Object.keys(defaultDesktopPreferences)
-    if (!Object.keys(body).some((key) => known.includes(key))) throw new Error('That file does not contain LeadsGhr settings.')
-    const checked = desktopPreferencesSchema.safeParse({ ...(await readPreferences()), ...body })
-    if (!checked.success) throw new Error('Some settings in that file are not valid, so nothing was imported.')
-    const preferences = { ...checked.data, scanPublicWebsites: false }
+    // Only preferences present in the file and accepted by this version are applied; the rest keep their values.
+    const imported = applyPreferencesFile(parsed, await readPreferences())
+    const preferences = { ...imported.preferences, scanPublicWebsites: false }
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
-    return { preferences, path }
+    return { preferences, path, applied: imported.applied.length, skipped: imported.skipped.length, ignored: imported.ignored.length }
   })
   // "Show in folder" for an exported settings file (only files inside C:\LeadsGhr\settings).
   ipcMain.handle('leadsghr:preferences:show-export', async (event, input: unknown) => {
