@@ -1,0 +1,84 @@
+name: Release desktop app
+
+# Every push to main builds the Windows installer and publishes it as a GitHub Release.
+# Friends download the newest version from one permanent link:
+#   https://github.com/<owner>/<repo>/releases/latest/download/LeadsGhr-Setup.exe
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-desktop
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Each release gets its own version: 0.1.<build number>. Only the CI copy changes; nothing is committed.
+      - name: Set release version
+        shell: pwsh
+        run: |
+          $version = "0.1.${{ github.run_number }}"
+          $path = 'apps/desktop/package.json'
+          $json = Get-Content $path -Raw
+          $json = [regex]::Replace($json, '"version":\s*"[^"]+"', "`"version`": `"$version`"", 1)
+          Set-Content -Path $path -Value $json -NoNewline
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Output "Release version $version"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The installer bundles the Chrome extension ZIPs, so build them first.
+      - name: Build Chrome extensions
+        shell: pwsh
+        run: |
+          pnpm build:extension
+          if (Test-Path scripts/package-mailer-extension.ps1) { pnpm build:mailer-extension }
+
+      - name: Build Windows installer
+        run: pnpm build
+        env:
+          # No code-signing certificate: build an unsigned installer.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Name the installer
+        shell: pwsh
+        run: |
+          $dir = 'apps/desktop/dist-installer'
+          $exe = Get-ChildItem $dir -Filter '*.exe' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $exe) { throw 'No installer was built.' }
+          Copy-Item $exe.FullName (Join-Path $dir 'LeadsGhr-Setup.exe')
+          Copy-Item $exe.FullName (Join-Path $dir "LeadsGhr-Setup-$env:VERSION.exe")
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: LeadsGhr ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: |
+            apps/desktop/dist-installer/LeadsGhr-Setup.exe
+            apps/desktop/dist-installer/LeadsGhr-Setup-${{ env.VERSION }}.exe
+          body: |
+            LeadsGhr ${{ env.VERSION }} for Windows, built from ${{ github.sha }}.
+
+            **Install:** download `LeadsGhr-Setup.exe` and run it. The installer is not code-signed, so Windows may show "Windows protected your PC": select **More info**, then **Run anyway**.
+
+            **Needs:** Windows and Google Chrome. The Chrome extensions are downloaded from inside the app (Email Tracking / Email Sending pages).

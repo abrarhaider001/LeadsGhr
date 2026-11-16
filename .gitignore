@@ -70,3 +70,6 @@ apps/desktop/dist-installer/
 apps/desktop/dist-icon-check*/
 apps/desktop/out/
 apps/desktop/electron.vite.config.*.mjs
+
+# Supabase CLI local state (linked project, pooler URL)
+supabase/.temp/

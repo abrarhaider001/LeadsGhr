@@ -418,6 +418,6 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
         {selectedSitePage.emails.length ? <ol className="la-crawler-detail-emails">{selectedSitePage.emails.map((email) => <li key={email}><span>{email}</span>{selectedSitePage.kind === 'Contact page' && homepageEmails.has(email.toLowerCase()) && <span className="la-crawler-duplicate-chip">Also found on homepage</span>}</li>)}</ol> : <p className="la-crawler-detail-empty">{selectedSitePage.status === 'crawled' ? 'No emails found on this page.' : 'No emails found yet.'}</p>}
       </aside>
     </div>}
-    <p className="la-results-note">Search results supply website URLs. Pipeline crawls those sites, filters extracted emails, and exports the saved results to Documents/LeadsGhr/exports.</p>
+    <p className="la-results-note">Search results supply website URLs. Pipeline crawls those sites, filters extracted emails, and exports the saved results to C:\LeadsGhr\exports.</p>
   </div>
 }

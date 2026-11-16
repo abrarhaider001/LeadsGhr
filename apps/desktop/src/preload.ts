@@ -33,5 +33,6 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   startEmailVerify: (input: unknown) => ipcRenderer.invoke('leadsghr:email-verify:start', emailVerifyRequestSchema.parse(input)),
   stopEmailVerify: (id: unknown) => ipcRenderer.invoke('leadsghr:email-verify:stop', emailVerifyJobIdSchema.parse(id)),
   onEmailVerifyEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:email-verify:event', listener); return () => ipcRenderer.removeListener('leadsghr:email-verify:event', listener) },
+  downloadTrackingExtension: () => ipcRenderer.invoke('leadsghr:tracking:download-extension'),
 })
 
