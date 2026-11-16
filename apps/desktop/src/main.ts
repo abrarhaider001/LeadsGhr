@@ -1,11 +1,12 @@
-﻿import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { readFile, writeFile, copyFile } from 'node:fs/promises'
+import { readFile, writeFile, copyFile, mkdir } from 'node:fs/promises'
 import Database from 'better-sqlite3'
 import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, type DesktopPreferences } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
+import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory } from './paths'
 import { registerCrawlerTest } from './crawler-test'
 import { autoUpdater } from 'electron-updater'
 import { scanMaps } from './maps-scan'
@@ -35,7 +36,7 @@ async function readPreferences(): Promise<DesktopPreferences> {
 function localStore() {
   if (!db) {
     db = new Database(join(app.getPath('userData'), 'leadsghr.sqlite'))
-    adapters = createDesktopAdapters(db, app.getPath('userData'))
+    adapters = createDesktopAdapters(db, leadsGhrExportsDirectory())
   }
   return { db, adapters: adapters! }
 }
@@ -76,17 +77,19 @@ function createWindow(crawlStore: ReturnType<typeof createCrawlRunStore>) {
   else void window.loadFile(join(__dirname, '../renderer/index.html'))
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
   registerEmailVerifyIpc(localStore().db)
-  // Email Sending: save the LeadsGhr Mailer extension ZIP, then confirm with an information dialog.
+  // Email Sending: save the LeadsGhr Mailer extension ZIP (in C:\LeadsGhr\extensions), then confirm with an information dialog.
   ipcMain.handle('leadsghr:mailer:download-extension', async (event) => {
     const source = app.isPackaged
       ? join(process.resourcesPath, 'leadsghr-mailer.zip')
       : join(app.getAppPath(), '../../apps/mailer-extension/leadsghr-mailer.zip')
+    const directory = leadsGhrExtensionsDirectory()
+    await mkdir(directory, { recursive: true })
     const owner = BrowserWindow.fromWebContents(event.sender)
-    const saveOptions = { defaultPath: 'leadsghr-mailer.zip', filters: [{ name: 'ZIP archive', extensions: ['zip'] }] }
+    const saveOptions = { defaultPath: join(directory, 'leadsghr-mailer.zip'), filters: [{ name: 'ZIP archive', extensions: ['zip'] }] }
     const result = owner ? await dialog.showSaveDialog(owner, saveOptions) : await dialog.showSaveDialog(saveOptions)
     if (result.canceled || !result.filePath) return null
     await copyFile(source, result.filePath)
@@ -104,6 +107,17 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     }
     const info = owner ? await dialog.showMessageBox(owner, infoOptions) : await dialog.showMessageBox(infoOptions)
     if (info.response === 0) shell.showItemInFolder(result.filePath)
+    return result.filePath
+  })
+  ipcMain.handle('leadsghr:tracking:download-extension', async () => {
+    const source = app.isPackaged
+      ? join(process.resourcesPath, 'leadsghr-tracker.zip')
+      : join(app.getAppPath(), '../../apps/extension/leadsghr-tracker.zip')
+    const directory = leadsGhrExtensionsDirectory()
+    await mkdir(directory, { recursive: true })
+    const result = await dialog.showSaveDialog({ defaultPath: join(directory, 'leadsghr-tracker.zip'), filters: [{ name: 'ZIP archive', extensions: ['zip'] }] })
+    if (result.canceled || !result.filePath) return null
+    await copyFile(source, result.filePath)
     return result.filePath
   })
   ipcMain.handle('leadsghr:scan', async (_event, input: unknown) => {

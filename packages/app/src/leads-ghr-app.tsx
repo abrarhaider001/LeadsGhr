@@ -4,6 +4,7 @@ import { CrawlerPage } from './crawler-page'
 import { EmailFilteringPage } from './email-filtering-page'
 import { EmailValidationPage } from './email-validation-page'
 import { EmailSpamEnginePage } from './email-spam-engine-page'
+import { EmailTrackingPage } from './email-tracking-page'
 import { DashboardPage } from './dashboard-page'
 import { NicheLibraryPage } from './niche-library-page'
 import { SearchSetupPage } from './search-setup-page'
@@ -206,7 +207,7 @@ export function LeadsGhrApp() {
           : page === 'Email Validation' ? <EmailValidationPage preferences={preferences} />
           : page === 'Email Spam Check' ? <EmailSpamEnginePage />
           : page === 'Email Sending' ? <EmailSendingPage />
-          : page === 'Email Tracking' ? <Card className="la-local-page"><h2>Email Tracking</h2><p>Planned feature. Delivery and engagement tracking are not available in the desktop app yet.</p></Card>
+          : page === 'Email Tracking' ? <EmailTrackingPage />
           : page === 'Niche Library' ? <NicheLibraryPage useNicheKeywords={preferences.useNicheKeywords} onStartSearch={() => void showPage('New Search')} />
           : page === 'Pipeline' ? <PipelineOverviewPage runs={crawlRuns} onCreate={(draft, start) => { setSearchOrigin('Pipeline'); setPipelineDraft(draft); setPipelineDetails({ name: draft.name, provider: draft.provider }); setRunDetail(null); setSearchCriteria(draft.criteria); setPage(start ? 'Crawl Results' : 'New Pipeline') }} onResume={(id) => void resumeCrawl(id)} onDelete={(id) => void deletePipeline(id)} />
           : page === 'New Pipeline' || page === 'New Search' ? <SearchSetupPage iconActions pipelineMode={page === 'New Pipeline'} pipelineDraft={page === 'New Pipeline' ? pipelineDraft : null} onSearch={(criteria, details) => { setRunDetail(null); setSearchOrigin(page === 'New Pipeline' ? 'Pipeline' : 'New Search'); setPipelineDetails(details ?? null); setSearchCriteria(criteria); setPage('Crawl Results') }} />

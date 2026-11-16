@@ -1,6 +1,6 @@
 # Desktop architecture and folder structure
 
-`apps/desktop/src/crawl-runs.ts` owns dedicated SQLite `crawl_runs`, `crawl_run_rows`, and `crawl_exports` tables, validated IPC, query checkpoints, and automatic or user-chosen CSV file writes. `packages/export/src/index.ts` builds spreadsheet-safe CSV bytes. `packages/app/src/crawl-run-bridge.ts` types the renderer IPC; `search-results-page.tsx` persists streamed rows and checkpoints; `exports-page.tsx` and `dashboard-page.tsx` read run/export summaries. Saved Maps rows remain separate from the general lead table. CSV files default to Documents/LeadsGhr/exports. No crawl data is sent to Supabase.
+`apps/desktop/src/crawl-runs.ts` owns dedicated SQLite `crawl_runs`, `crawl_run_rows`, and `crawl_exports` tables, validated IPC, query checkpoints, and automatic or user-chosen CSV file writes. `packages/export/src/index.ts` builds spreadsheet-safe CSV bytes. `packages/app/src/crawl-run-bridge.ts` types the renderer IPC; `search-results-page.tsx` persists streamed rows and checkpoints; `exports-page.tsx` and `dashboard-page.tsx` read run/export summaries. Saved Maps rows remain separate from the general lead table. `apps/desktop/src/paths.ts` defines the user-visible folders: CSV files default to `C:\LeadsGhr\exports` and the extension ZIP download to `C:\LeadsGhr\extensions` (under `Documents/LeadsGhr` on non-Windows systems). No crawl data is sent to Supabase.
 
 The Pipeline sidebar entry opens `packages/app/src/pipeline-overview-page.tsx`, with cards explaining search, URL queue, crawl, and export. It lists saved pipelines for resumption or deletion. Creation uses `search-setup-page.tsx` for required name and provider cards, then separate niche, state, and location steps. `pipeline-timeline.tsx` marks completed selections. Name and provider are stored on `crawl_runs` through a SQLite migration; only `google-maps` can currently create an automated run. `search-results-page.tsx` first saves Maps results, then sends business websites to `apps/desktop/src/pipeline-pages.ts`. That Electron module owns the persistent `pipeline_pages` SQLite queue and two overlapping stages: HTTP prefetch and rendered page inspection. It validates public targets, checks robots.txt, uses polite delays, pauses on challenges, and stores extracted emails on the matching business row. `pipeline-export-page.tsx` shows the CSV filename and path after the run ends. New Search continues to use the search-only result flow.
 
@@ -12,6 +12,7 @@ apps/desktop/
   src/email-verify.ts Email Validation IPC and job control
   src/email-verify/ Pipeline, DNS, SMTP client, and Valid/Invalid SQLite cache
   src/renderer.tsx  Shared React app
+apps/extension/     LeadsGhr Tracker: MV3 Gmail open-tracking extension
 apps/mailer-extension/  LeadsGhr Mailer: MV3 Gmail sending extension (popup, settings, sending queue)
   src/email-sending/ Campaign CSV/Excel, saved templates, range, queue, and compose helpers
 packages/
@@ -24,7 +25,7 @@ supabase/migrations/ Account/profile schema with RLS; public assets bucket (emai
 docs/              Current guides plus historical specification archive
 ```
 
-All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker/extension folders are inactive and excluded from pnpm workspaces.
+All extraction information belongs in local SQLite or files. Supabase holds user auth and profile data and the public `assets` bucket for email images; the optional mail-tracking function stores opaque pixel tokens, image-load counts, and load timestamps only. Shared packages do not import Node-only modules; Electron main owns SQLite, network and filesystem access. Email Validation pipeline helpers live in `packages/quality/src/email-verify/`; DNS, SMTP sockets, and the local verify cache stay under `apps/desktop/src/email-verify/`. The legacy web/API/worker folders are inactive. `apps/extension` is an active MV3 Gmail tracking build in the pnpm workspace.
 
 The New Search page has a niche/state step and a separate location step with numbered chips and inclusive page and location-number range controls. It reads `packages/app/data/niches.json` and `packages/app/data/us-states-locations.json`. Electron main validates and stores custom niches and selections in a local `search-criteria.json` file under the app user-data directory.
 

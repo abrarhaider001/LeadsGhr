@@ -63,7 +63,7 @@ async function getPublic(url: string, options: { maxBytes?: number; timeoutMs?: 
 
 export const desktopHttp = { get: getPublic }
 
-export function createDesktopAdapters(db: Database.Database, dataDirectory: string): PlatformAdapters {
+export function createDesktopAdapters(db: Database.Database, exportsDirectory: string): PlatformAdapters {
   db.pragma('journal_mode = WAL')
   db.exec(`CREATE TABLE IF NOT EXISTS leads (id TEXT PRIMARY KEY, org_id TEXT NOT NULL, payload TEXT NOT NULL, updated_at TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS leads_org_idx ON leads(org_id, updated_at);
@@ -93,7 +93,7 @@ export function createDesktopAdapters(db: Database.Database, dataDirectory: stri
       return id
     } },
     files: { async save(name, bytes) {
-      const directory = join(dataDirectory, 'exports')
+      const directory = exportsDirectory
       await mkdir(directory, { recursive: true })
       const path = join(directory, basename(name))
       await writeFile(path, bytes)

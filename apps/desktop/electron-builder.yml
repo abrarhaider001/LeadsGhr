@@ -8,6 +8,8 @@ files:
 extraResources:
   - from: resources/leadsghr-icon.png
     to: icons/leadsghr-icon.png
+  - from: ../extension/leadsghr-tracker.zip
+    to: leadsghr-tracker.zip
   - from: ../mailer-extension/leadsghr-mailer.zip
     to: leadsghr-mailer.zip
 win:

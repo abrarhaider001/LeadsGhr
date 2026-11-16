@@ -8,6 +8,7 @@
     "postinstall": "pnpm --filter @leadsghr/desktop run rebuild:native",
     "dev": "pnpm --filter @leadsghr/desktop dev",
     "dev:desktop": "pnpm --filter @leadsghr/desktop dev",
+    "build:extension": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1",
     "clear:crawl-history": "node scripts/clear-local-crawl-history.mjs",
     "build": "pnpm --filter @leadsghr/desktop build",
     "build:mailer-extension": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-mailer-extension.ps1",

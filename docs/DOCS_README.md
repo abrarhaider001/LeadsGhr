@@ -1,6 +1,6 @@
 # LeadsGhr documentation
 
-The source is the 90-page original "LeadAtlas Complete Specification" (version 3.0, October 2026). The transcriptions preserve historical source requirements. The active product is desktop-only: SQLite and disk hold extraction data, while Supabase holds account data only. LeadsGhr Mailer (`apps/mailer-extension`) is the active Chrome extension for Gmail sending, documented in [Email Sending](EMAIL_SENDING_README.md); other extension features are future work.
+The source is the 90-page original "LeadAtlas Complete Specification" (version 3.0, October 2026). The transcriptions preserve historical source requirements. The active product is desktop-first: SQLite and disk hold extraction data. A separate Gmail tracking extension is now built from `apps/extension`; its optional public Supabase pixel service stores opaque tokens and image-load counts only. LeadsGhr Mailer (`apps/mailer-extension`) is a second, separate Chrome extension for Gmail sending, documented in [Email Sending](EMAIL_SENDING_README.md). Most other original extension features remain future work.
 
 ## Project guides
 
@@ -8,6 +8,7 @@ The source is the 90-page original "LeadAtlas Complete Specification" (version 3
 - [Email Sending: LeadsGhr Mailer extension](EMAIL_SENDING_README.md)
 
 - [Crawler test page](crawler/CRAWLER_README.md)
+- [Email Tracking local prototype](EMAIL_TRACKING_README.md)
 
 - [Theme, typography, sizing, and motion](theme/THEME_README.md)
 - [Architecture and target folder structure](structure/STRUCTURE_README.md)
