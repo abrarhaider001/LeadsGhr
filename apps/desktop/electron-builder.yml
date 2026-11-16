@@ -1,6 +1,8 @@
-﻿appId: com.leadsghr.desktop
+appId: com.leadsghr.desktop
 productName: LeadsGhr
 electronDist: node_modules/electron/dist
+# better-sqlite3 is already rebuilt for Electron by the root postinstall (rebuild:native); do not rebuild it again while packaging.
+npmRebuild: false
 directories:
   output: dist-installer
 files:
