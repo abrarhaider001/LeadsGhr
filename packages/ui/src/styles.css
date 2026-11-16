@@ -1388,3 +1388,33 @@ a { color: var(--la-accent); }
 .la-settings-notice button.la-settings-notice-close { min-height: 28px; width: 28px; padding: 0; border: 0; background: transparent; color: var(--la-muted); font-size: 18px; }
 @media (max-width: 760px) { .la-settings-transfer-bar { flex-direction: column; align-items: flex-start; } }
 
+/* Preferences: "Choose what to export" dialog. */
+.la-export-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(25, 11, 45, .35); }
+.la-export-dialog { display: flex; flex-direction: column; width: min(620px, 100%); max-height: min(720px, calc(100vh - 48px)); border-radius: 14px; background: #FFFFFF; box-shadow: 0 20px 50px rgba(25, 11, 45, .22); }
+.la-export-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 14px; border-bottom: 1px solid var(--la-line); }
+.la-export-head h2 { margin: 0 0 4px; font-size: 17px; }
+.la-export-head p { margin: 0; color: var(--la-muted); font-size: 12px; }
+.la-export-quick { display: flex; flex: none; gap: 6px; }
+.la-export-quick button { padding: 6px 10px; border: 1px solid var(--la-line); border-radius: 7px; background: #FFFFFF; color: var(--la-text); font: inherit; font-size: 12px; cursor: pointer; }
+.la-export-quick button:hover { background: #F7F4FF; }
+.la-export-sections { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 20px; }
+.la-export-section { border: 1px solid var(--la-line); border-radius: 10px; }
+.la-export-section + .la-export-section { margin-top: 10px; }
+.la-export-section-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; }
+.la-export-check { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
+.la-export-check input { flex: none; width: 16px; height: 16px; margin: 0; accent-color: #5B12C9; cursor: pointer; }
+.la-export-check strong { display: block; font-size: 14px; }
+.la-export-check small { display: block; color: var(--la-muted); font-size: 12px; }
+.la-export-check > span { flex: 1; min-width: 0; font-size: 13px; }
+.la-export-check em { flex: none; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--la-muted); font-size: 12px; font-style: normal; }
+.la-export-expand { display: grid; flex: none; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: var(--la-muted); cursor: pointer; }
+.la-export-expand:hover { background: #F4F1F8; color: var(--la-text); }
+.la-export-settings { margin: 0; padding: 2px 12px 8px 38px; list-style: none; border-top: 1px solid var(--la-line); }
+.la-export-settings li { padding: 7px 0; }
+.la-export-settings li + li { border-top: 1px solid #F1EFF4; }
+.la-export-foot { display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--la-line); }
+.la-export-foot span { flex: 1; color: var(--la-muted); font-size: 12px; }
+.la-export-foot button { min-height: 36px; padding: 0 14px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; color: var(--la-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.la-export-foot button.primary { border-color: #5B12C9; background: #5B12C9; color: #FFFFFF; }
+.la-export-foot button.primary:disabled { border-color: #ECE8F2; background: #ECE8F2; color: var(--la-muted); cursor: default; }
+

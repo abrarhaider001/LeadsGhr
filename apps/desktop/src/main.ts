@@ -192,14 +192,16 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     return preferences
   })
   // Preferences → Export settings: write the current preferences to C:\LeadsGhr\settings and return the file path.
-  ipcMain.handle('leadsghr:preferences:export', async (event) => {
+  ipcMain.handle('leadsghr:preferences:export', async (event, input: unknown) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    // The sender's choice of preferences; buildPreferencesFile keeps only known, exportable keys.
+    const keys = Array.isArray(input) ? input.filter((key): key is string => typeof key === 'string').slice(0, 100) : undefined
     const preferences = await readPreferences()
     const directory = leadsGhrSettingsDirectory()
     await mkdir(directory, { recursive: true })
     const stamp = new Date().toISOString().slice(0, 16).replace('T', '-').replace(':', '')
     const path = join(directory, `leadsghr-settings-${stamp}.json`)
-    const file = buildPreferencesFile(preferences, app.getVersion())
+    const file = buildPreferencesFile(preferences, app.getVersion(), keys)
     await writeFile(path, JSON.stringify(file, null, 2) + '\n', 'utf8')
     return path
   })

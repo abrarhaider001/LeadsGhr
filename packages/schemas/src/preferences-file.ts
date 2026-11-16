@@ -19,6 +19,40 @@ export const PREFERENCE_RENAMES: Readonly<Record<string, keyof DesktopPreference
 /** Converts an old value of a preference to its current form; return undefined to skip it. */
 export const PREFERENCE_VALUE_UPGRADES: Readonly<Partial<Record<keyof DesktopPreferences, (value: unknown) => unknown>>> = {}
 
+/**
+ * Preferences offered in "Choose what to export", grouped like Settings → Preferences.
+ * Every preference except `scanPublicWebsites` (always off) must appear exactly once; the test checks this.
+ */
+export const PREFERENCE_SECTIONS: readonly { id: 'crawler' | 'search' | 'email-validation'; title: string; settings: readonly { key: keyof DesktopPreferences; label: string }[] }[] = [
+  { id: 'crawler', title: 'Crawler', settings: [
+    { key: 'crawlerEmailSource', label: 'Crawler email source' },
+    { key: 'crawlerFetchMethod', label: 'Page fetch method' },
+    { key: 'crawlerConcurrentPages', label: 'Concurrent pages' },
+    { key: 'showCrawlerPreview', label: 'Show webpage in Crawler' },
+    { key: 'crawlerContactOnly', label: 'Crawl homepage and contact page only' },
+  ] },
+  { id: 'search', title: 'Search', settings: [
+    { key: 'showChromeDuringSearch', label: 'Show Chrome while searching' },
+    { key: 'searchGoogleMaps', label: 'Show Google Maps listings' },
+    { key: 'useNicheKeywords', label: 'Use Niche Library search terms' },
+    { key: 'showListingsWithoutWebsite', label: 'Show businesses without a website' },
+    { key: 'includeCompanyName', label: 'Result field: Company name' },
+    { key: 'includeWebsite', label: 'Result field: Website URL' },
+    { key: 'includePhone', label: 'Result field: Phone number' },
+    { key: 'includeAddress', label: 'Result field: Street address' },
+    { key: 'includeLocation', label: 'Result field: Searched location' },
+  ] },
+  { id: 'email-validation', title: 'Email Validation', settings: [
+    { key: 'emailVerifyMailFrom', label: 'SMTP mail-from address' },
+    { key: 'emailVerifyEhlo', label: 'SMTP EHLO name' },
+    { key: 'emailVerifyPerSession', label: 'Recipients per SMTP session' },
+    { key: 'emailVerifyPaceMs', label: 'Wait between recipients' },
+  ] },
+]
+
+/** Preferences that can be exported (all except those that never leave this computer's defaults). */
+export const EXPORTABLE_PREFERENCE_KEYS: readonly (keyof DesktopPreferences)[] = PREFERENCE_SECTIONS.flatMap((section) => section.settings.map((setting) => setting.key))
+
 export type PreferencesFile = {
   app: 'LeadsGhr'
   kind: 'preferences'
@@ -38,8 +72,16 @@ export type PreferencesImport = {
   ignored: string[]
 }
 
-export function buildPreferencesFile(preferences: DesktopPreferences, appVersion?: string): PreferencesFile {
-  return { app: 'LeadsGhr', kind: 'preferences', version: PREFERENCES_FILE_VERSION, appVersion, exportedAt: new Date().toISOString(), preferences }
+/**
+ * Builds the export file. With `keys`, only those preferences are written (the sender's choice in
+ * "Choose what to export"); without it, every exportable preference is written.
+ */
+export function buildPreferencesFile(preferences: DesktopPreferences, appVersion?: string, keys: readonly string[] = EXPORTABLE_PREFERENCE_KEYS): PreferencesFile {
+  const chosen = keys.filter((key): key is keyof DesktopPreferences => (EXPORTABLE_PREFERENCE_KEYS as readonly string[]).includes(key))
+  if (!chosen.length) throw new Error('Choose at least one setting to export.')
+  const picked: Partial<Record<keyof DesktopPreferences, unknown>> = {}
+  for (const key of chosen) picked[key] = preferences[key]
+  return { app: 'LeadsGhr', kind: 'preferences', version: PREFERENCES_FILE_VERSION, appVersion, exportedAt: new Date().toISOString(), preferences: picked as Partial<DesktopPreferences> }
 }
 
 /**

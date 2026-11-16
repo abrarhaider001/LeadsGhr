@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { applyPreferencesFile, buildPreferencesFile, defaultDesktopPreferences, PREFERENCES_FILE_VERSION } from '../src/index.ts'
+import { applyPreferencesFile, buildPreferencesFile, defaultDesktopPreferences, desktopPreferencesSchema, EXPORTABLE_PREFERENCE_KEYS, PREFERENCES_FILE_VERSION } from '../src/index.ts'
 
 const current = { ...defaultDesktopPreferences }
 const someKey = 'crawlerEmailSource' as const
@@ -10,7 +10,20 @@ test('export file carries every preference and the file version', () => {
   assert.equal(file.kind, 'preferences')
   assert.equal(file.version, PREFERENCES_FILE_VERSION)
   assert.equal(file.appVersion, '0.1.5')
-  assert.deepEqual(file.preferences, current)
+  const { scanPublicWebsites: _alwaysOff, ...exportable } = current
+  assert.deepEqual(file.preferences, exportable)
+})
+
+test('every preference is offered in Choose what to export exactly once', () => {
+  const schemaKeys = Object.keys(desktopPreferencesSchema.shape).filter((key) => key !== 'scanPublicWebsites').sort()
+  assert.deepEqual([...EXPORTABLE_PREFERENCE_KEYS].sort(), schemaKeys)
+  assert.equal(new Set(EXPORTABLE_PREFERENCE_KEYS).size, EXPORTABLE_PREFERENCE_KEYS.length)
+})
+
+test('export writes only the chosen preferences', () => {
+  const file = buildPreferencesFile(current, undefined, ['crawlerFetchMethod', 'crawlerConcurrentPages', 'notAPreference'])
+  assert.deepEqual(Object.keys(file.preferences).sort(), ['crawlerConcurrentPages', 'crawlerFetchMethod'])
+  assert.throws(() => buildPreferencesFile(current, undefined, []), /at least one setting/)
 })
 
 test('round trip: importing an export restores the same preferences', () => {

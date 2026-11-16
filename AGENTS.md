@@ -88,10 +88,10 @@ Do not silently rewrite the product to match an old specification. Explain any c
 **Migrations and data:** write schema changes as reviewable files and validate locally. Do not apply migrations to Supabase or alter a user's real extraction database. Preserve existing data and define how new local schema fields migrate.
 
 **Preferences file (import/export):** Settings → Preferences → Export settings / Import settings use the JSON file defined in `packages/schemas/src/preferences-file.ts` (`buildPreferencesFile`, `applyPreferencesFile`). Whenever a preference is added, changed, renamed, or removed in `desktopPreferencesSchema`/`defaultDesktopPreferences`, update that file format in the same change so exported files keep working across versions:
-- **Added:** give it a default in `defaultDesktopPreferences`; export includes it and import applies it when present, so nothing else is needed.
+- **Added:** give it a default in `defaultDesktopPreferences` and add it, with a label, to its section in `PREFERENCE_SECTIONS` so it appears in **Choose what to export** (the test fails until it is listed exactly once); import applies it when present.
 - **Renamed:** add `oldName: 'newName'` to `PREFERENCE_RENAMES` so files from older versions still set it.
 - **Allowed values changed:** add a conversion to `PREFERENCE_VALUE_UPGRADES` when an old value has a clear new equivalent; otherwise the old value is skipped and the current setting is kept.
-- **Removed:** nothing to add (older files that still contain it are ignored for that key); mention the removal in the user guide.
+- **Removed:** remove it from `PREFERENCE_SECTIONS` (older files that still contain it are ignored for that key); mention the removal in the user guide.
 - **File structure changed** (not just the list of preferences): bump `PREFERENCES_FILE_VERSION` and keep reading older versions.
 
 Import must stay version-tolerant: apply only the preferences present in the file that this version accepts, keep every other preference at its current value, and ignore entries this version does not know, so a file from an older or newer LeadsGhr imports as far as both versions agree. Extend `packages/schemas/tests/preferences-file.test.ts` (run with `pnpm.cmd --filter @leadsghr/schemas test`) for every rename, value upgrade, or structure change, and update the README's import/export paragraph.

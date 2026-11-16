@@ -1,17 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Avatar, { genConfig } from 'react-nice-avatar'
-import type { DesktopPreferences } from '@leadsghr/schemas'
+import { PREFERENCE_SECTIONS, type DesktopPreferences } from '@leadsghr/schemas'
 import { saveLocalAccount, type LocalAccount } from './account-data'
 
 type SettingsBridge = {
-  exportPreferences(): Promise<string>
+  exportPreferences(keys?: string[]): Promise<string>
   importPreferences(): Promise<{ preferences: DesktopPreferences; path: string; applied: number; skipped: number; ignored: number } | null>
   showSettingsExport(path: string): Promise<void>
 }
 const settingsBridge = () => (window as Window & { leadsGhrDesktop?: Partial<SettingsBridge> }).leadsGhrDesktop
 
 type SettingsNotice =
-  | { kind: 'exported'; path: string }
+  | { kind: 'exported'; path: string; count: number }
   | { kind: 'imported'; path: string; applied: number; skipped: number; ignored: number }
   | { kind: 'error'; message: string }
 
@@ -27,16 +27,103 @@ function importSummary(notice: { applied: number; skipped: number; ignored: numb
 
 const fileName = (path: string) => path.split(/[\\/]/).pop() ?? path
 
-/** Export and import of all preferences as a JSON file, with a notice after each action. */
-function SettingsTransfer({ onImported }: { onImported(next: DesktopPreferences): void }) {
+type PreferenceKeyName = keyof DesktopPreferences
+
+/** Current value shown next to each setting in "Choose what to export". */
+function describeValue(key: PreferenceKeyName, value: DesktopPreferences[PreferenceKeyName] | undefined): string {
+  if (value === undefined || value === null) return '—'
+  if (typeof value === 'boolean') return value ? 'On' : 'Off'
+  if (key === 'crawlerEmailSource') return value === 'email-hunter' ? 'Email Hunter-style' : 'Our behavior'
+  if (key === 'crawlerFetchMethod') return value === 'http' ? 'Lightweight HTTP' : 'Browser rendering'
+  if (key === 'emailVerifyPaceMs') return `${value} ms`
+  return String(value)
+}
+
+/** Checkbox that also shows a mixed state, for a section with only some settings chosen. */
+function MixedCheckbox({ checked, mixed, label, onChange }: { checked: boolean; mixed: boolean; label: string; onChange(next: boolean): void }) {
+  const box = useRef<HTMLInputElement>(null)
+  useEffect(() => { if (box.current) box.current.indeterminate = mixed }, [mixed])
+  return <input ref={box} type="checkbox" checked={checked} aria-label={label} aria-checked={mixed ? 'mixed' : checked} onChange={(event) => onChange(event.target.checked)} />
+}
+
+/** "Choose what to export": whole sections or single settings. */
+function ExportChooser({ preferences, busy, onCancel, onExport }: { preferences: DesktopPreferences; busy: boolean; onCancel(): void; onExport(keys: string[]): void }) {
+  const [chosen, setChosen] = useState<Set<string>>(() => new Set(PREFERENCE_SECTIONS.flatMap((section) => section.settings.map((setting) => setting.key))))
+  const [open, setOpen] = useState<Set<string>>(() => new Set(PREFERENCE_SECTIONS.map((section) => section.id)))
+  const dialog = useRef<HTMLDivElement>(null)
+  const cancel = useRef(onCancel)
+  cancel.current = onCancel
+  // Focus the dialog once when it opens, and close it with Escape.
+  useEffect(() => {
+    dialog.current?.querySelector<HTMLElement>('input, button')?.focus()
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') cancel.current() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const toggle = (keys: string[], on: boolean) => setChosen((current) => {
+    const next = new Set(current)
+    for (const key of keys) { if (on) next.add(key); else next.delete(key) }
+    return next
+  })
+  const total = PREFERENCE_SECTIONS.reduce((sum, section) => sum + section.settings.length, 0)
+
+  return <div className="la-export-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onCancel() }}>
+    <div ref={dialog} className="la-export-dialog" role="dialog" aria-modal="true" aria-labelledby="la-export-title">
+      <div className="la-export-head">
+        <div><h2 id="la-export-title">Choose what to export</h2><p>Tick a whole section, or open it and pick single settings.</p></div>
+        <div className="la-export-quick">
+          <button type="button" onClick={() => toggle(PREFERENCE_SECTIONS.flatMap((section) => section.settings.map((setting) => setting.key)), true)}>Select all</button>
+          <button type="button" onClick={() => setChosen(new Set())}>Clear</button>
+        </div>
+      </div>
+      <div className="la-export-sections">
+        {PREFERENCE_SECTIONS.map((section) => {
+          const keys = section.settings.map((setting) => setting.key as string)
+          const count = keys.filter((key) => chosen.has(key)).length
+          const expanded = open.has(section.id)
+          return <section key={section.id} className="la-export-section">
+            <div className="la-export-section-head">
+              <label className="la-export-check">
+                <MixedCheckbox checked={count === keys.length} mixed={count > 0 && count < keys.length} label={`Export all ${section.title} settings`} onChange={(on) => toggle(keys, on)} />
+                <span><strong>{section.title}</strong><small>{count} of {keys.length} settings</small></span>
+              </label>
+              <button type="button" className="la-export-expand" aria-expanded={expanded} aria-label={`${expanded ? 'Hide' : 'Show'} ${section.title} settings`} onClick={() => setOpen((current) => { const next = new Set(current); if (next.has(section.id)) next.delete(section.id); else next.add(section.id); return next })}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={expanded ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'}/></svg>
+              </button>
+            </div>
+            {expanded && <ul className="la-export-settings">
+              {section.settings.map((setting) => <li key={setting.key}>
+                <label className="la-export-check">
+                  <input type="checkbox" checked={chosen.has(setting.key)} onChange={(event) => toggle([setting.key], event.target.checked)} />
+                  <span>{setting.label}</span>
+                  <em>{describeValue(setting.key, preferences[setting.key])}</em>
+                </label>
+              </li>)}
+            </ul>}
+          </section>
+        })}
+      </div>
+      <div className="la-export-foot">
+        <span>{chosen.size} of {total} settings selected</span>
+        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" className="primary" disabled={!chosen.size || busy} onClick={() => onExport([...chosen])}>{busy ? 'Exporting…' : `Export ${chosen.size} setting${chosen.size === 1 ? '' : 's'}`}</button>
+      </div>
+    </div>
+  </div>
+}
+
+/** Export (chosen settings) and import of preferences as a JSON file, with a notice after each action. */
+function SettingsTransfer({ preferences, onImported }: { preferences: DesktopPreferences; onImported(next: DesktopPreferences): void }) {
+  const [choosing, setChoosing] = useState(false)
   const [notice, setNotice] = useState<SettingsNotice | null>(null)
   const [busy, setBusy] = useState<'export' | 'import' | null>(null)
 
-  async function exportSettings() {
+  async function exportSettings(keys: string[]) {
     const api = settingsBridge()
-    if (!api?.exportPreferences) { setNotice({ kind: 'error', message: 'Restart the desktop app to enable settings export.' }); return }
+    if (!api?.exportPreferences) { setNotice({ kind: 'error', message: 'Restart the desktop app to enable settings export.' }); setChoosing(false); return }
     setBusy('export')
-    try { setNotice({ kind: 'exported', path: await api.exportPreferences() }) }
+    try { setNotice({ kind: 'exported', path: await api.exportPreferences(keys), count: keys.length }); setChoosing(false) }
     catch (error) { setNotice({ kind: 'error', message: error instanceof Error ? error.message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '') : String(error) }) }
     finally { setBusy(null) }
   }
@@ -60,19 +147,20 @@ function SettingsTransfer({ onImported }: { onImported(next: DesktopPreferences)
       <div><h2>Set up in one click</h2><p>Import a teammate's settings instead of choosing every option again, or export yours to share.</p></div>
       <div className="la-settings-transfer-actions">
         <button type="button" disabled={busy !== null} onClick={() => void importSettings()}>{busy === 'import' ? 'Importing…' : 'Import settings'}</button>
-        <button type="button" className="primary" disabled={busy !== null} onClick={() => void exportSettings()}>{busy === 'export' ? 'Exporting…' : 'Export settings'}</button>
+        <button type="button" className="primary" disabled={busy !== null} onClick={() => { setNotice(null); setChoosing(true) }}>Export settings</button>
       </div>
     </div>
     {notice && <div className={`la-settings-notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}>
       <span className="la-settings-notice-icon" aria-hidden="true">{notice.kind === 'error' ? '!' : '✓'}</span>
       <div className="la-settings-notice-text">
-        {notice.kind === 'exported' && <><strong>Settings exported</strong><span>Saved as {fileName(notice.path)} in C:\LeadsGhr\settings. Send this file to share your settings.</span></>}
+        {notice.kind === 'exported' && <><strong>Settings exported</strong><span>{plural(notice.count, 'setting')} saved as {fileName(notice.path)} in C:\LeadsGhr\settings. Send this file to share them.</span></>}
         {notice.kind === 'imported' && <><strong>Settings imported successfully</strong><span>{importSummary(notice)} from {fileName(notice.path)}.</span></>}
         {notice.kind === 'error' && <><strong>Settings not changed</strong><span>{notice.message}</span></>}
       </div>
       {notice.kind === 'exported' && <button type="button" onClick={() => void settingsBridge()?.showSettingsExport?.(notice.path)}>Show in folder</button>}
       <button type="button" className="la-settings-notice-close" aria-label="Dismiss" onClick={() => setNotice(null)}>×</button>
     </div>}
+    {choosing && <ExportChooser preferences={preferences} busy={busy === 'export'} onCancel={() => setChoosing(false)} onExport={(keys) => void exportSettings(keys)} />}
   </div>
 }
 
@@ -121,7 +209,7 @@ export function ProfilePage({ section, preferences, onPreferencesChange, onPrefe
       <p className="la-profile-note">These details are stored on this computer. Supabase authentication is not connected yet.</p></section>
       <section className="la-profile-account la-password-section"><div><h2>Reset Password</h2><p>Account password changes will be available when Supabase sign-in is connected.</p></div><div className="la-account-fields"><label>Current password<input type="password" autoComplete="current-password" disabled placeholder="Authentication required" /></label><label>New password<input type="password" autoComplete="new-password" disabled placeholder="Authentication required" /></label><label>Confirm new password<input type="password" autoComplete="new-password" disabled placeholder="Authentication required" /></label></div><button type="button" disabled>Reset password</button></section>
     </div> : <div className="la-profile-preferences" aria-label="Preferences">
-      <SettingsTransfer onImported={onPreferencesImported} />
+      <SettingsTransfer preferences={preferences} onImported={onPreferencesImported} />
       <div className="la-profile-tabs" role="tablist" aria-label="Preference categories">
         {(['Crawler', 'Search', 'Email Validation'] as const).map((category) => <button type="button" role="tab" id={`la-preference-tab-${category.toLowerCase().replace(/\s+/g, '-')}`} aria-controls="la-preference-panel" key={category} aria-selected={preferenceCategory === category} onClick={() => setPreferenceCategory(category)}>{category}</button>)}
       </div>
