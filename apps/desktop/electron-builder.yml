@@ -1,6 +1,8 @@
-﻿appId: com.leadsghr.desktop
+appId: com.leadsghr.desktop
 productName: LeadsGhr
 electronDist: node_modules/electron/dist
+# better-sqlite3 is already rebuilt for Electron by the root postinstall (rebuild:native); do not rebuild it again while packaging.
+npmRebuild: false
 directories:
   output: dist-installer
 files:
@@ -14,5 +16,13 @@ extraResources:
     to: leadsghr-mailer.zip
 win:
   icon: resources/leadsghr-icon.ico
-publish: null
+nsis:
+  # Installer name referenced by latest.yml; the release workflow uploads it under this exact name.
+  artifactName: LeadsGhr-Setup-${version}.${ext}
+# Where installed copies look for updates (electron-updater). Publishing itself is done by the release workflow.
+publish:
+  provider: github
+  owner: abrarhaider001
+  repo: LeadsGhr
+  releaseType: release
 
