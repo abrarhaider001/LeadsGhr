@@ -1,17 +1,29 @@
-# Builds LeadsGhr-Setup.exe (the small branded setup program) into dist-installer\nsis-web, next to the
-# electron-builder output it downloads. Uses the C# compiler that ships with Windows (.NET Framework 4.x).
+# Builds LeadsGhr's small branded Windows programs with the C# compiler that ships with Windows (.NET Framework 4.x):
+#   -Target setup      LeadsGhr-Setup.exe into dist-installer\nsis-web (after electron-builder; it downloads that output).
+#   -Target uninstall  LeadsGhr-Uninstall.exe into setup\out (before electron-builder, which packs it into the app's
+#                      resources; the uninstaller in setup\installer.nsh runs it).
+param([ValidateSet('setup', 'uninstall')][string]$Target = 'setup')
 $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
-$out = Join-Path $here '..\dist-installer\nsis-web'
 $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) { $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
 if (-not (Test-Path $csc)) { throw 'The .NET Framework C# compiler (csc.exe) was not found.' }
-New-Item -ItemType Directory -Force $out | Out-Null
 
 $assets = Join-Path $here 'assets'
-$resources = @('logo-256.png', 'InstrumentSans-Regular.ttf', 'InstrumentSans-SemiBold.ttf', 'InstrumentSans-Bold.ttf') |
-  ForEach-Object { "/resource:$(Join-Path $assets $_),$_" }
-$exe = Join-Path $out 'LeadsGhr-Setup.exe'
+$fonts = @('InstrumentSans-Regular.ttf', 'InstrumentSans-SemiBold.ttf', 'InstrumentSans-Bold.ttf')
+if ($Target -eq 'setup') {
+  $out = Join-Path $here '..\dist-installer\nsis-web'
+  $exe = Join-Path $out 'LeadsGhr-Setup.exe'
+  $sources = @(Join-Path $here 'LeadsGhrSetup.cs')
+  $resourceFiles = @('logo-256.png') + $fonts
+} else {
+  $out = Join-Path $here 'out'
+  $exe = Join-Path $out 'LeadsGhr-Uninstall.exe'
+  $sources = @((Join-Path $here 'Brand.cs'), (Join-Path $here 'LeadsGhrUninstall.cs'))
+  $resourceFiles = $fonts
+}
+New-Item -ItemType Directory -Force $out | Out-Null
+$resources = $resourceFiles | ForEach-Object { "/resource:$(Join-Path $assets $_),$_" }
 
 & $csc /nologo /target:winexe /optimize+ /platform:anycpu `
   "/out:$exe" `
@@ -19,6 +31,6 @@ $exe = Join-Path $out 'LeadsGhr-Setup.exe'
   "/win32manifest:$(Join-Path $here 'setup.manifest')" `
   /reference:System.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll `
   $resources `
-  (Join-Path $here 'LeadsGhrSetup.cs')
+  $sources
 if ($LASTEXITCODE -ne 0) { throw "csc failed with exit code $LASTEXITCODE" }
-Write-Output ("LeadsGhr-Setup.exe built: {0:N0} KB" -f ((Get-Item $exe).Length / 1KB))
+Write-Output ("{0} built: {1:N0} KB" -f (Split-Path $exe -Leaf), ((Get-Item $exe).Length / 1KB))

@@ -14,6 +14,9 @@ extraResources:
     to: leadsghr-tracker.zip
   - from: ../mailer-extension/leadsghr-mailer.zip
     to: leadsghr-mailer.zip
+  # The branded uninstall window (setup/LeadsGhrUninstall.cs, built by `pnpm build:uninstall` before packaging).
+  - from: setup/out/LeadsGhr-Uninstall.exe
+    to: LeadsGhr-Uninstall.exe
 win:
   icon: resources/leadsghr-icon.ico
   # Web installer: electron-builder makes LeadsGhr-Installer.exe plus the app package (.nsis.7z) and latest.yml.
@@ -23,6 +26,8 @@ win:
 nsisWeb:
   # Same name in every release; latest.yml points at it.
   artifactName: LeadsGhr-Installer.${ext}
+  # Uninstall opens LeadsGhr's own window and can keep or delete the data (see setup/installer.nsh).
+  include: setup/installer.nsh
   # Used when LeadsGhr-Installer.exe is run on its own; scripts/finish-web-installer.mjs gives the package this name.
   appPackageUrl: https://github.com/abrarhaider001/LeadsGhr/releases/latest/download/LeadsGhr-App-x64.nsis.7z
 # Where installed copies look for updates (electron-updater). Publishing itself is done by the release workflow.
