@@ -238,13 +238,45 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
   })
   ipcMain.handle('leadsghr:leads', () => localStore().adapters.storage.listLeads(localScope, 500))
   ipcMain.handle('leadsghr:runs', () => localStore().db.prepare('SELECT id,url,status,started_at AS startedAt,finished_at AS finishedAt,error FROM scan_runs ORDER BY started_at DESC LIMIT 100').all())
-  if (app.isPackaged && process.env.LEADSGHR_UPDATE_URL) {
-    autoUpdater.setFeedURL({ provider: 'generic', url: process.env.LEADSGHR_UPDATE_URL })
-    void autoUpdater.checkForUpdatesAndNotify().catch(() => undefined)
-  }
+  startAutoUpdates()
   createWindow(crawlStore)
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
+
+/**
+ * Auto-update for installed copies: check GitHub Releases (the `publish` target in electron-builder.yml)
+ * at start-up and every four hours, download a newer version in the background, then offer a restart.
+ * "Later" installs it when the app next closes. LEADSGHR_UPDATE_URL can point at another feed for testing.
+ */
+function startAutoUpdates(): void {
+  if (!app.isPackaged) return
+  if (process.env.LEADSGHR_UPDATE_URL) autoUpdater.setFeedURL({ provider: 'generic', url: process.env.LEADSGHR_UPDATE_URL })
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+  let prompted = false
+  autoUpdater.on('update-downloaded', (info) => {
+    if (prompted) return
+    prompted = true
+    const owner = BrowserWindow.getAllWindows()[0]
+    const options = {
+      type: 'info' as const,
+      title: 'Update ready',
+      message: `LeadsGhr ${info.version} is ready to install`,
+      detail: 'Restart now to update, or choose Later and it installs the next time you close LeadsGhr. Your data and settings are kept.',
+      buttons: ['Restart now', 'Later'],
+      defaultId: 0,
+      cancelId: 1,
+      noLink: true,
+    }
+    void (owner ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options)).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall(false, true)
+    })
+  })
+  autoUpdater.on('error', (error) => { console.warn('[LeadsGhr] Update check failed:', error instanceof Error ? error.message : error) })
+  const check = () => { void autoUpdater.checkForUpdates().catch(() => undefined) }
+  check()
+  setInterval(check, 4 * 60 * 60 * 1000)
+}
 app.on('before-quit', () => { activeMapsScan?.controller.abort(); abortActiveEmailVerify(); db?.close() })
 
 
