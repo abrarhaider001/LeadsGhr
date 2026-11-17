@@ -23,7 +23,7 @@ import Avatar, { genConfig } from 'react-nice-avatar'
 import { GrSearchAdvanced } from 'react-icons/gr'
 import { TbFilterBolt } from 'react-icons/tb'
 import { FiSettings } from 'react-icons/fi'
-import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed } from './account-data'
+import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed, syncProfileFromDisk } from './account-data'
 import { EmailSendingPage } from './email-sending-page'
 import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
 
@@ -99,6 +99,8 @@ export function LeadsGhrApp() {
   const appVersion = useAppVersion()
   const updateState = useUpdateState()
   const [avatarSeed, setAvatarSeed] = useState(loadAvatarSeed)
+  // The profile file in the data folder wins over the start-up copy (for example after a reinstall).
+  useEffect(() => { let active = true; void syncProfileFromDisk().then((stored) => { if (active && stored) { setAccount(stored.account); setAvatarSeed(stored.avatarSeed) } }); return () => { active = false } }, [])
   function regenerateAvatar() { const next = crypto.randomUUID(); saveAvatarSeed(next); setAvatarSeed(next) }
 
   useEffect(() => {
@@ -218,7 +220,7 @@ export function LeadsGhrApp() {
           : page === 'Crawl Results' && searchCriteria ? <SearchResultsPage key={runDetail?.id ?? 'new'} criteria={runDetail?.criteria ?? searchCriteria} preferences={runDetail?.preferences ?? preferences} initialRun={runDetail} pipelineMode={searchOrigin === 'Pipeline'} pipelineName={pipelineDetails?.name} provider={pipelineDetails?.provider ?? 'google-maps'} onBack={() => void showPage(searchOrigin === 'Pipeline' ? 'New Pipeline' : 'New Search')} onSaved={() => void refreshCrawlHistory()} onFinished={(item) => { setFinishedExport(item); setPage('Pipeline Export'); void refreshCrawlHistory() }} />
           : page === 'Pipeline Export' && finishedExport ? <><PipelineTimeline current={5}/><PipelineExportPage item={finishedExport} onPipeline={() => void showPage('Pipeline')} onExports={() => void showPage('Exports')} /></>
           : page === 'Runs' || page === 'Exports' ? <ExportsPage runs={crawlRuns} exports={crawlExports} showExportHistory={page === 'Exports'} onRefresh={refreshCrawlHistory} onResume={(id) => void resumeCrawl(id)} />
-          : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} updateState={updateState}preferences={preferences} onPreferencesChange={updatePreferences} onPreferencesImported={(next) => { setPreferences(next); setPreferencesMessage('') }} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
+          : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} updateState={updateState} preferences={preferences} onPreferencesChange={updatePreferences} onPreferencesImported={(next) => { setPreferences(next); setPreferencesMessage('') }} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
           : page === 'Leads' ? <section className="la-records">
             <div className="la-records-toolbar">
               <label className="la-records-search"><Icon name="search" size={17}/><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search companies, sources, emails..." aria-label={`Search ${page.toLowerCase()}`} /></label>

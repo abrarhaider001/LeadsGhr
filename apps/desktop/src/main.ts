@@ -7,6 +7,8 @@ import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPrefere
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
 import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory, leadsGhrSettingsDirectory } from './paths'
+import { leadsGhrDataFile, prepareDataFolder } from './data-folder'
+import { z } from 'zod'
 import { registerCrawlerTest } from './crawler-test'
 import { autoUpdater } from 'electron-updater'
 import { scanMaps } from './maps-scan'
@@ -24,7 +26,7 @@ let criteriaWrite = Promise.resolve()
 async function readPreferences(): Promise<DesktopPreferences> {
   await preferencesWrite.catch(() => undefined)
   try {
-    const raw = JSON.parse(await readFile(join(app.getPath('userData'), 'preferences.json'), 'utf8')) as Record<string, unknown>
+    const raw = JSON.parse(await readFile(leadsGhrDataFile('preferences.json'), 'utf8')) as Record<string, unknown>
     const preferences = desktopPreferencesSchema.parse({ ...defaultDesktopPreferences, ...raw })
     if (/@(?:localhost|.+\.invalid)$/i.test(preferences.emailVerifyMailFrom)) preferences.emailVerifyMailFrom = defaultDesktopPreferences.emailVerifyMailFrom
     if (/^(?:localhost|.*\.invalid)$/i.test(preferences.emailVerifyEhlo)) preferences.emailVerifyEhlo = defaultDesktopPreferences.emailVerifyEhlo
@@ -35,7 +37,7 @@ async function readPreferences(): Promise<DesktopPreferences> {
 
 function localStore() {
   if (!db) {
-    db = new Database(join(app.getPath('userData'), 'leadsghr.sqlite'))
+    db = new Database(leadsGhrDataFile('leadsghr.sqlite'))
     adapters = createDesktopAdapters(db, leadsGhrExportsDirectory())
   }
   return { db, adapters: adapters! }
@@ -78,6 +80,8 @@ function createWindow(crawlStore: ReturnType<typeof createCrawlRunStore>) {
 }
 
 app.whenReady().then(async () => {
+  // LeadsGhr's data lives in C:\LeadsGhr\data; the first start copies it there from %APPDATA%.
+  prepareDataFolder()
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
   registerEmailVerifyIpc(localStore().db)
@@ -166,7 +170,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password) throw new Error('Only public website links can be opened')
     await shell.openExternal(target.toString())
   })
-  const criteriaPath = join(app.getPath('userData'), 'search-criteria.json')
+  const criteriaPath = leadsGhrDataFile('search-criteria.json')
   ipcMain.handle('leadsghr:search-criteria:load', async (event) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
     await criteriaWrite.catch(() => undefined)
@@ -180,6 +184,25 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     await criteriaWrite
     return criteria
   })
+  // Profile (name, email, avatar) in C:\LeadsGhr\data\profile.json, so it survives reinstalling LeadsGhr.
+  const profilePath = leadsGhrDataFile('profile.json')
+  const profileSchema = z.object({
+    account: z.object({ firstName: z.string().trim().min(1).max(80), lastName: z.string().trim().min(1).max(80), email: z.string().trim().email().max(254) }),
+    avatarSeed: z.string().min(1).max(200),
+  })
+  let profileWrite = Promise.resolve()
+  ipcMain.handle('leadsghr:profile:load', async (event) => {
+    if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    await profileWrite.catch(() => undefined)
+    try { return profileSchema.parse(JSON.parse(await readFile(profilePath, 'utf8'))) }
+    catch { return null }
+  })
+  ipcMain.handle('leadsghr:profile:save', async (event, input: unknown) => {
+    if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    const profile = profileSchema.parse(input)
+    profileWrite = profileWrite.catch(() => undefined).then(() => writeFile(profilePath, JSON.stringify(profile, null, 2) + '\n', 'utf8'))
+    await profileWrite
+  })
   ipcMain.handle('leadsghr:preferences:load', async (event) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
     return readPreferences()
@@ -187,7 +210,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
   ipcMain.handle('leadsghr:preferences:save', async (event, input: unknown) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
     const preferences = { ...desktopPreferencesSchema.parse(input), scanPublicWebsites: false }
-    preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
+    preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(leadsGhrDataFile('preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
     applyAutoUpdatePreference(preferences.autoUpdate)
     return preferences
@@ -224,7 +247,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     // Only preferences present in the file and accepted by this version are applied; the rest keep their values.
     const imported = applyPreferencesFile(parsed, await readPreferences())
     const preferences = { ...imported.preferences, scanPublicWebsites: false }
-    preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
+    preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(leadsGhrDataFile('preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
     applyAutoUpdatePreference(preferences.autoUpdate)
     return { preferences, path, applied: imported.applied.length, skipped: imported.skipped.length, ignored: imported.ignored.length }

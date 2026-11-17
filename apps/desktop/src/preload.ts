@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   openWebsite: (url: string) => ipcRenderer.invoke('leadsghr:website:open', url),
   onMapsScanEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:maps-scan:event', listener); return () => ipcRenderer.removeListener('leadsghr:maps-scan:event', listener) },
   loadPreferences: () => ipcRenderer.invoke('leadsghr:preferences:load'),
+  loadProfile: () => ipcRenderer.invoke('leadsghr:profile:load'),
+  saveProfile: (profile: unknown) => ipcRenderer.invoke('leadsghr:profile:save', profile),
   savePreferences: (input: unknown) => ipcRenderer.invoke('leadsghr:preferences:save', desktopPreferencesSchema.parse(input)),
   getAppVersion: () => ipcRenderer.invoke('leadsghr:app:version'),
   getUpdateStatus: () => ipcRenderer.invoke('leadsghr:update:status'),

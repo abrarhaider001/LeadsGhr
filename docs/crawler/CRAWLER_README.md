@@ -19,7 +19,7 @@ Business-listing search is a separate stage. Google Maps is currently the availa
 
 ## Preferences
 
-Open **Settings > Preferences > Crawler**. Preferences are validated with Zod, saved to the desktop user-data `preferences.json`, and defaulted when older files lack a newly added field. A Pipeline saves a copy of the preferences when created; later changes do not rewrite that run.
+Open **Settings > Preferences > Crawler**. Preferences are validated with Zod, saved to `preferences.json` in `C:\LeadsGhr\data`, and defaulted when older files lack a newly added field. A Pipeline saves a copy of the preferences when created; later changes do not rewrite that run.
 
 | Setting | Default | Effect |
 | --- | --- | --- |

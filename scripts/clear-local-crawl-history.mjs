@@ -2,10 +2,11 @@ import { DatabaseSync, backup as backupDatabase } from 'node:sqlite'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-const dataRoot = process.env.APPDATA
-if (!dataRoot) throw new Error('APPDATA is unavailable. This command must run on the Windows desktop that stores LeadsGhr data.')
-
-const path = join(dataRoot, '@leadsghr', 'desktop', 'leadsghr.sqlite')
+// LeadsGhr keeps its database in C:\LeadsGhr\data (or LEADSGHR_DATA_DIR); versions before the data folder
+// kept it in %APPDATA%\@leadsghr\desktop.
+const dataFolder = process.env.LEADSGHR_DATA_DIR || join(`${process.env.SystemDrive ?? 'C:'}\\`, 'LeadsGhr', 'data')
+const legacy = process.env.APPDATA ? join(process.env.APPDATA, '@leadsghr', 'desktop', 'leadsghr.sqlite') : undefined
+const path = existsSync(join(dataFolder, 'leadsghr.sqlite')) || !legacy ? join(dataFolder, 'leadsghr.sqlite') : legacy
 if (!existsSync(path)) {
   console.log(`No local crawl database found at ${path}`)
   process.exit(0)

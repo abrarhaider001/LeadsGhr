@@ -15,7 +15,7 @@ The Niche Library turns a simple business name into a reusable set of public-sea
 - User-added custom niches, including multiple comma- or newline-separated names. A custom niche starts with its name as a search term.
 - Editable search and negative term chips. Removing a bundled term stores a user override; adding a term stores a user addition. **Reset pack edits** restores the bundled pack without deleting the underlying data. Custom niches can be deleted.
 - A combined preview of all selected packs: unique keyword count, unique search-query term count per location, negative-term count, and the merged chips. Matching is case-insensitive and retains readable display text.
-- Local persistence through validated Electron IPC in the app user-data `search-criteria.json` file. The built-in JSON is never rewritten by personal edits.
+- Local persistence through validated Electron IPC in `search-criteria.json` in `C:\LeadsGhr\data`. The built-in JSON is never rewritten by personal edits.
 - Settings > Preferences > Search provides **Use Niche Library search terms**. It defaults off: Search Results prepares one query for each selected niche name and location. When on, it prepares one query for every distinct pack search term and location, deduplicates identical term/location pairs, and applies the pack negative terms to matching business names. Both modes merge repeated businesses in the temporary result list.
 
 ## User flow
