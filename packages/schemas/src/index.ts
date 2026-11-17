@@ -78,6 +78,8 @@ export const desktopPreferencesSchema = z.object({
   emailVerifyEhlo: z.string().trim().min(1).max(255).default('verify.example.com'),
   emailVerifyPerSession: z.number().int().min(1).max(40).default(8),
   emailVerifyPaceMs: z.number().int().min(0).max(5000).default(400),
+  /** Download new LeadsGhr versions in the background (installed app only). Off: only show that one is available. */
+  autoUpdate: z.boolean().default(true),
 })
 export type DesktopPreferences = z.infer<typeof desktopPreferencesSchema>
 export const defaultDesktopPreferences: DesktopPreferences = {
@@ -100,6 +102,7 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   emailVerifyEhlo: 'verify.example.com',
   emailVerifyPerSession: 8,
   emailVerifyPaceMs: 400,
+  autoUpdate: true,
 }
 
 export const mapsQuerySchema = z.string().trim().min(2).max(260)

@@ -25,6 +25,7 @@ import { TbFilterBolt } from 'react-icons/tb'
 import { FiSettings } from 'react-icons/fi'
 import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed } from './account-data'
 import { EmailSendingPage } from './email-sending-page'
+import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
 
 const sidebarWordmark = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 const mark = new URL('../../../public/logo-leadsghr.svg', import.meta.url).href
@@ -95,6 +96,8 @@ export function LeadsGhrApp() {
   const [preferences, setPreferences] = useState<DesktopPreferences>(defaultDesktopPreferences)
   const [preferencesMessage, setPreferencesMessage] = useState('')
   const [account, setAccount] = useState(loadLocalAccount)
+  const appVersion = useAppVersion()
+  const updateState = useUpdateState()
   const [avatarSeed, setAvatarSeed] = useState(loadAvatarSeed)
   function regenerateAvatar() { const next = crypto.randomUUID(); saveAvatarSeed(next); setAvatarSeed(next) }
 
@@ -192,7 +195,7 @@ export function LeadsGhrApp() {
       <nav className="la-nav" aria-label="Main navigation">
         {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase()) || (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase()))).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={label !== 'Settings' && (page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin)) ? 'page' : undefined} aria-expanded={label === 'Settings' ? settingsExpanded : undefined} aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined} onClick={() => label === 'Settings' ? setSettingsExpanded((current) => !current) : void showPage(label)} title={label}>{icon === 'advancedSearch' ? <GrSearchAdvanced size={16} aria-hidden="true"/> : icon === 'filterBolt' ? <TbFilterBolt size={17} aria-hidden="true"/> : icon === 'gear' ? <FiSettings size={16} aria-hidden="true" /> : <Icon name={icon} size={16}/>}<span>{label}</span></button>{label === 'Settings' && (settingsExpanded || navQuery.trim()) && <div className="la-sidebar-settings-children" id="la-settings-submenu"><button type="button" aria-current={page === 'Preferences' ? 'page' : undefined} onClick={() => void showPage('Preferences')}>Preferences</button></div>}</div>)}
       </nav>
-      <div className="la-sidebar-bottom"><button className="la-sidebar-footer" type="button" aria-label="Open profile" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace</small></span></button></div>
+      <div className="la-sidebar-bottom"><button className="la-sidebar-footer" type="button" aria-label="Open profile" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace{appVersion ? ` · v${appVersion}` : ''}</small></span></button></div>
     </aside>
     <main className="la-main">
       {page === 'Dashboard' && <header className="la-topbar">
@@ -200,6 +203,7 @@ export function LeadsGhrApp() {
         <div className="la-topbar-tools"><span className="la-topbar-account"><img src={mark} alt="" /><span><strong>LeadsGhr</strong><small>Local workspace</small></span></span></div>
       </header>}
       <div className="la-content">
+        <UpdateBanner state={updateState} />
         {historyMessage && <p className="la-search-message" role="alert">{historyMessage}</p>}
         {page === 'Dashboard' ? <DashboardPage onNavigate={(next) => void showPage(next)} crawlRuns={crawlRuns} exportCount={crawlExports.length} onExport={(id) => void exportCrawl(id)} />
           : page === 'Crawler' ? <CrawlerPage preferences={preferences} />
@@ -214,7 +218,7 @@ export function LeadsGhrApp() {
           : page === 'Crawl Results' && searchCriteria ? <SearchResultsPage key={runDetail?.id ?? 'new'} criteria={runDetail?.criteria ?? searchCriteria} preferences={runDetail?.preferences ?? preferences} initialRun={runDetail} pipelineMode={searchOrigin === 'Pipeline'} pipelineName={pipelineDetails?.name} provider={pipelineDetails?.provider ?? 'google-maps'} onBack={() => void showPage(searchOrigin === 'Pipeline' ? 'New Pipeline' : 'New Search')} onSaved={() => void refreshCrawlHistory()} onFinished={(item) => { setFinishedExport(item); setPage('Pipeline Export'); void refreshCrawlHistory() }} />
           : page === 'Pipeline Export' && finishedExport ? <><PipelineTimeline current={5}/><PipelineExportPage item={finishedExport} onPipeline={() => void showPage('Pipeline')} onExports={() => void showPage('Exports')} /></>
           : page === 'Runs' || page === 'Exports' ? <ExportsPage runs={crawlRuns} exports={crawlExports} showExportHistory={page === 'Exports'} onRefresh={refreshCrawlHistory} onResume={(id) => void resumeCrawl(id)} />
-          : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} preferences={preferences} onPreferencesChange={updatePreferences} onPreferencesImported={(next) => { setPreferences(next); setPreferencesMessage('') }} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
+          : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} updateState={updateState}preferences={preferences} onPreferencesChange={updatePreferences} onPreferencesImported={(next) => { setPreferences(next); setPreferencesMessage('') }} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
           : page === 'Leads' ? <section className="la-records">
             <div className="la-records-toolbar">
               <label className="la-records-search"><Icon name="search" size={17}/><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search companies, sources, emails..." aria-label={`Search ${page.toLowerCase()}`} /></label>

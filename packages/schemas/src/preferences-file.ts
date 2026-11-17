@@ -23,7 +23,7 @@ export const PREFERENCE_VALUE_UPGRADES: Readonly<Partial<Record<keyof DesktopPre
  * Preferences offered in "Choose what to export", grouped like Settings → Preferences.
  * Every preference except `scanPublicWebsites` (always off) must appear exactly once; the test checks this.
  */
-export const PREFERENCE_SECTIONS: readonly { id: 'crawler' | 'search' | 'email-validation'; title: string; settings: readonly { key: keyof DesktopPreferences; label: string }[] }[] = [
+export const PREFERENCE_SECTIONS: readonly { id: 'crawler' | 'search' | 'email-validation' | 'updates'; title: string; settings: readonly { key: keyof DesktopPreferences; label: string }[] }[] = [
   { id: 'crawler', title: 'Crawler', settings: [
     { key: 'crawlerEmailSource', label: 'Crawler email source' },
     { key: 'crawlerFetchMethod', label: 'Page fetch method' },
@@ -47,6 +47,9 @@ export const PREFERENCE_SECTIONS: readonly { id: 'crawler' | 'search' | 'email-v
     { key: 'emailVerifyEhlo', label: 'SMTP EHLO name' },
     { key: 'emailVerifyPerSession', label: 'Recipients per SMTP session' },
     { key: 'emailVerifyPaceMs', label: 'Wait between recipients' },
+  ] },
+  { id: 'updates', title: 'Updates', settings: [
+    { key: 'autoUpdate', label: 'Download updates automatically' },
   ] },
 ]
 
