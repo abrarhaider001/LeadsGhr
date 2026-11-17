@@ -57,18 +57,19 @@ jobs:
           # No code-signing certificate: build an unsigned installer.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
-      # Web installer: LeadsGhr-Setup.exe (about 1 MB) downloads LeadsGhr-App-x64.nsis.7z from the latest
-      # release while installing. latest.yml lets installed copies find and download the same package.
+      # LeadsGhr-Setup.exe (the branded setup people download) reads latest.yml, downloads LeadsGhr-Installer.exe
+      # and LeadsGhr-App-x64.nsis.7z, checks their hashes, and installs. Installed copies update from the same files.
       - name: Check release files
         shell: pwsh
         run: |
           $dir = 'apps/desktop/dist-installer/nsis-web'
-          foreach ($file in @('LeadsGhr-Setup.exe', 'LeadsGhr-App-x64.nsis.7z', 'latest.yml')) {
+          foreach ($file in @('LeadsGhr-Setup.exe', 'LeadsGhr-Installer.exe', 'LeadsGhr-App-x64.nsis.7z', 'latest.yml')) {
             if (-not (Test-Path (Join-Path $dir $file))) { throw "Missing release file: $file" }
           }
           $latest = Join-Path $dir 'latest.yml'
           if (-not (Select-String -Path $latest -Pattern "version: $env:VERSION" -Quiet)) { throw 'latest.yml has the wrong version.' }
           if (-not (Select-String -Path $latest -Pattern 'path: LeadsGhr-App-x64.nsis.7z' -SimpleMatch -Quiet)) { throw 'latest.yml does not point at the app package.' }
+          if (-not (Select-String -Path $latest -Pattern 'path: LeadsGhr-Installer.exe' -SimpleMatch -Quiet)) { throw 'latest.yml does not point at the installer.' }
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -79,12 +80,13 @@ jobs:
           make_latest: true
           files: |
             apps/desktop/dist-installer/nsis-web/LeadsGhr-Setup.exe
+            apps/desktop/dist-installer/nsis-web/LeadsGhr-Installer.exe
             apps/desktop/dist-installer/nsis-web/LeadsGhr-App-x64.nsis.7z
             apps/desktop/dist-installer/nsis-web/latest.yml
           body: |
             LeadsGhr ${{ env.VERSION }} for Windows, built from ${{ github.sha }}.
 
-            **Install:** download `LeadsGhr-Setup.exe` (about 1 MB) and run it. It downloads LeadsGhr (`LeadsGhr-App-x64.nsis.7z`, about 100 MB) while installing, so it needs an internet connection. The installer is not code-signed, so Windows may show "Windows protected your PC": select **More info**, then **Run anyway**.
+            **Install:** download `LeadsGhr-Setup.exe` (under 1 MB) and run it. It downloads LeadsGhr (about 100 MB) while installing, so it needs an internet connection, then opens LeadsGhr. `LeadsGhr-Installer.exe`, `LeadsGhr-App-x64.nsis.7z` and `latest.yml` are used by setup and by automatic updates. The installer is not code-signed, so Windows may show "Windows protected your PC": select **More info**, then **Run anyway**.
 
             **Updates:** LeadsGhr 0.1.3 and later update themselves: they show a banner when a new release is available, download it (automatically unless turned off in Settings → Preferences → Updates), and offer to restart.
 

@@ -16,13 +16,14 @@ extraResources:
     to: leadsghr-mailer.zip
 win:
   icon: resources/leadsghr-icon.ico
-  # Web installer only: a small LeadsGhr-Setup.exe that downloads the app package (.nsis.7z) from the
-  # GitHub Release of the same version while installing. Installed copies update from the same files.
+  # Web installer: electron-builder makes LeadsGhr-Installer.exe plus the app package (.nsis.7z) and latest.yml.
+  # People download LeadsGhr-Setup.exe (setup/, built by setup/build-setup.ps1), which downloads both and runs
+  # LeadsGhr-Installer.exe silently. Installed copies update through latest.yml and the same two files.
   target: nsis-web
 nsisWeb:
-  # Same name in every release, so .../releases/latest/download/LeadsGhr-Setup.exe always works.
-  artifactName: LeadsGhr-Setup.${ext}
-  # The setup file always installs the newest release; scripts/finish-web-installer.mjs gives the package this name.
+  # Same name in every release; latest.yml points at it.
+  artifactName: LeadsGhr-Installer.${ext}
+  # Used when LeadsGhr-Installer.exe is run on its own; scripts/finish-web-installer.mjs gives the package this name.
   appPackageUrl: https://github.com/abrarhaider001/LeadsGhr/releases/latest/download/LeadsGhr-App-x64.nsis.7z
 # Where installed copies look for updates (electron-updater). Publishing itself is done by the release workflow.
 publish:

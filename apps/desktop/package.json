@@ -5,7 +5,8 @@
     "type": "module",
     "scripts": {
         "dev": "electron-vite dev",
-        "build": "electron-vite build && electron-builder --publish never && node scripts/finish-web-installer.mjs",
+        "build": "electron-vite build && electron-builder --publish never && node scripts/finish-web-installer.mjs && pnpm run build:setup",
+        "build:setup": "powershell -NoProfile -ExecutionPolicy Bypass -File setup/build-setup.ps1",
         "rebuild:native": "electron-rebuild -f -o better-sqlite3",
         "typecheck": "tsc --noEmit",
         "lint": "tsc --noEmit"
