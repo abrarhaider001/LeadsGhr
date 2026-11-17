@@ -6,7 +6,7 @@ Rules for coding agents working in this repository. LeadsGhr is a desktop applic
 
 | Part | Location | Runs on | Data |
 | --- | --- | --- | --- |
-| Desktop app | `apps/desktop/` | Electron on the user's computer and IP | Local SQLite, user-data files, CSV exports |
+| Desktop app | `apps/desktop/` | Electron on the user's computer and IP | Local SQLite and data files in `C:\LeadsGhr\data`, CSV exports |
 | React UI and shared logic | `packages/app/`, `packages/ui/`, other `packages/*` | Electron renderer or reusable TypeScript | No direct database or filesystem access from shared code |
 | LeadsGhr Tracker (Gmail tracking extension) | `apps/extension/` | Chrome Manifest V3 | Message metadata in Chrome storage; opaque pixel counts in optional public service |
 | LeadsGhr Mailer (Gmail sending extension) | `apps/mailer-extension/` | Chrome Manifest V3 | Saved templates and preferences as files in its `data` folder; recipients and campaign state in Chrome storage only |
@@ -19,10 +19,10 @@ The pnpm workspace includes `apps/desktop`, `apps/extension`, `apps/mailer-exten
 
 | Environment | How it is used | Data boundary |
 | --- | --- | --- |
-| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | Electron user-data directory holds preferences and SQLite; CSV exports go to `C:\LeadsGhr\exports` the extension ZIPs to `C:\LeadsGhr\extensions`, and exported preference files to `C:\LeadsGhr\settings` (`apps/desktop/src/paths.ts`) |
+| Local development | `pnpm.cmd install` and `pnpm.cmd dev` from the repository root | `C:\LeadsGhr\data` holds SQLite, `preferences.json`, `search-criteria.json`, and `profile.json` (`apps/desktop/src/data-folder.ts`; `LEADSGHR_DATA_DIR` overrides it, and the first start copies older data from `%APPDATA%\@leadsghr\desktop`); CSV exports go to `C:\LeadsGhr\exports` the extension ZIPs to `C:\LeadsGhr\extensions`, and exported preference files to `C:\LeadsGhr\settings` (`apps/desktop/src/paths.ts`) |
 | Chrome extension builds | `pnpm.cmd build:extension` (Tracker) and `pnpm.cmd build:mailer-extension` (Mailer) from the repository root | `C:\LeadsGhr\extensions` holds each extension's ZIP and its extracted, ready-to-load folder side by side (`leadsghr-tracker.zip` and `leadsghr-tracker\`, `leadsghr-mailer.zip` and `leadsghr-mailer\`); each extension's user data lives in that folder's `data\` subfolder |
 | Packaged desktop build | `pnpm.cmd build` when packaging is needed | Runs on the user's PC; generated output is not source and stays ignored |
-| Desktop releases | `.github/workflows/release.yml` on every push to `main` | Builds the unsigned Windows installer on GitHub Actions and publishes a GitHub Release (`v0.1.<run number>`: the branded setup `LeadsGhr-Setup.exe` from `apps/desktop/setup/`, plus `LeadsGhr-Installer.exe`, the app package `LeadsGhr-App-x64.nsis.7z`, and `latest.yml`, which setup and auto-update download); a push to `main` therefore publishes a downloadable release that installed copies (0.1.3+) download and offer to install automatically |
+| Desktop releases | `.github/workflows/release.yml` on every push to `main` | Builds the unsigned Windows installer on GitHub Actions and publishes a GitHub Release (`v0.1.<run number>`: the branded setup `LeadsGhr-Setup.exe` from `apps/desktop/setup/`, plus `LeadsGhr-Installer.exe`, the app package `LeadsGhr-App-x64.nsis.7z`, and `latest.yml`, which setup and auto-update download; uninstalling opens the branded window from `apps/desktop/setup/LeadsGhrUninstall.cs`, which keeps `C:\LeadsGhr` unless the user ticks **Also delete my LeadsGhr data**); a push to `main` therefore publishes a downloadable release that installed copies (0.1.3+) download and offer to install automatically |
 | Supabase | Account profile schema and optional mail tracking endpoint | Never store extracted leads, crawl observations, queues, exports, message recipients, or subjects |
 | GitHub | `abrarhaider001/LeadsGhr`, with `main` as the owner's branch | Agents commit completed work; pushing (which can trigger the Supabase deploy), releasing, and deploying require the owner's explicit approval |
 

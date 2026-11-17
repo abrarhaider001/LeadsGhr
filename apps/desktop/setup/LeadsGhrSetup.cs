@@ -165,9 +165,10 @@ namespace LeadsGhr.Setup
             }
             foreach (FontFamily f in fonts.Families)
             {
-                if (f.Name == "Instrument Sans") regular = f;
-                else if (f.Name == "Instrument Sans SemiBold") semibold = f;
-                else if (f.Name == "Instrument Sans Bold") bold = f;
+                // Family names come from the font files; GDI+ may append the style ("Instrument Sans SemiBold SemiBo").
+                if (f.Name.StartsWith("Instrument Sans SemiBold")) semibold = f;
+                else if (f.Name.StartsWith("Instrument Sans Bold")) bold = f;
+                else if (f.Name == "Instrument Sans") regular = f;
             }
             if (regular == null) regular = FontFamily.GenericSansSerif;
             if (semibold == null) semibold = regular;
@@ -421,8 +422,9 @@ namespace LeadsGhr.Setup
         {
             var fmt = StringFormat.GenericTypographic;
             float em = 36;
-            using (var line1 = new GraphicsPath())
-            using (var line2 = new GraphicsPath())
+            // Winding fill: the font has overlapping outlines that the default (alternate) fill would cut out.
+            using (var line1 = new GraphicsPath(FillMode.Winding))
+            using (var line2 = new GraphicsPath(FillMode.Winding))
             {
                 line1.AddString("Your lead workspace is", bold, (int)FontStyle.Regular, em, new PointF(46, 132), fmt);
                 line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)FontStyle.Regular, em, new PointF(46, 172), fmt);
