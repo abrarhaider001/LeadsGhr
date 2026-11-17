@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useAppVersion } from './updates'
 
 const logoUrl = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 const fanLines = Array.from({ length: 17 }, (_, index) => -80 + index * 53)
@@ -19,6 +20,7 @@ function SplashBackground() {
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [progress, setProgress] = useState(0)
   const [leaving, setLeaving] = useState(false)
+  const version = useAppVersion()
 
   useEffect(() => {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -70,6 +72,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
           <div className="la-splash__fill" style={{ transform: `scaleX(${progress / 100})` }} />
         </div>
         <span className="la-splash__loading">Opening workspace</span>
+        {version && <span className="la-splash__version">Version {version}</span>}
       </div>
     </div>
   )

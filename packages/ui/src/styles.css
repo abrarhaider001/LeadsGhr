@@ -1065,6 +1065,7 @@ body, .la-main, .la-shell { background: var(--la-canvas); color: var(--la-text);
 .la-splash__description { max-width: 460px; margin: 17px 0 32px; color: var(--la-muted); font-size: clamp(14px, 1.3vw, 17px); line-height: 1.5; }
 .la-splash__track { width: min(100%, 260px); min-width: 0; height: 4px; }
 .la-splash__loading { margin-top: 12px; color: var(--la-muted); font-size: 12px; }
+.la-splash__version { margin-top: 4px; color: var(--la-muted); font-family: 'Monaspace Neon', monospace; font-size: 11px; opacity: .8; }
 @media (max-width: 700px) { .la-splash__background { width: 160%; left: -30%; opacity: .3; } .la-splash__content { padding: 0 20px; } }
 a { color: var(--la-accent); }
 :is(button, input, textarea, a, select):focus-visible, .la-sidebar-search:focus-within,
@@ -1387,6 +1388,17 @@ a { color: var(--la-accent); }
 .la-settings-notice button { flex: none; min-height: 32px; padding: 0 12px; border: 1px solid #BFE3CB; border-radius: 8px; background: #FFFFFF; color: #1D6B3A; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .la-settings-notice button.la-settings-notice-close { min-height: 28px; width: 28px; padding: 0; border: 0; background: transparent; color: var(--la-muted); font-size: 18px; }
 @media (max-width: 760px) { .la-settings-transfer-bar { flex-direction: column; align-items: flex-start; } }
+/* Update banner (reuses .la-settings-notice) and Settings → Preferences → Updates. */
+.la-update-banner { margin-bottom: 14px; border-color: #D9CCF5; background: #F7F4FF; }
+.la-update-banner .la-settings-notice-icon { background: #5B12C9; }
+.la-update-banner .la-settings-notice-text strong { color: #5B12C9; }
+.la-update-banner button { border-color: #D9CCF5; color: #5B12C9; }
+.la-settings-notice button.primary, .la-update-status button.primary { border-color: #5B12C9; background: #5B12C9; color: #FFFFFF; }
+.la-update-progress { display: block; overflow: hidden; height: 6px; margin-top: 4px; border-radius: 999px; background: #E4DAF8; }
+.la-update-progress > span { display: block; height: 100%; background: #5B12C9; transform-origin: left center; transition: transform .3s ease; }
+.la-update-status button { flex: none; min-height: 34px; padding: 0 14px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; color: var(--la-text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.la-update-status button:disabled { opacity: .6; cursor: default; }
+@media (max-width: 760px) { .la-update-banner { flex-wrap: wrap; } }
 
 /* Preferences: "Choose what to export" dialog. */
 .la-export-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(25, 11, 45, .35); }
