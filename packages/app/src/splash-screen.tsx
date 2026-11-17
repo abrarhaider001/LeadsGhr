@@ -72,8 +72,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
           <div className="la-splash__fill" style={{ transform: `scaleX(${progress / 100})` }} />
         </div>
         <span className="la-splash__loading">Opening workspace</span>
-        {version && <span className="la-splash__version">Version {version}</span>}
       </div>
+      {version && <span className="la-splash__version">Version {version}</span>}
     </div>
   )
 }

@@ -1065,7 +1065,7 @@ body, .la-main, .la-shell { background: var(--la-canvas); color: var(--la-text);
 .la-splash__description { max-width: 460px; margin: 17px 0 32px; color: var(--la-muted); font-size: clamp(14px, 1.3vw, 17px); line-height: 1.5; }
 .la-splash__track { width: min(100%, 260px); min-width: 0; height: 4px; }
 .la-splash__loading { margin-top: 12px; color: var(--la-muted); font-size: 12px; }
-.la-splash__version { margin-top: 4px; color: var(--la-muted); font-family: 'Monaspace Neon', monospace; font-size: 11px; opacity: .8; }
+.la-splash__version { position: absolute; right: 0; bottom: 24px; left: 0; z-index: 1; text-align: center; color: var(--la-muted); font-family: 'Monaspace Neon', monospace; font-size: 11px; opacity: .8; animation: la-splash-enter 650ms ease-out both; }
 @media (max-width: 700px) { .la-splash__background { width: 160%; left: -30%; opacity: .3; } .la-splash__content { padding: 0 20px; } }
 a { color: var(--la-accent); }
 :is(button, input, textarea, a, select):focus-visible, .la-sidebar-search:focus-within,
