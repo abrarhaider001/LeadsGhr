@@ -87,6 +87,6 @@ jobs:
 
             **Install:** download `LeadsGhr-Setup.exe` and run it. The installer is not code-signed, so Windows may show "Windows protected your PC": select **More info**, then **Run anyway**.
 
-            **Updates:** LeadsGhr 0.1.3 and later update themselves: they download new releases in the background and offer to restart.
+            **Updates:** LeadsGhr 0.1.3 and later update themselves: they show a banner when a new release is available, download it (automatically unless turned off in Settings → Preferences → Updates), and offer to restart.
 
             **Needs:** Windows and Google Chrome. The Chrome extensions are downloaded from inside the app (Email Tracking / Email Sending pages).

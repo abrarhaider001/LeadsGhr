@@ -189,6 +189,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     const preferences = { ...desktopPreferencesSchema.parse(input), scanPublicWebsites: false }
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
+    applyAutoUpdatePreference(preferences.autoUpdate)
     return preferences
   })
   // Preferences → Export settings: write the current preferences to C:\LeadsGhr\settings and return the file path.
@@ -225,6 +226,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     const preferences = { ...imported.preferences, scanPublicWebsites: false }
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(join(app.getPath('userData'), 'preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
+    applyAutoUpdatePreference(preferences.autoUpdate)
     return { preferences, path, applied: imported.applied.length, skipped: imported.skipped.length, ignored: imported.ignored.length }
   })
   // "Show in folder" for an exported settings file (only files inside C:\LeadsGhr\settings).
@@ -236,47 +238,84 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     if (!path.toLowerCase().startsWith(directory.toLowerCase() + '\\') && !path.toLowerCase().startsWith(directory.toLowerCase() + '/')) throw new Error('Not a settings export.')
     shell.showItemInFolder(path)
   })
+  // Version and updates (Settings → Preferences → Updates, the update banner, and the splash screen).
+  ipcMain.handle('leadsghr:app:version', () => app.getVersion())
+  ipcMain.handle('leadsghr:update:status', () => updateState)
+  ipcMain.handle('leadsghr:update:check', async (event) => {
+    if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    if (!app.isPackaged || updateState.status === 'downloading' || updateState.status === 'downloaded') return updateState
+    await autoUpdater.checkForUpdates().catch(() => undefined)
+    return updateState
+  })
+  ipcMain.handle('leadsghr:update:install', async (event) => {
+    if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    if (!app.isPackaged) return updateState
+    if (updateState.status === 'downloaded') { setImmediate(() => autoUpdater.quitAndInstall(false, true)); return updateState }
+    if (updateState.status === 'available' || updateState.status === 'error') {
+      installWhenDownloaded = true
+      setUpdateState({ ...updateState, status: 'downloading', percent: 0 })
+      void autoUpdater.downloadUpdate().catch(() => undefined)
+    } else if (updateState.status === 'downloading') installWhenDownloaded = true
+    return updateState
+  })
   ipcMain.handle('leadsghr:leads', () => localStore().adapters.storage.listLeads(localScope, 500))
   ipcMain.handle('leadsghr:runs', () => localStore().db.prepare('SELECT id,url,status,started_at AS startedAt,finished_at AS finishedAt,error FROM scan_runs ORDER BY started_at DESC LIMIT 100').all())
-  startAutoUpdates()
+  void readPreferences().then((preferences) => startAutoUpdates(preferences.autoUpdate), () => startAutoUpdates(true))
   createWindow(crawlStore)
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
 
+/** What the app knows about updates; sent to every window as it changes. */
+type UpdateState = {
+  status: 'unsupported' | 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  /** Version being offered or downloaded. */
+  version?: string
+  /** Download progress, 0–100. */
+  percent?: number
+  message?: string
+  checkedAt?: number
+}
+let updateState: UpdateState = { status: 'idle' }
+let installWhenDownloaded = false
+
+function setUpdateState(next: UpdateState): void {
+  updateState = next
+  for (const window of BrowserWindow.getAllWindows()) window.webContents.send('leadsghr:update:event', updateState)
+}
+
+/** Apply the Auto-update preference: on, new versions download by themselves; off, they are only announced. */
+function applyAutoUpdatePreference(enabled: boolean): void {
+  if (app.isPackaged) autoUpdater.autoDownload = enabled
+}
+
 /**
  * Auto-update for installed copies: check GitHub Releases (the `publish` target in electron-builder.yml)
- * at start-up and every four hours, download a newer version in the background, then offer a restart.
- * "Later" installs it when the app next closes. LEADSGHR_UPDATE_URL can point at another feed for testing.
+ * at start-up and every four hours. The renderer shows the state (banner and Settings → Preferences → Updates):
+ * "Update now" downloads when needed and restarts into the new version; a downloaded update also installs
+ * when the app closes. LEADSGHR_UPDATE_URL can point at another feed for testing.
  */
-function startAutoUpdates(): void {
-  if (!app.isPackaged) return
+function startAutoUpdates(autoDownload: boolean): void {
+  if (!app.isPackaged) { updateState = { status: 'unsupported', message: 'Updates work in the installed app, not in development.' }; return }
   if (process.env.LEADSGHR_UPDATE_URL) autoUpdater.setFeedURL({ provider: 'generic', url: process.env.LEADSGHR_UPDATE_URL })
-  autoUpdater.autoDownload = true
+  applyAutoUpdatePreference(autoDownload)
   autoUpdater.autoInstallOnAppQuit = true
-  let prompted = false
+  autoUpdater.on('checking-for-update', () => { if (updateState.status !== 'downloading' && updateState.status !== 'downloaded') setUpdateState({ ...updateState, status: 'checking' }) })
+  autoUpdater.on('update-available', (info) => setUpdateState({ status: autoUpdater.autoDownload ? 'downloading' : 'available', version: info.version, percent: 0, checkedAt: Date.now() }))
+  autoUpdater.on('update-not-available', () => setUpdateState({ status: 'not-available', checkedAt: Date.now() }))
+  autoUpdater.on('download-progress', (progress) => setUpdateState({ ...updateState, status: 'downloading', percent: Math.round(progress.percent) }))
   autoUpdater.on('update-downloaded', (info) => {
-    if (prompted) return
-    prompted = true
-    const owner = BrowserWindow.getAllWindows()[0]
-    const options = {
-      type: 'info' as const,
-      title: 'Update ready',
-      message: `LeadsGhr ${info.version} is ready to install`,
-      detail: 'Restart now to update, or choose Later and it installs the next time you close LeadsGhr. Your data and settings are kept.',
-      buttons: ['Restart now', 'Later'],
-      defaultId: 0,
-      cancelId: 1,
-      noLink: true,
-    }
-    void (owner ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options)).then(({ response }) => {
-      if (response === 0) autoUpdater.quitAndInstall(false, true)
-    })
+    setUpdateState({ status: 'downloaded', version: info.version, percent: 100, checkedAt: Date.now() })
+    if (installWhenDownloaded) setImmediate(() => autoUpdater.quitAndInstall(false, true))
   })
-  autoUpdater.on('error', (error) => { console.warn('[LeadsGhr] Update check failed:', error instanceof Error ? error.message : error) })
+  autoUpdater.on('error', (error) => {
+    console.warn('[LeadsGhr] Update failed:', error instanceof Error ? error.message : error)
+    setUpdateState({ ...updateState, status: 'error', message: 'Could not check for updates. Check your internet connection and try again.' })
+  })
   const check = () => { void autoUpdater.checkForUpdates().catch(() => undefined) }
   check()
   setInterval(check, 4 * 60 * 60 * 1000)
 }
+
 app.on('before-quit', () => { activeMapsScan?.controller.abort(); abortActiveEmailVerify(); db?.close() })
 
 
