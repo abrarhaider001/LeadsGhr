@@ -5,7 +5,7 @@
     "type": "module",
     "scripts": {
         "dev": "electron-vite dev",
-        "build": "electron-vite build && electron-builder",
+        "build": "electron-vite build && electron-builder --publish never",
         "rebuild:native": "electron-rebuild -f -o better-sqlite3",
         "typecheck": "tsc --noEmit",
         "lint": "tsc --noEmit"

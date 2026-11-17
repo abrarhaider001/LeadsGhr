@@ -57,14 +57,18 @@ jobs:
           # No code-signing certificate: build an unsigned installer.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
-      - name: Name the installer
+      # electron-builder names the installer LeadsGhr-Setup-<version>.exe and writes latest.yml + .blockmap,
+      # which installed copies read to update themselves. LeadsGhr-Setup.exe is the permanent download link.
+      - name: Check update files and add the download copy
         shell: pwsh
         run: |
           $dir = 'apps/desktop/dist-installer'
-          $exe = Get-ChildItem $dir -Filter '*.exe' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          if (-not $exe) { throw 'No installer was built.' }
-          Copy-Item $exe.FullName (Join-Path $dir 'LeadsGhr-Setup.exe')
-          Copy-Item $exe.FullName (Join-Path $dir "LeadsGhr-Setup-$env:VERSION.exe")
+          $exe = Join-Path $dir "LeadsGhr-Setup-$env:VERSION.exe"
+          foreach ($file in @($exe, "$exe.blockmap", (Join-Path $dir 'latest.yml'))) {
+            if (-not (Test-Path $file)) { throw "Missing release file: $file" }
+          }
+          if (-not (Select-String -Path (Join-Path $dir 'latest.yml') -Pattern "version: $env:VERSION" -Quiet)) { throw 'latest.yml has the wrong version.' }
+          Copy-Item $exe (Join-Path $dir 'LeadsGhr-Setup.exe')
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
@@ -76,9 +80,13 @@ jobs:
           files: |
             apps/desktop/dist-installer/LeadsGhr-Setup.exe
             apps/desktop/dist-installer/LeadsGhr-Setup-${{ env.VERSION }}.exe
+            apps/desktop/dist-installer/LeadsGhr-Setup-${{ env.VERSION }}.exe.blockmap
+            apps/desktop/dist-installer/latest.yml
           body: |
             LeadsGhr ${{ env.VERSION }} for Windows, built from ${{ github.sha }}.
 
             **Install:** download `LeadsGhr-Setup.exe` and run it. The installer is not code-signed, so Windows may show "Windows protected your PC": select **More info**, then **Run anyway**.
+
+            **Updates:** LeadsGhr 0.1.3 and later update themselves: they download new releases in the background and offer to restart.
 
             **Needs:** Windows and Google Chrome. The Chrome extensions are downloaded from inside the app (Email Tracking / Email Sending pages).
