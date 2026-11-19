@@ -11,6 +11,8 @@ import { publicIp } from './adapters'
 
 const AGENT = 'LeadsGhr/0.1 (public-data crawler)'
 const CHALLENGE = /captcha|unusual traffic|verify you are human|sign in to continue/i
+/** Bot-check pages served instead of the real site (hosting "One moment, please", Cloudflare "Just a moment..."). They are challenges: the site is skipped, never passed. */
+const BOT_CHECK = /<title>\s*(?:one moment, please|just a moment|attention required|checking your browser|please wait while we (?:verify|check)|ddos-guard|security check)/i
 const CONTACT = /(?:^|[\/_-])(?:contact(?:-us)?|get-in-touch|reach-us|enquir(?:y|ies)|inquir(?:y|ies))(?:$|[\/_-])/i
 const MAX_SITE_PAGES = 1000
 /** Errors that can mean this computer is offline rather than that one website is broken. */
@@ -101,16 +103,16 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
       policies.set(final.origin, finalRobots)
       if (!finalRobots.isAllowed(final.toString(), AGENT)) throw new Error('Redirect target disallowed by robots.txt')
     }
+    if (BOT_CHECK.test(response.body.slice(0, 10000))) throw new Error('Site shows a bot-check page instead of its content; site skipped')
     if ([401, 403, 429, 503].includes(response.status) || CHALLENGE.test(response.body.slice(0, 10000))) throw new Error(`Page presented a challenge (HTTP ${response.status}); site skipped`)
     if (response.status !== 200 || !response.contentType.includes('text/html')) { setStatus(id, target, 'skipped', `HTTP ${response.status}: no public HTML`); return null }
     if (response.url !== target.url) redirectAliases.set(`${id}|${target.rowKey}|${canonical(response.url)}`, target.url)
     setStatus(id, target, 'ready')
     return { html: response.body, url: response.url }
   }
-  async function crawl(id: string, target: Page, html: string, pageUrl: string, contactOnly: boolean, fetchMethod: 'browser' | 'http', emailSource: 'leadsghr' | 'email-hunter') {
-    setStatus(id, target, 'crawling')
-    const snapshots = [html]
-    if (fetchMethod === 'browser') {
+  /** Loads a page in a hidden, sandboxed browser window and returns up to eight scrolled snapshots of its HTML. */
+  async function renderPage(id: string, target: Page, pageUrl: string): Promise<string[]> {
+    const snapshots: string[] = []
     const preview = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, partition: `pipeline-${randomUUID()}` } })
     preview.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
     const allowNavigation = (url: string) => { try { const destination = new URL(url); return destination.origin === new URL(pageUrl).origin && (policies.get(destination.origin)?.isAllowed(url, AGENT) ?? false) } catch { return false } }
@@ -133,22 +135,25 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     try {
       const origin = new URL(pageUrl).origin
       await reserveFetch(origin, Math.max(2000, (policies.get(origin)?.getCrawlDelay(AGENT) ?? 0) * 1000))
-      if (active?.controller.signal.aborted) return
+      if (active?.controller.signal.aborted) return snapshots
       await Promise.race([preview.loadURL(pageUrl), new Promise<never>((_resolve, reject) => setTimeout(() => reject(new Error('Rendered page timed out')), 20000))])
       for (let step = 0; step < 8; step++) {
         if (active?.controller.signal.aborted) break
         const rendered = await preview.webContents.executeJavaScript(`window.scrollTo(0, document.documentElement.scrollHeight * ${(step + 1) / 8}); document.documentElement.outerHTML`) as string
-        if (CHALLENGE.test(rendered.slice(0, 10000))) throw new Error('Page presented a challenge; site skipped')
-        snapshots.push(rendered)
+        if (CHALLENGE.test(rendered.slice(0, 10000)) || BOT_CHECK.test(rendered.slice(0, 10000))) throw new Error('Page presented a challenge; site skipped')
+        if (rendered) snapshots.push(rendered)
         await wait(350)
       }
     } catch (error) {
-      if (CHALLENGE.test(String(error))) throw error
+      if (/site skipped/.test(String(error))) throw error
       emit(id, `Rendered preview unavailable for ${target.url}; using public HTML.`)
     } finally { if (!preview.isDestroyed()) preview.destroy() }
-    }
+    return snapshots
+  }
+  async function crawl(id: string, target: Page, html: string, pageUrl: string, contactOnly: boolean, fetchMethod: 'browser' | 'http', emailSource: 'leadsghr' | 'email-hunter') {
+    setStatus(id, target, 'crawling')
     const emails = new Set<string>()
-    for (const snapshot of snapshots) {
+    const inspect = (snapshot: string) => {
       const discovery = discoverPage(snapshot, pageUrl)
       // Enqueue discovered links before email extraction finishes. Other
       // workers can claim them while this page is still being inspected.
@@ -158,6 +163,14 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
       }
       if (!contactOnly) for (const link of discovery.links) enqueue(id, target.rowKey, link, CONTACT.test(decodeURIComponent(new URL(link).pathname)) ? 'Contact page' : 'Page')
       for (const email of [...(emailSource === 'email-hunter' ? extractRenderedHtmlEmails(snapshot) : extractContacts(snapshot).emails), ...discovery.formRecipientEmails]) emails.add(email)
+    }
+    inspect(html)
+    if (fetchMethod === 'browser') for (const snapshot of await renderPage(id, target, pageUrl)) inspect(snapshot)
+    else if (!emails.size && target.kind !== 'Page' && !active?.controller.signal.aborted) {
+      // Direct HTTP found no email on a homepage or contact page: many sites add the address with JavaScript,
+      // so load this one page once in the hidden browser. Challenge and bot-check pages are not passed (see BOT_CHECK).
+      emit(id, `No email in the public HTML of ${target.url}; trying browser rendering...`)
+      for (const snapshot of await renderPage(id, target, pageUrl)) inspect(snapshot)
     }
     const storedRow = db.prepare('SELECT payload FROM crawl_run_rows WHERE run_id=? AND row_key=?').get(id, target.rowKey) as { payload: string } | undefined
     if (storedRow) {

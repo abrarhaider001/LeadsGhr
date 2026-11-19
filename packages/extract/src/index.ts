@@ -12,21 +12,49 @@ const EMAIL_VALUE = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i
 const SOCIAL = /(?:linkedin\.com|facebook\.com|instagram\.com|x\.com)\//i
 const RENDERED_EMAIL = /\b[a-z\d-][_a-z\d-+]*(?:\.[_a-z\d-+]*)*@[a-z\d]+[a-z\d-]*(?:\.[a-z\d-]+)*(?:\.[a-z]{2,63})\b/gi
 
+/** Error-reporting and analytics endpoints that look like email addresses (for example Sentry keys in Wix pages). */
+const TRACKING_ADDRESS = /@(?:[a-z0-9-]+\.)*(?:sentry\.io|sentry-next\.wixpress\.com|sentry\.wixpress\.com|wixpress\.com)$/i
+
+function decodeCloudflareEmail(hex: string): string | null {
+  if (!/^(?:[0-9a-f]{2}){2,}$/i.test(hex)) return null
+  const key = parseInt(hex.slice(0, 2), 16)
+  let decoded = ''
+  for (let index = 2; index < hex.length; index += 2) decoded += String.fromCharCode(parseInt(hex.slice(index, index + 2), 16) ^ key)
+  return EMAIL_VALUE.test(decoded) ? decoded : null
+}
+
+/**
+ * Reveals addresses that Cloudflare's email obfuscation hides (`data-cfemail="..."` and
+ * `/cdn-cgi/l/email-protection#...`), so both extractors see the real address.
+ */
+export function decodeProtectedEmails(html: string): string {
+  if (!/cfemail|email-protection#/i.test(html)) return html
+  return html
+    .replace(/(href=)(["'])\/cdn-cgi\/l\/email-protection#([0-9a-f]+)\2/gi, (match, attribute: string, quote: string, hex: string) => {
+      const email = decodeCloudflareEmail(hex)
+      return email ? `${attribute}${quote}mailto:${email}${quote}` : match
+    })
+    .replace(/<([a-z0-9]+)([^>]*?)\sdata-cfemail=(["'])([0-9a-f]+)\3([^>]*)>[\s\S]*?<\/\1>/gi, (match, tag: string, before: string, _quote: string, hex: string, after: string) => {
+      const email = decodeCloudflareEmail(hex)
+      return email ? `<${tag}${before}${after}>${email}</${tag}>` : match
+    })
+}
+
 /** Email Hunter-style matching over rendered HTML, including attributes and inline scripts. Matches are unverified. */
 export function extractRenderedHtmlEmails(html: string): string[] {
-  return [...new Set((html.replace(/\\n/gi, ' ').match(RENDERED_EMAIL) ?? []).map((value) => value.toLowerCase()))]
-    .filter((value) => !/\.(?:png|jpe?g|gif|css|js|webp)$/i.test(value) && !/(?:no|not)[-_]?reply|mailer[-_]?daemon|nondelivery/i.test(value))
+  return [...new Set((decodeProtectedEmails(html).replace(/\\n/gi, ' ').replace(/%40/gi, '@').match(RENDERED_EMAIL) ?? []).map((value) => value.toLowerCase()))]
+    .filter((value) => !/\.(?:png|jpe?g|gif|css|js|webp)$/i.test(value) && !/(?:no|not)[-_]?reply|mailer[-_]?daemon|nondelivery/i.test(value) && !TRACKING_ADDRESS.test(value))
 }
 
 
 /** Pure HTML-string extraction: safe in Node and an extension offscreen document. */
 export function extractContacts(html: string, defaultCountry: 'US' | 'GB' | 'PK' = 'US'): ExtractedContacts {
-  const $ = cheerio.load(html)
+  const $ = cheerio.load(decodeProtectedEmails(html))
   $('script,style,noscript').remove()
   const text = $.root().text().replace(/\u200b/g, '')
-  const mailto = $('a[href^="mailto:"]').map((_, node) => ($(node).attr('href') ?? '').slice(7).split('?')[0]).get()
+  const mailto = $('a[href^="mailto:" i]').map((_, node) => { const value = ($(node).attr('href') ?? '').slice(7).split('?')[0]; try { return decodeURIComponent(value) } catch { return value } }).get()
   const emails = [...new Set([...mailto, ...(text.match(EMAIL) ?? [])].map((value) => value.trim().toLowerCase()))]
-    .filter((value) => EMAIL_VALUE.test(value) && !/\.(png|jpe?g|gif|svg|webp)$/i.test(value) && !value.includes('example.'))
+    .filter((value) => EMAIL_VALUE.test(value) && !/\.(png|jpe?g|gif|svg|webp)$/i.test(value) && !value.includes('example.') && !TRACKING_ADDRESS.test(value))
   const phones = new Set<string>()
   $('a[href^="tel:"]').each((_, node) => {
     const parsed = parsePhoneNumberFromString(($(node).attr('href') ?? '').slice(4), defaultCountry)

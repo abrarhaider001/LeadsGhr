@@ -163,6 +163,8 @@ export async function scanMaps(query: string, location: string, emit: (event: Ma
         await cdp.call('Page.navigate', { url })
         continue
       }
+      // Chrome shows its own error page when the connection drops: report it as a network problem, not as a broken search.
+      if (page.url.startsWith('chrome-error://')) throw new Error('Chrome could not load Google Maps (network error)')
       if (CHALLENGE.test(page.text)) throw new Error('Google presented a challenge; search paused')
       if (!page.cards.length && !seen.size && loadingRounds < 12) {
         loadingRounds++
