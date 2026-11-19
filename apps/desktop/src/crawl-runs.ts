@@ -32,7 +32,7 @@ export function createCrawlRunStore(db: Database.Database) {
   const summary = (run: StoredRun): CrawlRunSummary => {
     const criteria = JSON.parse(run.criteria_json) as CreateCrawlRun['criteria']
     const latest = exportsFor(run.id)[0]
-    return { id: run.id, name: run.name, provider: run.provider, kind: run.kind, niches: criteria.selectedNiches, states: criteria.selectedStates, stateStartNumber: run.state_start_number, stateEndNumber: run.state_end_number, startedAt: run.started_at, finishedAt: run.finished_at, status: run.status, nextQueryIndex: run.next_query_index, totalQueries: (JSON.parse(run.searches_json) as unknown[]).length, entryCount: (db.prepare('SELECT COUNT(*) AS count FROM crawl_run_rows WHERE run_id=?').get(run.id) as { count: number }).count, latestFileName: latest?.file_name ?? null, latestFileSize: latest?.file_size ?? null, latestFilePath: latest?.file_path ?? null }
+    return { id: run.id, name: run.name, provider: run.provider, kind: run.kind, niches: criteria.selectedNiches, states: criteria.selectedStates, stateStartNumber: run.state_start_number, stateEndNumber: run.state_end_number, startedAt: run.started_at, finishedAt: run.finished_at, status: run.status, nextQueryIndex: run.next_query_index, totalQueries: (JSON.parse(run.searches_json) as unknown[]).length, entryCount: (db.prepare('SELECT COUNT(*) AS count FROM crawl_run_rows WHERE run_id=?').get(run.id) as { count: number }).count, latestFileName: latest?.file_name ?? null, latestFileSize: latest?.file_size ?? null, latestFilePath: latest?.file_path ?? null, error: run.error }
   }
   return {
     create(input: CreateCrawlRun) {

@@ -19,6 +19,9 @@ const mapsBridge = () => (window as Window & { leadsGhrDesktop?: MapsBridge }).l
 type PreparedSearch = { niche: string; term: string; place: string; query: string }
 type RunPhase = 'running' | 'pausing' | 'paused' | 'stopped' | 'completed' | 'error'
 
+/** Maps errors that affect every search, so the run stops (with its reason) instead of skipping the location. */
+const STOPPING_SEARCH_ERROR = /challenge|robots|not installed|Enable Maps/i
+
 export function SearchResultsPage({ criteria, preferences, initialRun, pipelineMode = false, pipelineName, provider = 'google-maps', onBack, onSaved, onFinished }: { criteria: SearchCriteria; preferences: DesktopPreferences; initialRun?: CrawlRunDetail | null; pipelineMode?: boolean; pipelineName?: string; provider?: PipelineProvider; onBack(): void; onSaved?(): void; onFinished?(item: CrawlExport): void }) {
   const [retry, setRetry] = useState(0)
   const [rows, setRows] = useState<MapsRow[]>([])
@@ -111,6 +114,13 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
     let activeRunId: string | null = null
     let siteCrawlTask: Promise<void> | null = null
     let sitePaused = false
+    let sitePauseReason: string | undefined
+    // Set when the searches end, so the website crawl pause it triggers is not mistaken for a crawler problem.
+    let searchesEnded = false
+    // A reason that stops every remaining search (Google challenge, robots.txt, setup problem).
+    let searchError: string | null = null
+    let lastErrorText = ''
+    const skipped: string[] = []
     let finalized = false
     let saveError: unknown = null
     let unsubscribe: (() => void) | undefined
@@ -183,12 +193,13 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
         siteCrawlActive.current = true
         let result: 'completed' | 'paused'
         try { result = await runStore.startPipelinePages(id) }
-        catch (failure) { sitePaused = true; stopRequested.current = true; setStatus(`Website crawl paused: ${String(failure)}`); if (currentId) void bridge.stopMapsScan(currentId); return }
+        catch (failure) { sitePaused = true; sitePauseReason = `Website crawl paused: ${String(failure)}`; stopRequested.current = true; setStatus(sitePauseReason); if (currentId) void bridge.stopMapsScan(currentId); return }
         finally { siteCrawlActive.current = false }
         if (result === 'completed') {
           if (!disposed) { setWebsiteCrawlFinished(true); setSiteCrawlElapsedMs(Date.now() - startedAt) }
           return
         }
+        if (searchesEnded) return
         if (!sitePauseRequested.current || stopRequested.current || disposed) {
           if (!stopRequested.current && !disposed) { sitePaused = true; stopRequested.current = true; setStatus('Website crawl paused. Resume this pipeline to continue.'); if (currentId) void bridge.stopMapsScan(currentId) }
           return
@@ -225,6 +236,8 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
       } catch (failure) { if (!disposed) { setPhase('error'); setStatus(`Could not create crawl run: ${String(failure)}`) } return }
       let index = nextQueryIndex.current
       let outcome: 'done' | 'error' | 'stopped' = 'done'
+      let attempt = 0
+      let failuresInARow = 0
       while (index < searches.length && !disposed && !stopRequested.current) {
         if (pauseRequested.current) {
           setPhase('paused')
@@ -278,19 +291,37 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
                 void task.finally(() => pendingRows.current.delete(task))
               }
             } else if (update.type === 'done') finish('done')
-            else { setStatus(`Search ${index + 1} of ${searches.length}: ${update.text}`); finish('error') }
+            else { lastErrorText = update.text.replace(/^Error:\s*/, ''); setStatus(`Search ${index + 1} of ${searches.length}: ${lastErrorText}`); finish('error') }
           })
           void bridge.startMapsScan({ query: search.query, location: search.place }).then((id) => {
             currentId = id
             if (disposed || stopRequested.current || pauseRequested.current) void bridge.stopMapsScan(id)
             else setRunId(id)
-          }).catch((error) => { if (!disposed) setStatus(`Could not start ${search.place}: ${String(error)}`); finish('error') })
+          }).catch((error) => { lastErrorText = `Could not start the search: ${String(error).replace(/^Error:\s*/, '')}`; if (!disposed) setStatus(`Could not start ${search.place}: ${String(error)}`); finish('error') })
         })
         currentId = null
         setRunId(null)
         if (disposed || stopRequested.current) break
         if (outcome === 'stopped' && pauseRequested.current) continue
-        if (outcome !== 'done') break
+        if (outcome === 'error') {
+          // Google challenges, robots.txt rules, and setup problems affect every search: stop and keep the reason.
+          if (STOPPING_SEARCH_ERROR.test(lastErrorText)) { searchError = lastErrorText; break }
+          // Anything else concerns only this location (Google often answers the same search differently a
+          // moment later): try it once more, then skip it and continue with the next location.
+          if (attempt === 0) {
+            attempt = 1
+            setStatus(`Search ${index + 1} of ${searches.length}: retrying ${search.place} (${lastErrorText})`)
+            await new Promise((resolve) => window.setTimeout(resolve, 5000))
+            if (disposed || stopRequested.current) break
+            continue
+          }
+          skipped.push(`${search.place}: ${lastErrorText}`)
+          failuresInARow += 1
+          if (failuresInARow >= 3) { searchError = `${failuresInARow} searches in a row failed (last: ${lastErrorText})`; break }
+          setStatus(`Search ${index + 1} of ${searches.length}: skipped ${search.place} (${lastErrorText})`)
+        } else if (outcome !== 'done') break
+        else failuresInARow = 0
+        attempt = 0
         index += 1
         nextQueryIndex.current = index
         try { await persistProgress('running') } catch (failure) { outcome = 'error'; if (!disposed) setStatus(`Could not save crawl position: ${String(failure)}`); break }
@@ -298,17 +329,20 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
       }
       if (disposed) return
       if (siteCrawlTask) {
-        if (stopRequested.current || outcome === 'error' || index < searches.length || sitePaused) {
+        if (stopRequested.current || searchError || index < searches.length || sitePaused) {
+          searchesEnded = !sitePaused
           if (activeRunId && siteCrawlActive.current) await runStore.pausePipelinePages(activeRunId)
           siteResumeWaiter.current?.()
         }
         await siteCrawlTask
       }
       if (disposed) return
-      if (sitePaused) { setPhase('stopped'); setStatus('Website crawl paused. Saving partial CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Website crawl paused. Resume this pipeline to continue.') }
+      const skippedNote = skipped.length ? `${skipped.length} search${skipped.length === 1 ? '' : 'es'} skipped: ${skipped.slice(0, 20).join('; ')}${skipped.length > 20 ? '; ...' : ''}` : undefined
+      const again = pipelineMode ? 'Resume this pipeline to continue.' : 'Results saved and exported.'
+      if (sitePaused) { setPhase('stopped'); setStatus('Website crawl paused. Saving partial CSV...'); if (await finishRun('stopped', sitePauseReason) && !disposed) setStatus(`${sitePauseReason ?? 'Website crawl paused.'} Resume this pipeline to continue.`) }
+      else if (searchError) { setPhase('stopped'); setStatus(`Stopped at search ${index + 1} of ${searches.length}: ${searchError}. Saving results...`); if (await finishRun('stopped', `Stopped at search ${index + 1} of ${searches.length}: ${searchError}`) && !disposed) setStatus(`Stopped at search ${index + 1} of ${searches.length}: ${searchError}. ${again}`) }
       else if (stopRequested.current) { setPhase('stopped'); setStatus('Search stopped. Saving CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Search stopped. Results saved and exported.') }
-      else if (outcome === 'error') { setPhase('error'); await finishRun('failed', 'Search ended with an error.') }
-      else if (index >= searches.length) { setPhase('completed'); setStatus('Search complete. Saving CSV...'); if (await finishRun('completed') && !disposed) setStatus(`Completed all ${searches.length} searches. Results exported.`) }
+      else if (index >= searches.length) { setPhase('completed'); setStatus('Search complete. Saving CSV...'); if (await finishRun('completed', skippedNote) && !disposed) setStatus(`Completed all ${searches.length} searches${skipped.length ? ` (${skipped.length} skipped)` : ''}. Results exported.`) }
       else { setPhase('stopped'); setStatus('Search stopped. Saving CSV...'); if (await finishRun('stopped') && !disposed) setStatus('Search stopped. Results saved and exported.') }
     }
     // StrictMode replays mount effects in development. Defer the database write

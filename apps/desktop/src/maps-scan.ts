@@ -148,11 +148,21 @@ export async function scanMaps(query: string, location: string, emit: (event: Ma
     let quietRounds = 0
     let loadingRounds = 0
     let lastPageUrl = ''
+    let reopened = false
     for (let step = 0; step < 45 && seen.size < 200; step++) {
       if (signal.aborted) throw new Error('Search stopped')
       await wait(step === 0 ? 1700 : 1400, signal)
       const page = await cdp.evaluate<{ url: string; text: string; cards: Pick<MapsRow, 'name' | 'website' | 'phone' | 'address' | 'mapsUrl' | 'emails'>[]; feed: boolean; scrollTop: number; scrollHeight: number; clientHeight: number }>(snapshot)
       lastPageUrl = page.url
+      // Chrome sometimes keeps the new tab on about:blank and never starts loading the Maps address it was
+      // started with. Open the address once in that case (Google was not reached yet, so this is not a repeat).
+      if (page.url === 'about:blank' && step >= 2 && !reopened) {
+        reopened = true
+        loadingRounds = 0
+        emit({ type: 'status', text: 'Chrome opened an empty tab; opening the Maps search again...' })
+        await cdp.call('Page.navigate', { url })
+        continue
+      }
       if (CHALLENGE.test(page.text)) throw new Error('Google presented a challenge; search paused')
       if (!page.cards.length && !seen.size && loadingRounds < 12) {
         loadingRounds++
@@ -175,7 +185,11 @@ export async function scanMaps(query: string, location: string, emit: (event: Ma
       if (!page.feed || (quietRounds >= 3 && page.scrollTop + page.clientHeight >= page.scrollHeight - 20)) break
       await cdp.evaluate(`(() => { const feed = document.querySelector('[role="feed"]'); if (feed) feed.scrollBy(0, Math.max(500, feed.clientHeight * .85)); })()`)
     }
-    if (!seen.size && !lastPageUrl.startsWith('https://www.google.com/maps/')) throw new Error('Google opened a different result view; Maps listings were not available for this search')
+    if (!seen.size && !lastPageUrl.startsWith('https://www.google.com/maps/')) {
+      let shown = lastPageUrl
+      try { const page = new URL(lastPageUrl); shown = `${page.hostname}${page.pathname}`.slice(0, 80) } catch { /* keep the raw value */ }
+      throw new Error(`Google opened a different result view (${shown || 'no page'}); Maps listings were not available for this search`)
+    }
     for (const row of crawlTargets) {
       if (signal.aborted) throw new Error('Search stopped')
       try {

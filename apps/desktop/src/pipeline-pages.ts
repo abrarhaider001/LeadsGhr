@@ -73,7 +73,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     if (!robots) {
       const robotsUrl = `${origin}/robots.txt`
       const response = await http.get(robotsUrl, { maxBytes: 250_000, timeoutMs: 20000 })
-      if (response.status !== 200 && response.status !== 404) throw new Error('Robots policy unavailable; crawl paused')
+      if (response.status !== 200 && response.status !== 404) throw new Error(`Robots policy unavailable (HTTP ${response.status}); site skipped`)
       robots = robotsParser(robotsUrl, response.status === 200 ? response.body : '')
       policies.set(origin, robots)
     }
@@ -85,16 +85,16 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     if (signal.aborted) return null
     const final = new URL(response.url)
     const requested = new URL(target.url)
-    if (final.hostname.replace(/^www\./, '') !== requested.hostname.replace(/^www\./, '')) throw new Error('Cross-site redirect paused')
+    if (final.hostname.replace(/^www\./, '') !== requested.hostname.replace(/^www\./, '')) throw new Error(`Redirects to another site (${final.hostname}); page skipped`)
     if (final.origin !== origin) {
       const finalRobotsUrl = `${final.origin}/robots.txt`
       const finalRobotsResponse = await http.get(finalRobotsUrl, { maxBytes: 250_000, timeoutMs: 20000 })
-      if (finalRobotsResponse.status !== 200 && finalRobotsResponse.status !== 404) throw new Error('Redirect robots policy unavailable; crawl paused')
+      if (finalRobotsResponse.status !== 200 && finalRobotsResponse.status !== 404) throw new Error('Redirect robots policy unavailable; page skipped')
       const finalRobots = robotsParser(finalRobotsUrl, finalRobotsResponse.status === 200 ? finalRobotsResponse.body : '')
       policies.set(final.origin, finalRobots)
       if (!finalRobots.isAllowed(final.toString(), AGENT)) throw new Error('Redirect target disallowed by robots.txt')
     }
-    if ([401, 403, 429, 503].includes(response.status) || CHALLENGE.test(response.body.slice(0, 10000))) throw new Error('Page presented a challenge; crawl paused')
+    if ([401, 403, 429, 503].includes(response.status) || CHALLENGE.test(response.body.slice(0, 10000))) throw new Error(`Page presented a challenge (HTTP ${response.status}); site skipped`)
     if (response.status !== 200 || !response.contentType.includes('text/html')) { setStatus(id, target, 'skipped', `HTTP ${response.status}: no public HTML`); return null }
     if (response.url !== target.url) redirectAliases.set(`${id}|${target.rowKey}|${canonical(response.url)}`, target.url)
     setStatus(id, target, 'ready')
@@ -131,7 +131,7 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
       for (let step = 0; step < 8; step++) {
         if (active?.controller.signal.aborted) break
         const rendered = await preview.webContents.executeJavaScript(`window.scrollTo(0, document.documentElement.scrollHeight * ${(step + 1) / 8}); document.documentElement.outerHTML`) as string
-        if (CHALLENGE.test(rendered.slice(0, 10000))) throw new Error('Page presented a challenge; crawl paused')
+        if (CHALLENGE.test(rendered.slice(0, 10000))) throw new Error('Page presented a challenge; site skipped')
         snapshots.push(rendered)
         await wait(350)
       }
@@ -167,7 +167,6 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
     const emailSource = run.preferences.crawlerEmailSource
     const workerCount = Math.max(1, Math.min(8, run.preferences.crawlerConcurrentPages))
     const searchCursor = db.prepare('SELECT next_query_index FROM crawl_runs WHERE id=?')
-    let failure: unknown = null
     let activeJobs = 0
     const worker = async () => {
       while (!signal.aborted) {
@@ -189,17 +188,20 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
           if (signal.aborted) return
           if (prepared) await crawl(id, target, prepared.html, prepared.url, contactOnly, fetchMethod, emailSource)
         } catch (error) {
-          failure ??= error
-          setStatus(id, target, 'queued', String(error))
-          active?.controller.abort()
-          return
+          if (signal.aborted) { setStatus(id, target, 'queued'); return }
+          // One website failing (blocked, challenged, redirected elsewhere, timed out) must not stop the
+          // whole pipeline: skip this page and keep crawling. A site that challenges us or has no readable
+          // robots.txt is skipped entirely, so it is not asked again for its other pages.
+          const reason = String(error).replace(/^Error:\s*/, '')
+          setStatus(id, target, 'skipped', reason)
+          if (/site skipped/.test(reason)) db.prepare("UPDATE pipeline_pages SET status='skipped',error=?,updated_at=? WHERE run_id=? AND row_key=? AND status='queued'").run(reason, new Date().toISOString(), id, target.rowKey)
         } finally { activeJobs-- }
       }
     }
     await Promise.all(Array.from({ length: workerCount }, () => worker()))
-    if (signal.aborted || failure) {
+    if (signal.aborted) {
       db.prepare("UPDATE pipeline_pages SET status='queued' WHERE run_id=? AND status IN ('fetching','ready','crawling')").run(id)
-      emit(id, failure ? `Paused: ${String(failure)}` : 'Pipeline paused')
+      emit(id, 'Pipeline paused')
       return 'paused'
     }
     emit(id, 'Website crawl complete')

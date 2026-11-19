@@ -120,7 +120,7 @@ export type CreateCrawlRun = z.infer<typeof createCrawlRunSchema>
 export const crawlRunIdSchema = z.string().uuid()
 export const crawlRunProgressSchema = z.object({ id: crawlRunIdSchema, nextQueryIndex: z.number().int().min(0).max(100000), status: z.enum(['running', 'stopped', 'completed', 'failed']), error: z.string().max(2000).optional() })
 export const crawlRunRowInputSchema = z.object({ id: crawlRunIdSchema, row: crawlRowSchema })
-export type CrawlRunSummary = { id: string; name: string; provider: PipelineProvider; kind: 'pipeline' | 'search'; niches: string[]; states: string[]; stateStartNumber: number; stateEndNumber: number; startedAt: string; finishedAt: string | null; status: 'running' | 'stopped' | 'completed' | 'failed'; nextQueryIndex: number; totalQueries: number; entryCount: number; latestFileName: string | null; latestFileSize: number | null; latestFilePath: string | null }
+export type CrawlRunSummary = { id: string; name: string; provider: PipelineProvider; kind: 'pipeline' | 'search'; niches: string[]; states: string[]; stateStartNumber: number; stateEndNumber: number; startedAt: string; finishedAt: string | null; status: 'running' | 'stopped' | 'completed' | 'failed'; nextQueryIndex: number; totalQueries: number; entryCount: number; latestFileName: string | null; latestFileSize: number | null; latestFilePath: string | null; /** Why the run stopped, or which searches were skipped. */ error: string | null }
 export type CrawlExport = { id: string; runId: string; fileName: string; filePath: string; fileSize: number; entryCount: number; exportedAt: string }
 export type CrawlRunDetail = CrawlRunSummary & { criteria: SearchCriteria; preferences: DesktopPreferences; searches: PreparedCrawlSearch[]; rows: CrawlRow[] }
 
