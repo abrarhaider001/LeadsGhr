@@ -53,7 +53,7 @@ export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView
       <h1 id="la-license-title">Unlock your <span>lead workspace</span></h1>
       <p className="la-license-lead">Enter the license key you received from your admin.</p>
       <label className="la-license-label" htmlFor="la-license-key">License key</label>
-      <div className={`la-license-field${message ? ' is-error' : ''}`}>{keyIcon}<textarea id="la-license-key" {...fieldProps} rows={2} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} aria-describedby={message ? 'la-license-error' : undefined} onKeyDown={onKey} /></div>
+      <div className={`la-license-field${message ? ' is-error' : ''}`}>{keyIcon}<textarea id="la-license-key" {...fieldProps} rows={1} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} aria-describedby={message ? 'la-license-error' : undefined} onKeyDown={onKey} /></div>
       {message && <p className="la-license-error" id="la-license-error" role="alert">{message}</p>}
       <button type="submit" className="la-license-submit" disabled={busy || !key.trim()}>{busy ? 'Checking key...' : 'Activate LeadsGhr'}</button>
       <div className="la-license-chips" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((product) => <span key={product.id}>{productIcon(product.id, 15)}{product.name}</span>)}</div>

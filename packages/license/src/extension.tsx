@@ -98,10 +98,10 @@ const styles = `
   .lg-lic-head p{margin:3px 0 0;font-size:12.5px;color:#DCD0F5}
   .lg-lic-body{flex:1;display:flex;flex-direction:column;padding:18px}
   .lg-lic-body label{font-size:12px;font-weight:600;color:#3A2E4D}
-  .lg-lic-field{display:flex;align-items:flex-start;gap:10px;margin-top:7px;padding:11px 12px;border:1.5px solid #D9CCF5;border-radius:12px;background:#FFF;box-shadow:0 0 0 4px #F3EEFF}
+  .lg-lic-field{display:flex;align-items:center;gap:10px;margin-top:7px;padding:11px 12px;border:1.5px solid #D9CCF5;border-radius:12px;background:#FFF;box-shadow:0 0 0 4px #F3EEFF}
   .lg-lic-field.bad{border-color:#E7B4AF;box-shadow:0 0 0 4px #FDF0EF}
-  .lg-lic-field svg{flex:none;margin-top:2px;color:#5B12C9}
-  .lg-lic-field textarea{flex:1;min-width:0;min-height:40px;border:0;outline:0;resize:none;background:none;font:500 12.5px/1.6 ui-monospace,Consolas,monospace;color:#190B2D;word-break:break-all}
+  .lg-lic-field svg{flex:none;color:#5B12C9}
+  .lg-lic-field textarea{flex:1;min-width:0;height:20px;padding:0;border:0;outline:0;resize:none;overflow:hidden;white-space:nowrap;background:none;font:500 12.5px/20px ui-monospace,Consolas,monospace;color:#190B2D}
   .lg-lic-field textarea::placeholder{color:#B3A9C6;font-family:'Instrument Sans',Arial,sans-serif;font-size:13px}
   .lg-lic-btn{height:42px;margin-top:12px;border:0;border-radius:11px;background:#5B12C9;color:#FFF;font:600 14px 'Instrument Sans',Arial,sans-serif;box-shadow:0 10px 24px rgba(91,18,201,.25);cursor:pointer}
   .lg-lic-btn:disabled{opacity:.65;cursor:default}
@@ -136,7 +136,7 @@ export function ExtensionLicenseScreen({ product, logo, initialMessage, onActiva
     <header className="lg-lic-head"><img src={logo} alt="" /><h1>{name}</h1><p>License required to continue</p></header>
     <form className="lg-lic-body" onSubmit={(event) => void submit(event)}>
       <label htmlFor="lg-lic-key">License key</label>
-      <div className={`lg-lic-field${message ? ' bad' : ''}`}>{keyIcon}<textarea id="lg-lic-key" {...fieldProps} rows={2} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }} /></div>
+      <div className={`lg-lic-field${message ? ' bad' : ''}`}>{keyIcon}<textarea id="lg-lic-key" {...fieldProps} rows={1} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }} /></div>
       {message && <div className="lg-lic-err" role="alert">{message}</div>}
       <button type="submit" className="lg-lic-btn" disabled={busy || !key.trim()}>{busy ? 'Checking key...' : `Activate ${short}`}</button>
       <div className="lg-lic-slots" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((item) => <span className="lg-lic-slot" key={item.id}>{slotIcon}{item.short}</span>)}</div>
