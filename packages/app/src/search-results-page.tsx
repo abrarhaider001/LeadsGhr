@@ -21,6 +21,9 @@ type RunPhase = 'running' | 'pausing' | 'paused' | 'stopped' | 'completed' | 'er
 
 /** Maps errors that affect every search, so the run stops (with its reason) instead of skipping the location. */
 const STOPPING_SEARCH_ERROR = /challenge|robots|not installed|Enable Maps/i
+/** Maps errors that mean Google cannot be reached (usually the internet connection): wait and try the same search again. */
+const OFFLINE_SEARCH_ERROR = /ENOTFOUND|EAI_AGAIN|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EHOSTUNREACH|ConnectTimeout|socket hang up|fetch failed|network/i
+const OFFLINE_WAIT_LIMIT_MS = 30 * 60 * 1000
 
 export function SearchResultsPage({ criteria, preferences, initialRun, pipelineMode = false, pipelineName, provider = 'google-maps', onBack, onSaved, onFinished }: { criteria: SearchCriteria; preferences: DesktopPreferences; initialRun?: CrawlRunDetail | null; pipelineMode?: boolean; pipelineName?: string; provider?: PipelineProvider; onBack(): void; onSaved?(): void; onFinished?(item: CrawlExport): void }) {
   const [retry, setRetry] = useState(0)
@@ -238,6 +241,8 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
       let outcome: 'done' | 'error' | 'stopped' = 'done'
       let attempt = 0
       let failuresInARow = 0
+      let offlineSince = 0
+      let offlineWaits = 0
       while (index < searches.length && !disposed && !stopRequested.current) {
         if (pauseRequested.current) {
           setPhase('paused')
@@ -303,6 +308,22 @@ export function SearchResultsPage({ criteria, preferences, initialRun, pipelineM
         setRunId(null)
         if (disposed || stopRequested.current) break
         if (outcome === 'stopped' && pauseRequested.current) continue
+        if (outcome === 'error' && OFFLINE_SEARCH_ERROR.test(lastErrorText)) {
+          // Google cannot be reached (usually the internet connection): wait and try the same location again,
+          // without using up its retry, for up to 30 minutes. Pause and Stop still work while waiting.
+          offlineSince ||= Date.now()
+          if (Date.now() - offlineSince > OFFLINE_WAIT_LIMIT_MS) { searchError = `No internet connection for 30 minutes (${lastErrorText})`; break }
+          const seconds = Math.min(60, 15 * 2 ** Math.min(offlineWaits, 2))
+          offlineWaits += 1
+          for (let left = seconds; left > 0 && !disposed && !stopRequested.current && !pauseRequested.current; left--) {
+            setStatus(`No internet connection: waiting to retry ${search.place} in ${left} s (search ${index + 1} of ${searches.length})`)
+            await new Promise((resolve) => window.setTimeout(resolve, 1000))
+          }
+          if (disposed || stopRequested.current) break
+          continue
+        }
+        offlineSince = 0
+        offlineWaits = 0
         if (outcome === 'error') {
           // Google challenges, robots.txt rules, and setup problems affect every search: stop and keep the reason.
           if (STOPPING_SEARCH_ERROR.test(lastErrorText)) { searchError = lastErrorText; break }

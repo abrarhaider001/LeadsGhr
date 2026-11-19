@@ -13,6 +13,8 @@ const AGENT = 'LeadsGhr/0.1 (public-data crawler)'
 const CHALLENGE = /captcha|unusual traffic|verify you are human|sign in to continue/i
 const CONTACT = /(?:^|[\/_-])(?:contact(?:-us)?|get-in-touch|reach-us|enquir(?:y|ies)|inquir(?:y|ies))(?:$|[\/_-])/i
 const MAX_SITE_PAGES = 1000
+/** Errors that can mean this computer is offline rather than that one website is broken. */
+const NETWORK_ERROR = /ENOTFOUND|EAI_AGAIN|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EHOSTUNREACH|ConnectTimeout|socket hang up|fetch failed|network/i
 const MAX_RUN_PAGES = 5000
 type PageStatus = 'queued' | 'fetching' | 'ready' | 'crawling' | 'crawled' | 'skipped'
 type StoredPage = { run_id: string; row_key: string; url: string; kind: 'Homepage' | 'Contact page' | 'Page'; status: PageStatus; emails_json: string; error: string | null; created_at: string }
@@ -61,6 +63,11 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
   }
   const policies = new Map<string, ReturnType<typeof robotsParser>>()
   const nextAllowedFetch = new Map<string, number>()
+  /** True when Google answers, i.e. this computer is online (used to tell an outage from one broken website). */
+  async function online() {
+    try { return (await http.get('https://www.google.com/generate_204', { maxBytes: 1000, timeoutMs: 8000 })).status < 500 }
+    catch { return false }
+  }
   async function reserveFetch(origin: string, delay: number) {
     const at = Math.max(Date.now(), nextAllowedFetch.get(origin) ?? 0)
     nextAllowedFetch.set(origin, at + delay)
@@ -193,6 +200,13 @@ export function registerPipelinePages(window: BrowserWindow, db: Database.Databa
           // whole pipeline: skip this page and keep crawling. A site that challenges us or has no readable
           // robots.txt is skipped entirely, so it is not asked again for its other pages.
           const reason = String(error).replace(/^Error:\s*/, '')
+          // Offline: put the page back and wait for the connection instead of skipping websites that are fine.
+          if (NETWORK_ERROR.test(reason) && !(await online())) {
+            setStatus(id, target, 'queued', 'Waiting for the internet connection')
+            emit(id, 'No internet connection: the website crawl is waiting and will continue when it is back.')
+            for (let waited = 0; waited < 15 && !signal.aborted; waited++) await wait(1000)
+            continue
+          }
           setStatus(id, target, 'skipped', reason)
           if (/site skipped/.test(reason)) db.prepare("UPDATE pipeline_pages SET status='skipped',error=?,updated_at=? WHERE run_id=? AND row_key=? AND status='queued'").run(reason, new Date().toISOString(), id, target.rowKey)
         } finally { activeJobs-- }
