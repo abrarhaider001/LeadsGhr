@@ -50,7 +50,7 @@ Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TR
 | [F2: Proxy Pool Manager](F2-Proxy%20Pool%20Manager/FEATURES-F2-README.md) | Not implemented | No proxy pool manager. |
 | [F3: Politeness Engine and robots.txt](F3-Politeness%20Engine%20and%20robots.txt/FEATURES-F3-README.md) | Partial | Robots checks and polite delays exist; centralized concurrency and crawl-delay handling are missing. |
 | [F4: Resilience Layer](F4-Resilience%20Layer/FEATURES-F4-README.md) | Partial | Timeouts, redirect limits and challenge checks exist; full retry/backoff and fallback handling are missing. |
-| [F5: Challenge and Block Policy](F5-Challenge%20and%20Block%20Policy/FEATURES-F5-README.md) | Partial | Challenges cause a pause; comprehensive per-source block policy is missing. |
+| [F5: Challenge and Block Policy](F5-Challenge%20and%20Block%20Policy/FEATURES-F5-README.md) | Partial | A Maps challenge stops the run with its reason; a challenged or blocked website is skipped while the Pipeline continues; comprehensive per-source block policy is missing. |
 | [F6: Logging and Monitoring](F6-Logging%20and%20Monitoring/FEATURES-F6-README.md) | Not implemented | No structured request log or health-monitoring panel. |
 | [G1: Dashboard](G1-Dashboard/FEATURES-G1-README.md) | Partial | Latest pipelines uses local run records with CSV export; metric totals and chart use local run and export data. |
 | [G2: Live Run Console](G2-Live%20Run%20Console/FEATURES-G2-README.md) | Partial | Crawler activity and Maps result streaming exist; full run progress, speed and ETA console are missing. |

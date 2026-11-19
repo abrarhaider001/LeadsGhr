@@ -6,7 +6,10 @@ export type FilterResult = { kept: FilteredEmail[]; rejected: RejectedEmail[]; d
 
 const STRICT_EMAIL = /^[a-z0-9](?:[a-z0-9.!#$%&'*+/=?^_`{|}~-]*[a-z0-9])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i
 const PLACEHOLDER_DOMAINS = new Set(['example.com', 'example.org', 'example.net', 'test.com', 'test.org', 'invalid', 'localhost', 'domain.com', 'yourdomain.com'])
-const PLACEHOLDER_LOCAL = /^(?:test|testing|example|sample|name|yourname|username|user|email|someone|abc|xxx|foo|bar)(?:\d+)?$/i
+const PLACEHOLDER_LOCAL = /^(?:test|testing|example|sample|name|yourname|username|user|email|someone|abc|xxx|foo|bar|you|your|youremail|yourmail|john\.?doe|jane\.?doe|first\.?last|firstname\.?lastname)(?:\d+)?$/i
+/** Error-reporting and analytics endpoints that look like addresses (for example Sentry keys embedded in Wix pages). */
+const TRACKING_DOMAIN = /(?:^|\.)(?:sentry\.io|wixpress\.com)$/i
+const KEY_LIKE_LOCAL = /^[0-9a-f]{24,}$/i
 const NO_REPLY = /^(?:no[._-]?reply|do[._-]?not[._-]?reply)$/i
 const COMMON_TLDS = new Set(['com', 'org', 'net', 'edu', 'gov', 'mil', 'int', 'io', 'co', 'biz', 'info', 'us', 'uk', 'pk', 'ca', 'au', 'in', 'de', 'fr', 'nl', 'it', 'es', 'me', 'ai', 'app', 'dev', 'tech', 'store', 'site', 'online', 'agency', 'company', 'email', 'mail'])
 
@@ -29,6 +32,7 @@ export function filterEmails(inputs: { value: string; source: string }[]): Filte
       const tld = domain.split('.').at(-1) ?? ''
       if (local.length > 64 || local.includes('..') || domain.includes('..')) reason = 'Invalid email structure'
       else if (/^(?:gmail|googlemail|yahoo|outlook|hotmail|icloud|aol)\.(?:com|co\.uk|fr|de|net)[a-z]{2,}$/.test(domain)) reason = 'Extra text attached to a mail domain'
+      else if (TRACKING_DOMAIN.test(domain) || KEY_LIKE_LOCAL.test(local)) reason = 'Error-reporting or tracking key, not a mailbox'
       else if (PLACEHOLDER_DOMAINS.has(domain) || domain.endsWith('.invalid') || PLACEHOLDER_LOCAL.test(local)) reason = 'Placeholder address'
       else if (isDisposableDomain(domain)) reason = 'Known disposable email domain'
       else if (NO_REPLY.test(local)) reason = 'No-reply mailbox'

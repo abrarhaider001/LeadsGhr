@@ -1107,6 +1107,7 @@ a { color: var(--la-accent); }
 .la-pipeline-resume-list { display: grid; gap: 8px; }
 .la-pipeline-resume-list > div { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 13px 16px; border: 1px solid var(--la-line); border-radius: 12px; }
 .la-pipeline-resume-list span { display: grid; gap: 3px; }
+.la-pipeline-run-note { max-width: 640px; color: var(--la-muted); font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
 .la-pipeline-resume-list small { color: var(--la-muted); }
 .la-pipeline-resume-list .la-pipeline-row-actions { display: flex; align-items: center; gap: 8px; flex: none; }
 .la-pipeline-delete-button { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; color: var(--la-text); cursor: pointer; }

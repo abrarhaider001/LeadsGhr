@@ -6,7 +6,7 @@
 
 **Status:** Partially implemented (desktop).
 
-**Current coverage:** Challenges cause a pause; comprehensive per-source block policy is missing.
+**Current coverage:** A Google Maps challenge stops the search or Pipeline with its reason saved. A website that presents a challenge, blocks with 401/403/429/503, or has no readable robots.txt is skipped (with its other queued pages) and the Pipeline continues. Comprehensive per-source block policy (cool-down, retry later) is missing.
 
 **Minimum plan:** Explorer  
 **Priority:** P0  
