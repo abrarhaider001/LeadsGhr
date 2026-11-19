@@ -2,6 +2,8 @@
 
 # G6: Accounts, Billing and Plans
 
+> **Owner decision (2026-11-20): license keys instead of accounts.** LeadsGhr will not have sign-up, email verification, plans, or billing. The owner generates license keys in Supabase; each key can be activated once for the desktop app, once for LeadsGhr Mailer, once for LeadsGhr Tracker, and once for each future extension, and expires on a set date. The license-key screen is the entry point of every product (after the splash screen on desktop), the activated key is stored encrypted locally, and each start re-validates it. The rule is in [AGENTS.md](../../../AGENTS.md) ("License keys"). Not implemented yet; the sign-up and billing text below is the original specification and is superseded.
+
 > **Current platform/stack override:** This is the product requirement for G6. The active implementation uses TypeScript/React/Node, pnpm/Turborepo, shared Zod schemas and platform adapters. Any older module path, vendor, color or two-product assumption below is historical and is superseded by [architecture](../../structure/STRUCTURE_README.md), [theme](../../theme/THEME_README.md) and [platform coverage](../../platforms/PLATFORMS_README.md). Feature intent and public-data rules remain in force.
 
 **Service limit:** Use email account sign-in and manual invoice approval. Third-party OAuth and payment gateways remain unavailable under the current external-service rule; the older examples below are historical.
