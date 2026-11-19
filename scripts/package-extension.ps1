@@ -25,7 +25,8 @@ try {
   if (Test-Path -LiteralPath $unpackedRoot) {
     Get-ChildItem -LiteralPath $unpackedRoot -Force | Where-Object { $_.Name -ne 'data' } | Remove-Item -Recurse -Force
   }
-  Expand-Archive -LiteralPath $archivePath -DestinationPath $unpackedRoot -Force
+  . (Join-Path $PSScriptRoot 'expand-extension-zip.ps1')
+  Expand-ExtensionZip -ArchivePath $archivePath -Destination $unpackedRoot
   Write-Output "Extracted to $unpackedRoot"
 } finally {
   Pop-Location
