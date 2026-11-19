@@ -114,7 +114,7 @@ namespace LeadsGhr.Setup
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
-            StartPosition = FormStartPosition.CenterScreen;
+            StartPosition = FormStartPosition.Manual; // centred in OnLoad, once the window has its final size
             BackColor = Color.White;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             using (var g = CreateGraphics()) scale = g.DpiX / 96f;
@@ -173,6 +173,15 @@ namespace LeadsGhr.Setup
             if (regular == null) regular = FontFamily.GenericSansSerif;
             if (semibold == null) semibold = regular;
             if (bold == null) bold = regular;
+        }
+
+        // Centre on the screen the mouse is on. FormStartPosition.CenterScreen uses the size from before the
+        // DPI-scaled ClientSize applies, which leaves the window low and to the right.
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            Rectangle area = Screen.FromPoint(Cursor.Position).WorkingArea;
+            Location = new Point(area.Left + Math.Max(0, (area.Width - Width) / 2), area.Top + Math.Max(0, (area.Height - Height) / 2));
         }
 
         protected override void OnShown(EventArgs e) { base.OnShown(e); Start(); }
