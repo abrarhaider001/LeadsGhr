@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, maskLicenseKey, type LicenseProduct, type LicenseView } from '@leadsghr/license'
 import { SplashBackground } from './splash-screen'
 
-const logoUrl = new URL('../../../public/logo-leadsghr-128x128.svg', import.meta.url).href
+const logoUrl = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 const productLogos: Partial<Record<LicenseProduct, string>> = {
   mailer: new URL('../../../public/leadsghr-mailer-icon.svg', import.meta.url).href,
   tracker: new URL('../../../public/leadsghr-tracker-icon.svg', import.meta.url).href,
@@ -48,14 +48,14 @@ export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView
   return <main className="la-license" aria-labelledby="la-license-title">
     <SplashBackground />
     <form className="la-license-form" onSubmit={(event) => void submit(event)}>
-      <div className="la-license-brand"><img src={logoUrl} alt="" /><span>Leads<em>Ghr</em></span></div>
+      <img className="la-license-logo" src={logoUrl} alt="LeadsGhr" />
       <h1 id="la-license-title">Activate <span>LeadsGhr</span></h1>
       <p className="la-license-lead">Enter the license key you received from your admin.</p>
       <label className="la-license-label" htmlFor="la-license-key">License key</label>
       <div className={`la-license-field${message ? ' is-error' : ''}`}>{keyIcon}<textarea id="la-license-key" value={key} rows={2} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} aria-describedby={message ? 'la-license-error' : undefined} onKeyDown={onKey} onChange={(event) => { setKey(event.target.value); setMessage('') }} /></div>
       {message && <p className="la-license-error" id="la-license-error" role="alert">{message}</p>}
       <button type="submit" className="la-license-submit" disabled={busy || !key.trim()}>{busy ? 'Checking key...' : 'Activate LeadsGhr'}</button>
-      <div className="la-license-chips" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((product) => <span key={product.id}>{productIcon(product.id, 18)}{product.name}</span>)}</div>
+      <div className="la-license-chips" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((product) => <span key={product.id}>{productIcon(product.id, 15)}{product.name}</span>)}</div>
       <p className="la-license-foot">One key works once on each. Key expired? Ask your admin for a new one.</p>
     </form>
   </main>

@@ -1433,30 +1433,28 @@ a { color: var(--la-accent); }
 
 
 /* License screen after the splash (design 2, split panel) and Settings → License (design 1 with the brand-header card). */
-.la-license { position: relative; isolation: isolate; overflow: hidden; display: grid; place-items: center; min-height: 100vh; padding: 32px 16px; background: #FFFFFF; color: var(--la-text); }
-.la-license .la-splash__background { opacity: .55; }
-.la-license-form { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: min(100%, 620px); text-align: center; }
-.la-license-brand { display: flex; align-items: center; gap: 12px; font-size: 30px; font-weight: 700; letter-spacing: -.02em; }
-.la-license-brand img { width: 48px; height: 48px; }
-.la-license-brand em { font-style: normal; color: #5B12C9; }
-.la-license-form h1 { margin: 34px 0 0; font-size: 52px; line-height: 1.05; letter-spacing: -.035em; }
+.la-license { position: relative; isolation: isolate; overflow: hidden; display: grid; place-items: center; min-height: 100vh; padding: 24px 16px; background: #FFFFFF; color: var(--la-text); }
+.la-license .la-splash__background { opacity: .38; }
+.la-license-form { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: min(100%, 460px); text-align: center; animation: la-splash-enter 650ms ease-out both; }
+.la-license-logo { display: block; width: clamp(170px, 18vw, 250px); height: auto; margin-bottom: 30px; }
+.la-license-form h1 { margin: 0; font-size: clamp(28px, 3.5vw, 44px); font-weight: 700; line-height: 1.08; letter-spacing: -.045em; }
 .la-license-form h1 span, .la-license-settings h1 span { background: linear-gradient(90deg, #5B12C9, #1FA9C9); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.la-license-form > p.la-license-lead { margin: 12px 0 0; color: var(--la-muted); font-size: 17px; }
+.la-license-form > p.la-license-lead { margin: 17px 0 0; color: var(--la-muted); font-size: clamp(14px, 1.3vw, 17px); line-height: 1.5; }
 .la-license-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.la-license-field { display: flex; align-items: flex-start; gap: 12px; width: 100%; margin-top: 36px; padding: 16px 18px; border: 1.5px solid #D9CCF5; border-radius: 14px; background: #FFFFFF; box-shadow: 0 0 0 5px #F3EEFF; color: #5B12C9; text-align: left; }
-.la-license-field svg { flex: none; margin-top: 3px; }
+.la-license-field { display: flex; align-items: flex-start; gap: 10px; width: 100%; margin-top: 28px; padding: 11px 14px; border: 1px solid #D9CCF5; border-radius: 10px; background: #FFFFFF; box-shadow: 0 0 0 4px #F3EEFF; color: #5B12C9; text-align: left; }
+.la-license-field svg { flex: none; width: 16px; height: 16px; margin-top: 2px; }
 .la-license-field:focus-within { border-color: #5B12C9; }
-.la-license-field.is-error { border-color: #E7B4AF; box-shadow: 0 0 0 5px #FDF0EF; }
-.la-license-field textarea { flex: 1; min-width: 0; min-height: 52px; border: 0; outline: 0; resize: none; background: none; color: var(--la-text); font: 500 16px/1.6 'Monaspace Neon', ui-monospace, monospace; word-break: break-all; }
-.la-license-field textarea::placeholder { color: #B3A9C6; font-family: 'Instrument Sans', sans-serif; }
-.la-license-form > p.la-license-error { width: 100%; margin: 12px 0 0; padding: 11px 14px; border: 1px solid #F3C4C0; border-radius: 10px; background: #FDF0EF; color: #8A1C12; font-size: 13.5px; line-height: 1.45; text-align: left; }
-.la-license-submit { width: 100%; height: 56px; margin-top: 16px; border: 0; border-radius: 14px; background: #5B12C9; color: #FFFFFF; font: inherit; font-size: 17px; font-weight: 600; box-shadow: 0 12px 28px rgba(91, 18, 201, .28); cursor: pointer; }
+.la-license-field.is-error { border-color: #E7B4AF; box-shadow: 0 0 0 4px #FDF0EF; }
+.la-license-field textarea { flex: 1; min-width: 0; min-height: 40px; border: 0; outline: 0; resize: none; background: none; color: var(--la-text); font: 500 13px/1.55 'Monaspace Neon', ui-monospace, monospace; word-break: break-all; }
+.la-license-field textarea::placeholder { color: #B3A9C6; font-family: 'Instrument Sans', sans-serif; font-size: 14px; }
+.la-license-form > p.la-license-error { width: 100%; margin: 10px 0 0; padding: 8px 12px; border: 1px solid #F3C4C0; border-radius: 8px; background: #FDF0EF; color: #8A1C12; font-size: 12.5px; line-height: 1.45; text-align: left; }
+.la-license-submit { width: 100%; height: 42px; margin-top: 12px; border: 0; border-radius: 10px; background: #5B12C9; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px rgba(91, 18, 201, .22); cursor: pointer; }
 .la-license-submit:hover:not(:disabled) { background: #4E0FB0; }
 .la-license-submit:disabled { opacity: .65; cursor: default; }
-.la-license-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 30px; }
-.la-license-chips span { display: inline-flex; align-items: center; gap: 9px; padding: 10px 16px; border: 1px solid #E4DCF6; border-radius: 999px; background: #FBF9FF; color: #3A2E4D; font-size: 14.5px; }
+.la-license-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 24px; }
+.la-license-chips span { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid #E4DCF6; border-radius: 999px; background: #FBF9FF; color: #3A2E4D; font-size: 12.5px; }
 .la-license-chips svg { color: #5B12C9; }
-.la-license-form > p.la-license-foot { margin: 14px 0 0; color: var(--la-muted); font-size: 15px; }
+.la-license-form > p.la-license-foot { margin: 12px 0 0; color: var(--la-muted); font-size: 12px; }
 .la-license-settings { display: grid; gap: 20px; max-width: 860px; }
 .la-license-card { position: relative; overflow: hidden; padding: 22px 24px; border-radius: 16px; background: linear-gradient(150deg, #5B12C9, #2A0D5E); color: #FFFFFF; }
 .la-license-card::after { content: ''; position: absolute; right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(41, 203, 234, .4), transparent 65%); }
@@ -1476,5 +1474,5 @@ a { color: var(--la-accent); }
 .la-license-used li span { margin-left: auto; color: var(--la-muted); font-size: 12.5px; }
 .la-license-used li span.is-used { color: #1D6B3A; }
 .la-license-settings-note { margin: 12px 0 0; color: var(--la-muted); font-size: 12.5px; line-height: 1.5; }
-@media (max-width: 860px) { .la-license-form h1 { font-size: 38px; } .la-license-card-grid { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .la-license-card-grid { grid-template-columns: 1fr; } }
 .la-license-checking { display: grid; place-items: center; min-height: 100vh; background: #FFFFFF; color: var(--la-muted); font-size: 14px; }
