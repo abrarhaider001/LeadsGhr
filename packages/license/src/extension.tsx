@@ -62,7 +62,7 @@ async function saveLicense(stored: StoredLicense | null): Promise<void> {
 export async function checkExtensionLicense(product: LicenseProduct, options: { force?: boolean } = {}): Promise<LicenseView> {
   const stored = await readLicense()
   if (stored && !options.force && Date.now() - new Date(stored.lastCheckedAt).getTime() < RECHECK_MS && new Date(stored.expiresAt).getTime() > Date.now()) {
-    return { state: 'active', expiresAt: stored.expiresAt, last4: stored.last4, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false }
+    return { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false }
   }
   const result = await checkStoredLicense(stored, product, await installationId())
   if (result.view.state === 'locked' && result.view.reason !== 'offline') await saveLicense(null)
@@ -97,11 +97,11 @@ const styles = `
   .lg-lic-head p{margin:3px 0 0;font-size:12.5px;color:#DCD0F5}
   .lg-lic-body{flex:1;display:flex;flex-direction:column;padding:18px}
   .lg-lic-body label{font-size:12px;font-weight:600;color:#3A2E4D}
-  .lg-lic-field{display:flex;align-items:center;gap:10px;height:44px;margin-top:7px;padding:0 14px;border:1.5px solid #D9CCF5;border-radius:12px;background:#FFF;box-shadow:0 0 0 4px #F3EEFF}
+  .lg-lic-field{display:flex;align-items:flex-start;gap:10px;margin-top:7px;padding:11px 12px;border:1.5px solid #D9CCF5;border-radius:12px;background:#FFF;box-shadow:0 0 0 4px #F3EEFF}
   .lg-lic-field.bad{border-color:#E7B4AF;box-shadow:0 0 0 4px #FDF0EF}
-  .lg-lic-field svg{flex:none;color:#5B12C9}
-  .lg-lic-field input{flex:1;min-width:0;border:0;outline:0;background:none;font:500 14.5px/1 ui-monospace,Consolas,monospace;letter-spacing:.1em;color:#190B2D;text-transform:uppercase}
-  .lg-lic-field input::placeholder{color:#B3A9C6;letter-spacing:.1em}
+  .lg-lic-field svg{flex:none;margin-top:2px;color:#5B12C9}
+  .lg-lic-field textarea{flex:1;min-width:0;min-height:40px;border:0;outline:0;resize:none;background:none;font:500 12.5px/1.6 ui-monospace,Consolas,monospace;color:#190B2D;word-break:break-all}
+  .lg-lic-field textarea::placeholder{color:#B3A9C6;font-family:'Instrument Sans',Arial,sans-serif;font-size:13px}
   .lg-lic-btn{height:42px;margin-top:12px;border:0;border-radius:11px;background:#5B12C9;color:#FFF;font:600 14px 'Instrument Sans',Arial,sans-serif;box-shadow:0 10px 24px rgba(91,18,201,.25);cursor:pointer}
   .lg-lic-btn:disabled{opacity:.65;cursor:default}
   .lg-lic-err{display:flex;gap:9px;margin-top:10px;padding:10px 12px;border:1px solid #F3C4C0;border-radius:10px;background:#FDF0EF;color:#8A1C12;font-size:12.5px;line-height:1.45}
@@ -135,7 +135,7 @@ export function ExtensionLicenseScreen({ product, logo, initialMessage, onActiva
     <header className="lg-lic-head"><img src={logo} alt="" /><h1>{name}</h1><p>License required to continue</p></header>
     <form className="lg-lic-body" onSubmit={(event) => void submit(event)}>
       <label htmlFor="lg-lic-key">License key</label>
-      <div className={`lg-lic-field${message ? ' bad' : ''}`}>{keyIcon}<input id="lg-lic-key" value={key} autoFocus spellCheck={false} autoComplete="off" maxLength={40} placeholder="LGHR-XXXX-XXXX-XXXX" aria-invalid={Boolean(message)} onChange={(event) => { setKey(event.target.value); setMessage('') }} /></div>
+      <div className={`lg-lic-field${message ? ' bad' : ''}`}>{keyIcon}<textarea id="lg-lic-key" value={key} rows={2} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder="Paste your 64-character license key" aria-invalid={Boolean(message)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }} onChange={(event) => { setKey(event.target.value); setMessage('') }} /></div>
       {message && <div className="lg-lic-err" role="alert">{message}</div>}
       <button type="submit" className="lg-lic-btn" disabled={busy || !key.trim()}>{busy ? 'Checking key...' : `Activate ${short}`}</button>
       <div className="lg-lic-slots" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((item) => <span className="lg-lic-slot" key={item.id}>{slotIcon}{item.short}</span>)}</div>

@@ -66,7 +66,7 @@ export function registerLicenseIpc(): void {
   })
   ipcMain.handle('leadsghr:license:activate', async (event, input: unknown) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
-    if (typeof input !== 'string' || input.length > 64) throw new Error('Enter a license key')
+    if (typeof input !== 'string' || input.length > 200) throw new Error('Enter a license key')
     try {
       const result = await activateLicense(input, 'desktop', await installationId())
       if (result.stored) await saveLicense(result.stored)

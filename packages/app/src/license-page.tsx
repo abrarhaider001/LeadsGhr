@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { LICENSE_PRODUCTS, maskLicenseKey, type LicenseProduct, type LicenseView } from '@leadsghr/license'
+import { LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, maskLicenseKey, type LicenseProduct, type LicenseView } from '@leadsghr/license'
+import { SplashBackground } from './splash-screen'
 
 const logoUrl = new URL('../../../public/logo-leadsghr-128x128.svg', import.meta.url).href
 const productLogos: Partial<Record<LicenseProduct, string>> = {
@@ -25,7 +26,7 @@ const productIcon = (product: LicenseProduct, size = 18) => productLogos[product
 const formatDate = (value: string) => new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 const daysLeft = (value: string) => Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 86400000))
 
-/** Shown after the splash screen until this computer has an active license (design 2: split panel). */
+/** Shown after the splash screen until this computer has an active license (design 1: splash style). */
 export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView, { state: 'locked' }>; onActivated(next: LicenseView): void }) {
   const [key, setKey] = useState('')
   const [busy, setBusy] = useState(false)
@@ -43,21 +44,19 @@ export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView
     } catch { setMessage('Could not activate the key. Try again.') }
     finally { setBusy(false) }
   }
+  const onKey = (event: React.KeyboardEvent<HTMLTextAreaElement>) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }
   return <main className="la-license" aria-labelledby="la-license-title">
-    <aside className="la-license-side">
-      <div className="la-license-brand"><img src={logoUrl} alt="" /><span>Leads<em>Ghr</em></span></div>
-      <h2>One key, three products.</h2>
-      <p>Your key can be activated once on each:</p>
-      <ul>{LICENSE_PRODUCTS.map((product) => <li key={product.id}><span className="la-license-tile">{productIcon(product.id, 20)}</span><span><strong>{product.name}</strong><small>{product.id === 'desktop' ? 'this computer' : 'Chrome extension'}</small></span></li>)}</ul>
-    </aside>
+    <SplashBackground />
     <form className="la-license-form" onSubmit={(event) => void submit(event)}>
-      <h1 id="la-license-title">Enter your <span>license key</span></h1>
-      <p>Your admin gives each person their own key. It works only for you and can't be shared.</p>
-      <label htmlFor="la-license-key">License key</label>
-      <div className={`la-license-field${message ? ' is-error' : ''}`}>{keyIcon}<input id="la-license-key" value={key} autoFocus spellCheck={false} autoComplete="off" maxLength={40} placeholder="LGHR-XXXX-XXXX-XXXX" aria-invalid={Boolean(message)} aria-describedby={message ? 'la-license-error' : undefined} onChange={(event) => { setKey(event.target.value); setMessage('') }} /></div>
+      <div className="la-license-brand"><img src={logoUrl} alt="" /><span>Leads<em>Ghr</em></span></div>
+      <h1 id="la-license-title">Activate <span>LeadsGhr</span></h1>
+      <p className="la-license-lead">Enter the license key you received from your admin.</p>
+      <label className="la-license-label" htmlFor="la-license-key">License key</label>
+      <div className={`la-license-field${message ? ' is-error' : ''}`}>{keyIcon}<textarea id="la-license-key" value={key} rows={2} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} aria-describedby={message ? 'la-license-error' : undefined} onKeyDown={onKey} onChange={(event) => { setKey(event.target.value); setMessage('') }} /></div>
       {message && <p className="la-license-error" id="la-license-error" role="alert">{message}</p>}
       <button type="submit" className="la-license-submit" disabled={busy || !key.trim()}>{busy ? 'Checking key...' : 'Activate LeadsGhr'}</button>
-      <p className="la-license-foot">Key expired? Ask your admin for a new one.</p>
+      <div className="la-license-chips" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((product) => <span key={product.id}>{productIcon(product.id, 18)}{product.name}</span>)}</div>
+      <p className="la-license-foot">One key works once on each. Key expired? Ask your admin for a new one.</p>
     </form>
   </main>
 }
@@ -77,7 +76,7 @@ export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | nu
     <div className="la-license-card">
       <div className="la-license-card-top"><span className="la-license-badge">{checkIcon}{view.offline ? 'Active (offline)' : 'Active'}</span><span>Activated {formatDate(view.activatedAt)} on this computer</span></div>
       <div className="la-license-card-grid">
-        <div><small>License key</small><strong className="la-license-mono">{maskLicenseKey(view.last4)}</strong></div>
+        <div><small>License key</small><strong className="la-license-mono">{maskLicenseKey(view.keyEnd)}</strong></div>
         <div><small>Expires</small><strong>{formatDate(view.expiresAt)} <em>· {left} day{left === 1 ? '' : 's'} left</em></strong></div>
       </div>
     </div>

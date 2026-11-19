@@ -4,7 +4,8 @@ import { useAppVersion } from './updates'
 const logoUrl = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 const fanLines = Array.from({ length: 17 }, (_, index) => -80 + index * 53)
 
-function SplashBackground() {
+/** The splash screen's fan lines; also shown behind the license screen. */
+export function SplashBackground() {
   return <svg className="la-splash__background" viewBox="0 0 1600 700" preserveAspectRatio="none" aria-hidden="true" focusable="false">
     <defs>
       <linearGradient id="la-splash-fan-left" x1="0" y1="0" x2="1" y2="0"><stop stopColor="#5B12C9" stopOpacity=".55"/><stop offset="1" stopColor="#5B12C9" stopOpacity="0"/></linearGradient>

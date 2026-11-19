@@ -4,18 +4,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
  * LeadsGhr license service (AGENTS.md, "License keys"). Called by the desktop app and every extension:
  *   POST { action: 'activate' | 'check', key, product, installationId }
  * A key is activated once per product and bound to the installation that activated it. Answers carry
- * only the status, expiry date, last four characters, and which products the key is used on.
+ * only the status, expiry date, last eight characters, and which products the key is used on.
  */
 
 const PRODUCTS = ['desktop', 'mailer', 'tracker'] as const
 const allowed = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...allowed, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 
-/** Same normalization as packages/license normalizeLicenseKey and the SQL function license_key_hash. */
+/** Same normalization as packages/license normalizeLicenseKey and the SQL function normalize_license_key: 64 hex characters. */
 function normalizeKey(input: string): string | null {
-  const raw = input.toUpperCase().replace(/[^A-Z0-9]/g, '')
-  const body = raw.startsWith('LGHR') && raw.length === 16 ? raw.slice(4) : raw
-  return /^[A-Z0-9]{12}$/.test(body) ? `LGHR-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8)}` : null
+  const key = input.replace(/[^0-9A-Fa-f]/g, '').toLowerCase()
+  return /^[0-9a-f]{64}$/.test(key) ? key : null
 }
 
 async function sha256(text: string): Promise<string> {
@@ -34,7 +33,7 @@ Deno.serve(async (request) => {
   if (!key) return json({ status: 'invalid' })
 
   const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
-  const { data: license, error } = await db.from('license_keys').select('id, key_last4, expires_at, revoked_at').eq('key_hash', await sha256(key)).maybeSingle()
+  const { data: license, error } = await db.from('license_keys').select('id, license_key, expires_at, revoked_at').eq('license_key', key).maybeSingle()
   if (error) return json({ error: 'License lookup failed' }, 500)
   if (!license) return json({ status: 'invalid' })
   if (license.revoked_at) return json({ status: 'revoked' })
@@ -56,5 +55,5 @@ Deno.serve(async (request) => {
 
   await db.from('license_activations').update({ last_checked_at: new Date().toISOString() }).eq('license_id', license.id).eq('product', product)
   const all = [...(activations ?? []).filter((row) => row.product !== product), mine]
-  return json({ status: 'active', expiresAt: license.expires_at, last4: license.key_last4, products: slots(all), activatedAt: mine.activated_at })
+  return json({ status: 'active', expiresAt: license.expires_at, keyEnd: license.license_key.slice(-8), products: slots(all), activatedAt: mine.activated_at })
 })

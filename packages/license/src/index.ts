@@ -24,26 +24,28 @@ export const OFFLINE_GRACE_DAYS = 7
 
 export type LicenseServerStatus = 'active' | 'invalid' | 'expired' | 'revoked' | 'used' | 'not_activated'
 export type ProductSlots = Partial<Record<LicenseProduct, 'used' | 'available'>>
-export type LicenseResponse = { status: LicenseServerStatus; expiresAt?: string; last4?: string; products?: ProductSlots; activatedAt?: string }
+export type LicenseResponse = { status: LicenseServerStatus; expiresAt?: string; keyEnd?: string; products?: ProductSlots; activatedAt?: string }
 export type LicenseRequest = { action: 'activate' | 'check'; key: string; product: LicenseProduct; installationId: string }
 
 /** What a product keeps locally (encrypted). The full key never leaves this record. */
-export type StoredLicense = { key: string; expiresAt: string; last4: string; products: ProductSlots; activatedAt: string; lastCheckedAt: string }
+export type StoredLicense = { key: string; expiresAt: string; keyEnd: string; products: ProductSlots; activatedAt: string; lastCheckedAt: string }
 
 /** What the UI is allowed to see: never the full key. */
 export type LicenseView =
-  | { state: 'active'; expiresAt: string; last4: string; products: ProductSlots; activatedAt: string; lastCheckedAt: string; offline: boolean }
+  | { state: 'active'; expiresAt: string; keyEnd: string; products: ProductSlots; activatedAt: string; lastCheckedAt: string; offline: boolean }
   | { state: 'locked'; reason: LicenseServerStatus | 'missing' | 'offline' | 'error'; message: string; expiresAt?: string; products?: ProductSlots }
 
-/** Accepts the key with or without dashes, spaces, or the LGHR prefix; returns `LGHR-XXXX-XXXX-XXXX` or null. */
+/** A license key is 64 hexadecimal characters (SHA-256 of name, email, time, and a random part, made in Supabase). */
+export const LICENSE_KEY_LENGTH = 64
+
+/** Accepts the key with spaces, line breaks, or dashes and in any case; returns 64 lower-case hex characters or null. */
 export function normalizeLicenseKey(input: string): string | null {
-  const raw = input.toUpperCase().replace(/[^A-Z0-9]/g, '')
-  const body = raw.startsWith('LGHR') && raw.length === 16 ? raw.slice(4) : raw
-  if (!/^[A-Z0-9]{12}$/.test(body)) return null
-  return `LGHR-${body.slice(0, 4)}-${body.slice(4, 8)}-${body.slice(8)}`
+  const key = input.replace(/[^0-9A-Fa-f]/g, '').toLowerCase()
+  return /^[0-9a-f]{64}$/.test(key) ? key : null
 }
 
-export const maskLicenseKey = (last4: string) => `••••-••••-••••-${last4}`
+/** Shows only the last eight characters of a key. */
+export const maskLicenseKey = (keyEnd: string) => `••••••••••••…${keyEnd}`
 
 const productName = (product: LicenseProduct) => LICENSE_PRODUCTS.find((item) => item.id === product)?.name ?? product
 
@@ -80,9 +82,9 @@ export function withinOfflineGrace(stored: StoredLicense, now = Date.now()): boo
 
 /** Turns a service answer into the stored record (when active) and the view the UI shows. */
 export function applyLicenseResponse(key: string, product: LicenseProduct, response: LicenseResponse, previous?: StoredLicense, now = new Date()): { stored: StoredLicense | null; view: LicenseView } {
-  if (response.status === 'active' && response.expiresAt && response.last4) {
-    const stored: StoredLicense = { key, expiresAt: response.expiresAt, last4: response.last4, products: response.products ?? previous?.products ?? {}, activatedAt: response.activatedAt ?? previous?.activatedAt ?? now.toISOString(), lastCheckedAt: now.toISOString() }
-    return { stored, view: { state: 'active', expiresAt: stored.expiresAt, last4: stored.last4, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false } }
+  if (response.status === 'active' && response.expiresAt && response.keyEnd) {
+    const stored: StoredLicense = { key, expiresAt: response.expiresAt, keyEnd: response.keyEnd, products: response.products ?? previous?.products ?? {}, activatedAt: response.activatedAt ?? previous?.activatedAt ?? now.toISOString(), lastCheckedAt: now.toISOString() }
+    return { stored, view: { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false } }
   }
   const reason = response.status === 'active' ? 'error' : response.status
   return { stored: null, view: { state: 'locked', reason, message: licenseMessage(reason, product, response.expiresAt), expiresAt: response.expiresAt, products: response.products } }
@@ -94,7 +96,7 @@ export async function checkStoredLicense(stored: StoredLicense | null, product: 
   try {
     return applyLicenseResponse(stored.key, product, await callLicenseService({ action: 'check', key: stored.key, product, installationId }, fetchImpl), stored)
   } catch {
-    if (withinOfflineGrace(stored)) return { stored, view: { state: 'active', expiresAt: stored.expiresAt, last4: stored.last4, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: true } }
+    if (withinOfflineGrace(stored)) return { stored, view: { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: true } }
     return { stored, view: { state: 'locked', reason: 'offline', message: licenseMessage('offline', product) } }
   }
 }
@@ -102,6 +104,6 @@ export async function checkStoredLicense(stored: StoredLicense | null, product: 
 /** Activation shared by every product. Throws only when the license service cannot be reached. */
 export async function activateLicense(input: string, product: LicenseProduct, installationId: string, fetchImpl: typeof fetch = fetch): Promise<{ stored: StoredLicense | null; view: LicenseView }> {
   const key = normalizeLicenseKey(input)
-  if (!key) return { stored: null, view: { state: 'locked', reason: 'invalid', message: 'A license key looks like LGHR-XXXX-XXXX-XXXX. Check the key and try again.' } }
+  if (!key) return { stored: null, view: { state: 'locked', reason: 'invalid', message: 'A license key is 64 characters (0-9 and a-f). Paste the whole key and try again.' } }
   return applyLicenseResponse(key, product, await callLicenseService({ action: 'activate', key, product, installationId }, fetchImpl))
 }
