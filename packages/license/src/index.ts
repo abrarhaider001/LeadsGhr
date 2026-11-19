@@ -107,3 +107,26 @@ export async function activateLicense(input: string, product: LicenseProduct, in
   if (!key) return { stored: null, view: { state: 'locked', reason: 'invalid', message: 'A license key is 64 characters (0-9 and a-f). Paste the whole key and try again.' } }
   return applyLicenseResponse(key, product, await callLicenseService({ action: 'activate', key, product, installationId }, fetchImpl))
 }
+
+/** Character shown in place of each hidden key character while typing. */
+export const KEY_MASK_CHAR = '•'
+
+/** What the key field shows: every character as a dot except the one at `reveal` (-1 shows none). */
+export function maskKeyForDisplay(key: string, reveal = -1): string {
+  return Array.from(key, (char, index) => (index === reveal ? char : KEY_MASK_CHAR)).join('')
+}
+
+/**
+ * Applies an edit made to the masked field to the real key. `before` is what the field showed, `after` is
+ * what it shows after the edit; the changed part between their common start and end is the typed, pasted, or
+ * deleted text. Returns the new key and the position of the one typed character to reveal (-1 for a paste
+ * or a deletion).
+ */
+export function applyMaskedKeyEdit(key: string, before: string, after: string): { key: string; reveal: number } {
+  let start = 0
+  while (start < before.length && start < after.length && before[start] === after[start]) start++
+  let end = 0
+  while (end < before.length - start && end < after.length - start && before[before.length - 1 - end] === after[after.length - 1 - end]) end++
+  const inserted = after.slice(start, after.length - end)
+  return { key: key.slice(0, start) + inserted + key.slice(before.length - end), reveal: inserted.length === 1 ? start : -1 }
+}

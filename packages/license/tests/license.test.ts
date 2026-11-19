@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { activateLicense, checkStoredLicense, maskLicenseKey, normalizeLicenseKey, type LicenseResponse, type StoredLicense } from '../src/index.ts'
+import { activateLicense, applyMaskedKeyEdit, checkStoredLicense, maskKeyForDisplay, maskLicenseKey, normalizeLicenseKey, type LicenseResponse, type StoredLicense } from '../src/index.ts'
 
 const KEY = '9f3a0c2b7d41e85f6a1b3c9d0e2f4a6b8c1d3e5f7a9b0c2d4e6f8a1b3c5d7e9f'
 const answer = (body: LicenseResponse, status = 200) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch
@@ -36,4 +36,28 @@ test('start-up check removes expired keys and allows 7 offline days', async () =
   assert.equal(old.view.state === 'locked' && old.view.reason, 'offline')
   const missing = await checkStoredLicense(null, 'tracker', 'install-1', offline)
   assert.equal(missing.view.state === 'locked' && missing.view.reason, 'missing')
+})
+
+test('the key field shows only the character just typed', () => {
+  let key = ''
+  let reveal = -1
+  const type = (shownAfter: (shown: string) => string) => {
+    const shown = maskKeyForDisplay(key, reveal)
+    ;({ key, reveal } = applyMaskedKeyEdit(key, shown, shownAfter(shown)))
+  }
+  type((shown) => shown + 'a')
+  type((shown) => shown + 'b')
+  assert.equal(key, 'ab')
+  assert.equal(maskKeyForDisplay(key, reveal), '•b')
+  reveal = -1 // one second later
+  type((shown) => shown.slice(0, 1) + 'X' + shown.slice(1)) // typed in the middle
+  assert.equal(key, 'aXb')
+  assert.equal(maskKeyForDisplay(key, reveal), '•X•')
+  type((shown) => shown.slice(0, 2)) // Backspace at the end
+  assert.equal(key, 'aX')
+  assert.equal(reveal, -1)
+  type(() => KEY.toUpperCase()) // select all, then paste
+  assert.equal(key, KEY.toUpperCase())
+  assert.equal(maskKeyForDisplay(key, reveal), '•'.repeat(64))
+  assert.equal(normalizeLicenseKey(key), KEY)
 })
