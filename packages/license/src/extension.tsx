@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMaskedKey } from './masked-key'
-import { activateLicense, checkStoredLicense, LICENSE_PRODUCTS, type LicenseProduct, type LicenseView, type StoredLicense } from './index'
+import { activateLicense, checkStoredLicense, LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, type LicenseProduct, type LicenseView, type StoredLicense } from './index'
 
 /*
  * License handling shared by every LeadsGhr Chrome extension (Mailer, Tracker, and future ones).
@@ -136,7 +136,7 @@ export function ExtensionLicenseScreen({ product, logo, initialMessage, onActiva
     <header className="lg-lic-head"><img src={logo} alt="" /><h1>{name}</h1><p>License required to continue</p></header>
     <form className="lg-lic-body" onSubmit={(event) => void submit(event)}>
       <label htmlFor="lg-lic-key">License key</label>
-      <div className={`lg-lic-field${message ? ' bad' : ''}`}>{keyIcon}<textarea id="lg-lic-key" {...fieldProps} rows={2} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder="Paste your 64-character license key" aria-invalid={Boolean(message)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }} /></div>
+      <div className={`lg-lic-field${message ? ' bad' : ''}`}>{keyIcon}<textarea id="lg-lic-key" {...fieldProps} rows={2} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }} /></div>
       {message && <div className="lg-lic-err" role="alert">{message}</div>}
       <button type="submit" className="lg-lic-btn" disabled={busy || !key.trim()}>{busy ? 'Checking key...' : `Activate ${short}`}</button>
       <div className="lg-lic-slots" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((item) => <span className="lg-lic-slot" key={item.id}>{slotIcon}{item.short}</span>)}</div>

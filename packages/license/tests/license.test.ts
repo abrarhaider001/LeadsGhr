@@ -2,21 +2,25 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { activateLicense, applyMaskedKeyEdit, checkStoredLicense, maskKeyForDisplay, maskLicenseKey, normalizeLicenseKey, type LicenseResponse, type StoredLicense } from '../src/index.ts'
 
-const KEY = '9f3a0c2b7d41e85f6a1b3c9d0e2f4a6b8c1d3e5f7a9b0c2d4e6f8a1b3c5d7e9f'
+const KEY = 'Kp7#vQ2m!Xe9$Rt4&Wz8*Hn3?Bc6@Jd5'
+const OLD_KEY = '9f3a0c2b7d41e85f6a1b3c9d0e2f4a6b8c1d3e5f7a9b0c2d4e6f8a1b3c5d7e9f'
 const answer = (body: LicenseResponse, status = 200) => (async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch
 const offline = (async () => { throw new TypeError('fetch failed') }) as unknown as typeof fetch
 const stored = (lastCheckedAt: string, expiresAt = '2099-01-01T00:00:00Z'): StoredLicense => ({ key: KEY, expiresAt, keyEnd: KEY.slice(-8), products: { desktop: 'used' }, activatedAt: '2026-11-20T00:00:00Z', lastCheckedAt })
 
-test('64-character keys are normalized from pasted text', () => {
-  assert.equal(normalizeLicenseKey(KEY.toUpperCase()), KEY)
-  assert.equal(normalizeLicenseKey(` ${KEY.slice(0, 32)}\n${KEY.slice(32)} `), KEY)
-  assert.equal(normalizeLicenseKey(KEY.slice(0, 63)), null)
-  assert.equal(normalizeLicenseKey(`${KEY.slice(0, 63)}g`), null)
-  assert.equal(maskLicenseKey(KEY.slice(-8)), '••••••••••••…7a9b0c2d4e6f8a1b3c5d7e9f'.slice(0, 13) + KEY.slice(-8))
+test('32-character keys with special characters are read from pasted text', () => {
+  assert.equal(normalizeLicenseKey(KEY), KEY)
+  assert.equal(normalizeLicenseKey(` ${KEY.slice(0, 16)}\n${KEY.slice(16)} `), KEY)
+  assert.equal(normalizeLicenseKey(KEY.toLowerCase()), KEY.toLowerCase()) // case is kept: keys are case-sensitive
+  assert.equal(normalizeLicenseKey(KEY.slice(0, 31)), null)
+  assert.equal(normalizeLicenseKey(`${KEY.slice(0, 31)}'`), null) // quote is not in the alphabet
+  assert.equal(normalizeLicenseKey(`${KEY.slice(0, 31)}O`), null) // look-alike letters are left out
+  assert.equal(normalizeLicenseKey(OLD_KEY.toUpperCase()), OLD_KEY) // older 64-character keys still work
+  assert.equal(maskLicenseKey(KEY.slice(-8)), `••••••••••••…${KEY.slice(-8)}`)
 })
 
 test('activation stores the license only when the service says active', async () => {
-  const ok = await activateLicense(KEY.toUpperCase(), 'desktop', 'install-1', answer({ status: 'active', expiresAt: '2099-01-01T00:00:00Z', keyEnd: KEY.slice(-8), products: { desktop: 'used', mailer: 'available' } }))
+  const ok = await activateLicense(` ${KEY} `, 'desktop', 'install-1', answer({ status: 'active', expiresAt: '2099-01-01T00:00:00Z', keyEnd: KEY.slice(-8), products: { desktop: 'used', mailer: 'available' } }))
   assert.equal(ok.view.state, 'active')
   assert.equal(ok.stored?.key, KEY)
   const used = await activateLicense(KEY, 'mailer', 'install-2', answer({ status: 'used' }))
@@ -56,8 +60,8 @@ test('the key field shows only the character just typed', () => {
   type((shown) => shown.slice(0, 2)) // Backspace at the end
   assert.equal(key, 'aX')
   assert.equal(reveal, -1)
-  type(() => KEY.toUpperCase()) // select all, then paste
-  assert.equal(key, KEY.toUpperCase())
-  assert.equal(maskKeyForDisplay(key, reveal), '•'.repeat(64))
+  type(() => KEY) // select all, then paste
+  assert.equal(key, KEY)
+  assert.equal(maskKeyForDisplay(key, reveal), '•'.repeat(32))
   assert.equal(normalizeLicenseKey(key), KEY)
 })

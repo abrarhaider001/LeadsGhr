@@ -11,10 +11,11 @@ const PRODUCTS = ['desktop', 'mailer', 'tracker'] as const
 const allowed = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...allowed, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 
-/** Same normalization as packages/license normalizeLicenseKey and the SQL function normalize_license_key: 64 hex characters. */
+/** Same rules as packages/license normalizeLicenseKey and the SQL function normalize_license_key (0006): 32 characters, or an older 64-character hex key. */
 function normalizeKey(input: string): string | null {
-  const key = input.replace(/[^0-9A-Fa-f]/g, '').toLowerCase()
-  return /^[0-9a-f]{64}$/.test(key) ? key : null
+  const key = input.replace(/\s/g, '')
+  if (/^[A-HJ-NP-Za-km-np-z2-9!@#$%&*?]{32}$/.test(key)) return key
+  return /^[0-9A-Fa-f]{64}$/.test(key) ? key.toLowerCase() : null
 }
 
 async function sha256(text: string): Promise<string> {

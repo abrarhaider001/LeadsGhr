@@ -35,13 +35,20 @@ export type LicenseView =
   | { state: 'active'; expiresAt: string; keyEnd: string; products: ProductSlots; activatedAt: string; lastCheckedAt: string; offline: boolean }
   | { state: 'locked'; reason: LicenseServerStatus | 'missing' | 'offline' | 'error'; message: string; expiresAt?: string; products?: ProductSlots }
 
-/** A license key is 64 hexadecimal characters (SHA-256 of name, email, time, and a random part, made in Supabase). */
-export const LICENSE_KEY_LENGTH = 64
+/**
+ * A license key is 32 characters: capital and small letters, digits, and the special characters !@#$%&*?
+ * (made in Supabase from the name, email, time, and a random part; supabase/migrations/0006_license_key_32.sql).
+ * Keys are case-sensitive. Older 64-character hex keys are still accepted.
+ */
+export const LICENSE_KEY_LENGTH = 32
+const KEY_PATTERN = /^[A-HJ-NP-Za-km-np-z2-9!@#$%&*?]{32}$/
+const LEGACY_KEY_PATTERN = /^[0-9A-Fa-f]{64}$/
 
-/** Accepts the key with spaces, line breaks, or dashes and in any case; returns 64 lower-case hex characters or null. */
+/** Removes spaces and line breaks from a pasted key; returns the key, or null when it is not a valid key. */
 export function normalizeLicenseKey(input: string): string | null {
-  const key = input.replace(/[^0-9A-Fa-f]/g, '').toLowerCase()
-  return /^[0-9a-f]{64}$/.test(key) ? key : null
+  const key = input.replace(/\s/g, '')
+  if (KEY_PATTERN.test(key)) return key
+  return LEGACY_KEY_PATTERN.test(key) ? key.toLowerCase() : null
 }
 
 /** Shows only the last eight characters of a key. */
@@ -104,7 +111,7 @@ export async function checkStoredLicense(stored: StoredLicense | null, product: 
 /** Activation shared by every product. Throws only when the license service cannot be reached. */
 export async function activateLicense(input: string, product: LicenseProduct, installationId: string, fetchImpl: typeof fetch = fetch): Promise<{ stored: StoredLicense | null; view: LicenseView }> {
   const key = normalizeLicenseKey(input)
-  if (!key) return { stored: null, view: { state: 'locked', reason: 'invalid', message: 'A license key is 64 characters (0-9 and a-f). Paste the whole key and try again.' } }
+  if (!key) return { stored: null, view: { state: 'locked', reason: 'invalid', message: 'A license key is 32 characters (letters, digits, and !@#$%&*?). Paste the whole key and try again.' } }
   return applyLicenseResponse(key, product, await callLicenseService({ action: 'activate', key, product, installationId }, fetchImpl))
 }
 
