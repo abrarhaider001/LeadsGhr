@@ -93,7 +93,7 @@ namespace LeadsGhr.Uninstall
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
-            StartPosition = FormStartPosition.CenterScreen;
+            StartPosition = FormStartPosition.Manual; // centred in OnLoad, once the window has its final size
             BackColor = Color.White;
             KeyPreview = true;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
@@ -230,6 +230,15 @@ namespace LeadsGhr.Uninstall
                 using (Graphics g = Graphics.FromImage(bmp)) Draw(g);
                 bmp.Save(file, System.Drawing.Imaging.ImageFormat.Png);
             }
+        }
+
+        // Centre on the screen the mouse is on. FormStartPosition.CenterScreen uses the size from before the
+        // DPI-scaled ClientSize applies, which leaves the window low and to the right.
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            Rectangle area = Screen.FromPoint(Cursor.Position).WorkingArea;
+            Location = new Point(area.Left + Math.Max(0, (area.Width - Width) / 2), area.Top + Math.Max(0, (area.Height - Height) / 2));
         }
 
         protected override void OnPaint(PaintEventArgs e) { Draw(e.Graphics); }
