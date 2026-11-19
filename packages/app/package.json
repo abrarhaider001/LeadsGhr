@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@leadsghr/extract": "workspace:*",
+        "@leadsghr/license": "workspace:*",
         "@leadsghr/quality": "workspace:*",
         "@leadsghr/schemas": "workspace:*",
         "@leadsghr/ui": "workspace:*",

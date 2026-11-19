@@ -21,6 +21,7 @@
         "@leadsghr/crawler": "workspace:*",
         "@leadsghr/export": "workspace:*",
         "@leadsghr/extract": "workspace:*",
+        "@leadsghr/license": "workspace:*",
         "@leadsghr/platform": "workspace:*",
         "@leadsghr/quality": "workspace:*",
         "@leadsghr/schemas": "workspace:*",

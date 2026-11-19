@@ -10,8 +10,9 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@leadsghr/platform": "workspace:*",
     "@leadsghr/extract": "workspace:*",
+    "@leadsghr/license": "workspace:*",
+    "@leadsghr/platform": "workspace:*",
     "@leadsghr/ui": "workspace:*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

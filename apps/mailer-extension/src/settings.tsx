@@ -1,5 +1,6 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import { LicenseGate } from '@leadsghr/license/extension'
 import { EmailSendingPanel } from './email-sending/panel'
 import { DataFolderPanel } from './email-sending/data-folder-panel'
 import { SendingPreferencesPanel } from './email-sending/preferences'
@@ -31,4 +32,4 @@ function Settings() {
   </main>
 }
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><Settings /></React.StrictMode>)
+createRoot(document.getElementById('root')!).render(<React.StrictMode><LicenseGate product="mailer" logo="/icon.svg"><Settings /></LicenseGate></React.StrictMode>)

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { LicenseGate } from '@leadsghr/license/extension'
 import { SENDING_ALARM, type SendingActionResponse } from './email-sending/messages'
 import { readRecipientsFile } from './email-sending/recipients-file'
 import { DATA_CHANGED_KEY } from './email-sending/data-folder'
@@ -337,4 +338,5 @@ function Popup() {
   </div>
 }
 
-createRoot(document.getElementById('root')!).render(<Popup />)
+// The license screen is the entry point: the popup opens only with an active license key.
+createRoot(document.getElementById('root')!).render(<LicenseGate product="mailer" logo="/icon.svg"><Popup /></LicenseGate>)

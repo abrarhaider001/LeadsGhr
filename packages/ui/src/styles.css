@@ -1431,3 +1431,54 @@ a { color: var(--la-accent); }
 .la-export-foot button.primary { border-color: #5B12C9; background: #5B12C9; color: #FFFFFF; }
 .la-export-foot button.primary:disabled { border-color: #ECE8F2; background: #ECE8F2; color: var(--la-muted); cursor: default; }
 
+
+/* License screen after the splash (design 2, split panel) and Settings → License (design 1 with the brand-header card). */
+.la-license { display: grid; grid-template-columns: minmax(300px, 400px) 1fr; min-height: 100vh; background: #FFFFFF; color: var(--la-text); }
+.la-license-side { position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 48px 40px; background: linear-gradient(165deg, #5B12C9, #2A0D5E); color: #FFFFFF; }
+.la-license-side::after { content: ''; position: absolute; right: -110px; bottom: -110px; width: 280px; height: 280px; border-radius: 50%; background: radial-gradient(circle, rgba(41, 203, 234, .45), transparent 65%); }
+.la-license-brand { display: flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+.la-license-brand img { width: 44px; height: 44px; padding: 5px; border-radius: 12px; background: #FFFFFF; }
+.la-license-brand em { font-style: normal; color: #D7C4FF; }
+.la-license-side h2 { margin: 56px 0 0; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; }
+.la-license-side > p { margin: 10px 0 0; color: #DCD0F5; font-size: 14px; }
+.la-license-side ul { position: relative; z-index: 1; display: grid; gap: 10px; margin: 22px 0 0; padding: 0; list-style: none; }
+.la-license-side li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, .1); }
+.la-license-side li strong { display: block; font-size: 15px; }
+.la-license-side li small { color: #DCD0F5; font-size: 12.5px; }
+.la-license-tile { display: grid; flex: none; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: #FFFFFF; color: #5B12C9; }
+.la-license-form { display: flex; flex-direction: column; justify-content: center; width: min(100%, 560px); padding: 48px 56px; }
+.la-license-form h1 { margin: 0; font-size: 32px; letter-spacing: -.03em; }
+.la-license-form h1 span, .la-license-settings h1 span { background: linear-gradient(90deg, #5B12C9, #1FA9C9); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.la-license-form > p { margin: 10px 0 0; color: var(--la-muted); font-size: 14.5px; line-height: 1.5; }
+.la-license-form label { margin-top: 32px; color: #3A2E4D; font-size: 13px; font-weight: 600; }
+.la-license-field { display: flex; align-items: center; gap: 12px; height: 52px; margin-top: 8px; padding: 0 16px; border: 1.5px solid #D9CCF5; border-radius: 12px; background: #FFFFFF; box-shadow: 0 0 0 4px #F3EEFF; color: #5B12C9; }
+.la-license-field:focus-within { border-color: #5B12C9; }
+.la-license-field.is-error { border-color: #E7B4AF; box-shadow: 0 0 0 4px #FDF0EF; }
+.la-license-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; color: var(--la-text); font: 500 17px/1 'Monaspace Neon', ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+.la-license-field input::placeholder { color: #B3A9C6; }
+.la-license-form > p.la-license-error { margin: 10px 0 0; padding: 10px 12px; border: 1px solid #F3C4C0; border-radius: 10px; background: #FDF0EF; color: #8A1C12; font-size: 13px; line-height: 1.45; }
+.la-license-submit { height: 50px; margin-top: 16px; border: 0; border-radius: 12px; background: #5B12C9; color: #FFFFFF; font: inherit; font-size: 15.5px; font-weight: 600; box-shadow: 0 10px 24px rgba(91, 18, 201, .25); cursor: pointer; }
+.la-license-submit:hover:not(:disabled) { background: #4E0FB0; }
+.la-license-submit:disabled { opacity: .65; cursor: default; }
+.la-license-form > p.la-license-foot { margin: 28px 0 0; color: var(--la-muted); font-size: 13px; }
+.la-license-settings { display: grid; gap: 20px; max-width: 860px; }
+.la-license-card { position: relative; overflow: hidden; padding: 22px 24px; border-radius: 16px; background: linear-gradient(150deg, #5B12C9, #2A0D5E); color: #FFFFFF; }
+.la-license-card::after { content: ''; position: absolute; right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(41, 203, 234, .4), transparent 65%); }
+.la-license-card-top { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: #DCD0F5; font-size: 13px; }
+.la-license-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; background: #FFFFFF; color: #1D6B3A; font-size: 12px; font-weight: 600; }
+.la-license-card-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+.la-license-card-grid small { display: block; color: #DCD0F5; font-size: 12px; }
+.la-license-card-grid strong { display: block; margin-top: 4px; font-size: 18px; }
+.la-license-card-grid em { font-style: normal; font-weight: 400; font-size: 13px; color: #DCD0F5; }
+.la-license-mono { font-family: 'Monaspace Neon', ui-monospace, monospace; letter-spacing: .1em; }
+.la-license-used-head { display: flex; align-items: center; justify-content: space-between; }
+.la-license-used-head h3 { margin: 0; font-size: 15px; }
+.la-license-used-head button { min-height: 32px; padding: 0 12px; border: 1px solid var(--la-line); border-radius: 8px; background: #FFFFFF; color: var(--la-text); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.la-license-used ul { display: grid; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.la-license-used li { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 1px solid #ECE8F2; border-radius: 12px; color: #5B12C9; }
+.la-license-used li strong { color: var(--la-text); font-size: 14px; }
+.la-license-used li span { margin-left: auto; color: var(--la-muted); font-size: 12.5px; }
+.la-license-used li span.is-used { color: #1D6B3A; }
+.la-license-settings-note { margin: 12px 0 0; color: var(--la-muted); font-size: 12.5px; line-height: 1.5; }
+@media (max-width: 860px) { .la-license { grid-template-columns: 1fr; } .la-license-side { padding: 28px; } .la-license-side h2 { margin-top: 28px; } .la-license-form { padding: 32px 28px; } .la-license-card-grid { grid-template-columns: 1fr; } }
+.la-license-checking { display: grid; place-items: center; min-height: 100vh; background: #FFFFFF; color: var(--la-muted); font-size: 14px; }
