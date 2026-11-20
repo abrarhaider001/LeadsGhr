@@ -1457,7 +1457,7 @@ a { color: var(--la-accent); }
 .la-license-chips svg { color: #5B12C9; }
 .la-license-form > p.la-license-foot { margin: 12px 0 0; color: var(--la-muted); font-size: 12px; }
 .la-license-settings { display: grid; gap: 20px; max-width: 860px; }
-.la-license-card { position: relative; overflow: hidden; padding: 22px 24px; border-radius: 16px; background: linear-gradient(150deg, #5B12C9, #2A0D5E); color: #FFFFFF; }
+.la-license-card { position: relative; overflow: hidden; padding: 28px 30px 26px; border-radius: 16px; background: linear-gradient(150deg, #5B12C9, #2A0D5E); color: #FFFFFF; }
 .la-license-card::after { content: ''; position: absolute; right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(41, 203, 234, .4), transparent 65%); }
 .la-license-card-top { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: #DCD0F5; font-size: 13px; }
 .la-license-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; background: #FFFFFF; color: #1D6B3A; font-size: 12px; font-weight: 600; }
@@ -1475,5 +1475,18 @@ a { color: var(--la-accent); }
 .la-license-used li span { margin-left: auto; color: var(--la-muted); font-size: 12.5px; }
 .la-license-used li span.is-used { color: #1D6B3A; }
 .la-license-settings-note { margin: 12px 0 0; color: var(--la-muted); font-size: 12.5px; line-height: 1.5; }
+.la-license-expiry { position: relative; z-index: 1; margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, .16); }
+.la-license-expiry-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.la-license-expiry-head strong { font-size: 16px; }
+.la-license-expiry-head span { color: #DCD0F5; font-size: 13.5px; }
+.la-license-expiry-track { height: 8px; margin-top: 12px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, .18); }
+.la-license-expiry-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #B98CFF, #29CBEA); }
+.la-license-expiry p { margin: 12px 0 0; color: #DCD0F5; font-size: 12.5px; line-height: 1.5; }
 @media (max-width: 860px) { .la-license-card-grid { grid-template-columns: 1fr; } }
 .la-license-checking { display: grid; place-items: center; min-height: 100vh; background: #FFFFFF; color: var(--la-muted); font-size: 14px; }
+
+/* Sidebar: the page list scrolls on its own; the search box and profile stay in place. */
+.la-sidebar { overflow: hidden; }
+.la-sidebar > * { flex-shrink: 0; }
+.la-sidebar .la-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; scrollbar-width: thin; scrollbar-color: #D9CCF5 transparent; }
+.la-sidebar .la-sidebar-bottom { flex: none; }

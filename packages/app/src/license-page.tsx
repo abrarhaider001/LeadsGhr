@@ -75,12 +75,20 @@ export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | nu
   }
   if (!view || view.state !== 'active') return <section className="la-license-settings"><p className="la-license-settings-note">{view?.state === 'locked' ? view.message : 'Checking license...'}</p></section>
   const left = daysLeft(view.expiresAt)
+  // Share of the license period still left, from activation on this computer to the expiry date.
+  const total = new Date(view.expiresAt).getTime() - new Date(view.activatedAt).getTime()
+  const remaining = total > 0 ? Math.min(1, Math.max(0, (new Date(view.expiresAt).getTime() - Date.now()) / total)) : 0
   return <section className="la-license-settings" aria-label="License">
     <div className="la-license-card">
       <div className="la-license-card-top"><span className="la-license-badge">{checkIcon}{view.offline ? 'Active (offline)' : 'Active'}</span><span>Activated {formatDate(view.activatedAt)} on this computer</span></div>
       <div className="la-license-card-grid">
         <div><small>License key</small><strong className="la-license-mono">{maskLicenseKey(view.keyEnd)}</strong></div>
-        <div><small>Expires</small><strong>{formatDate(view.expiresAt)} <em>· {left} day{left === 1 ? '' : 's'} left</em></strong></div>
+        <div><small>Last checked</small><strong>{new Date(view.lastCheckedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</strong></div>
+      </div>
+      <div className="la-license-expiry">
+        <div className="la-license-expiry-head"><strong>Expires {formatDate(view.expiresAt)}</strong><span>{left} day{left === 1 ? '' : 's'} left</span></div>
+        <div className="la-license-expiry-track" role="progressbar" aria-label="License time left" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(remaining * 100)}><span style={{ width: `${remaining * 100}%` }} /></div>
+        <p>When it expires, LeadsGhr asks for a new key at the next start. Ask your admin before then.</p>
       </div>
     </div>
     <div className="la-license-used">
@@ -89,7 +97,7 @@ export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | nu
         const used = product.id === 'desktop' || view.products[product.id] === 'used'
         return <li key={product.id}>{productIcon(product.id)}<strong>{product.name}</strong><span className={used ? 'is-used' : ''}>{product.id === 'desktop' ? 'This computer' : used ? 'Activated' : 'Not activated yet'}</span></li>
       })}</ul>
-      <p className="la-license-settings-note">Last checked {new Date(view.lastCheckedAt).toLocaleString()}. The key is stored encrypted on this computer and is never shown in full.{view.offline ? ' LeadsGhr could not reach the license service and is working offline; it checks again at the next start.' : ''}</p>
+      <p className="la-license-settings-note">The key is stored encrypted on this computer and is never shown in full.{view.offline ? ' LeadsGhr could not reach the license service and is working offline; it checks again at the next start.' : ''}</p>
     </div>
   </section>
 }
