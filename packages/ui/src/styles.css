@@ -1488,5 +1488,11 @@ a { color: var(--la-accent); }
 /* Sidebar: the page list scrolls on its own; the search box and profile stay in place. */
 .la-sidebar { overflow: hidden; }
 .la-sidebar > * { flex-shrink: 0; }
-.la-sidebar .la-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; scrollbar-width: thin; scrollbar-color: #D9CCF5 transparent; }
+.la-sidebar .la-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; scrollbar-width: thin; scrollbar-color: #D4D4D8 transparent; }
 .la-sidebar .la-sidebar-bottom { flex: none; }
+.la-license-key-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.la-license-key-row strong { margin-top: 0; letter-spacing: .06em; }
+.la-license-copy { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 1px solid rgba(255, 255, 255, .28); border-radius: 8px; background: rgba(255, 255, 255, .12); color: #FFFFFF; cursor: pointer; transition: background .15s ease; }
+.la-license-copy:hover { background: rgba(255, 255, 255, .22); }
+.la-license-copy:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
+.la-license-copy.is-copied { border-color: rgba(134, 239, 172, .6); background: rgba(34, 197, 94, .25); color: #BBF7D0; }

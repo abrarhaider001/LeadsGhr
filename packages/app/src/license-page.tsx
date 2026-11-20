@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, maskLicenseKey, type LicenseProduct, type LicenseView } from '@leadsghr/license'
+import { useEffect, useState } from 'react'
+import { LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, type LicenseProduct, type LicenseView } from '@leadsghr/license'
 import { useMaskedKey } from '@leadsghr/license/masked-key'
 import { SplashBackground } from './splash-screen'
 
@@ -10,7 +10,7 @@ const productLogos: Partial<Record<LicenseProduct, string>> = {
   tracker: new URL('../../../public/leadsghr-tracker-icon.svg', import.meta.url).href,
 }
 
-type LicenseBridge = { getLicenseStatus(force?: boolean): Promise<LicenseView>; activateLicense(key: string): Promise<LicenseView> }
+type LicenseBridge = { getLicenseStatus(force?: boolean): Promise<LicenseView>; activateLicense(key: string): Promise<LicenseView>; copyLicenseKey(): Promise<boolean> }
 export const licenseBridge = () => (window as Window & { leadsGhrDesktop?: Partial<LicenseBridge> }).leadsGhrDesktop
 
 /** Start-up license check; the desktop app shows the license screen until it is active. */
@@ -22,6 +22,8 @@ export async function loadLicense(): Promise<LicenseView> {
 
 const desktopIcon = (size = 18) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
 const keyIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7M17 6l3 3M14.5 8.5l2 2"/></svg>
+const copyIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
+const copiedIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
 const checkIcon = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
 const productIcon = (product: LicenseProduct, size = 18) => productLogos[product] ? <img src={productLogos[product]} alt="" width={size} height={size} /> : desktopIcon(size)
 
@@ -67,6 +69,17 @@ export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView
 /** Settings → License (design 1, with the brand-header card): status, masked key, expiry, and where the key is used. */
 export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | null; onChange(next: LicenseView): void }) {
   const [checking, setChecking] = useState(false)
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const timer = window.setTimeout(() => setCopied(false), 2000)
+    return () => window.clearTimeout(timer)
+  }, [copied])
+  async function copyKey() {
+    const api = licenseBridge()
+    if (typeof api?.copyLicenseKey !== 'function') return
+    if (await api.copyLicenseKey()) setCopied(true)
+  }
   async function checkNow() {
     const api = licenseBridge()
     if (typeof api?.getLicenseStatus !== 'function') return
@@ -82,8 +95,7 @@ export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | nu
     <div className="la-license-card">
       <div className="la-license-card-top"><span className="la-license-badge">{checkIcon}{view.offline ? 'Active (offline)' : 'Active'}</span><span>Activated {formatDate(view.activatedAt)} on this computer</span></div>
       <div className="la-license-card-grid">
-        <div><small>License key</small><strong className="la-license-mono">{maskLicenseKey(view.keyEnd)}</strong></div>
-        <div><small>Last checked</small><strong>{new Date(view.lastCheckedAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</strong></div>
+        <div><small>License key</small><div className="la-license-key-row"><strong className="la-license-mono">{view.keyEnd}</strong><button type="button" className={`la-license-copy${copied ? ' is-copied' : ''}`} onClick={() => void copyKey()} aria-label={copied ? 'License key copied' : 'Copy license key'} title={copied ? 'Copied' : 'Copy license key'}>{copied ? copiedIcon : copyIcon}</button></div></div>
       </div>
       <div className="la-license-expiry">
         <div className="la-license-expiry-head"><strong>Expires {formatDate(view.expiresAt)}</strong><span>{left} day{left === 1 ? '' : 's'} left</span></div>
@@ -97,7 +109,7 @@ export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | nu
         const used = product.id === 'desktop' || view.products[product.id] === 'used'
         return <li key={product.id}>{productIcon(product.id)}<strong>{product.name}</strong><span className={used ? 'is-used' : ''}>{product.id === 'desktop' ? 'This computer' : used ? 'Activated' : 'Not activated yet'}</span></li>
       })}</ul>
-      <p className="la-license-settings-note">The key is stored encrypted on this computer and is never shown in full.{view.offline ? ' LeadsGhr could not reach the license service and is working offline; it checks again at the next start.' : ''}</p>
+      <p className="la-license-settings-note">The key is stored encrypted on this computer; only its last 8 characters are shown, and the copy button copies the full key.{view.offline ? ' LeadsGhr could not reach the license service and is working offline; it checks again at the next start.' : ''}</p>
     </div>
   </section>
 }

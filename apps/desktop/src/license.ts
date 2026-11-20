@@ -1,4 +1,4 @@
-import { BrowserWindow, ipcMain, safeStorage } from 'electron'
+import { BrowserWindow, clipboard, ipcMain, safeStorage } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import { activateLicense, checkStoredLicense, type LicenseView, type StoredLicense } from '@leadsghr/license'
@@ -8,7 +8,8 @@ import { leadsGhrDataFile } from './data-folder'
  * Desktop license (AGENTS.md, "License keys"). The activated license lives in C:\LeadsGhr\data\license.bin,
  * encrypted with Windows' per-user encryption (Electron safeStorage), so the key cannot be read from the
  * file. installation.bin holds this installation's random ID; it is kept when a license is removed, so the
- * same installation can re-activate its key. The renderer only ever receives a LicenseView (no full key).
+ * same installation can re-activate its key. The renderer only ever receives a LicenseView (no full key);
+ * Settings → License copies the full key through `leadsghr:license:copy`, which writes it to the clipboard here.
  */
 
 const licenseFile = () => leadsGhrDataFile('license.bin')
@@ -63,6 +64,14 @@ export function registerLicenseIpc(): void {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
     if (!startupCheck || force === true) startupCheck = checkLicense()
     return startupCheck
+  })
+  // Copies the activated key to the clipboard without sending it to the renderer.
+  ipcMain.handle('leadsghr:license:copy', async (event) => {
+    if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
+    const stored = current?.state === 'active' ? await readLicense() : null
+    if (!stored?.key) return false
+    clipboard.writeText(stored.key)
+    return true
   })
   ipcMain.handle('leadsghr:license:activate', async (event, input: unknown) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')

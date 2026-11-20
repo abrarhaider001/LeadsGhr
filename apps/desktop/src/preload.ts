@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   savePreferences: (input: unknown) => ipcRenderer.invoke('leadsghr:preferences:save', desktopPreferencesSchema.parse(input)),
   getLicenseStatus: (force?: boolean) => ipcRenderer.invoke('leadsghr:license:status', force === true),
   activateLicense: (key: string) => ipcRenderer.invoke('leadsghr:license:activate', key),
+  copyLicenseKey: () => ipcRenderer.invoke('leadsghr:license:copy') as Promise<boolean>,
   getAppVersion: () => ipcRenderer.invoke('leadsghr:app:version'),
   getUpdateStatus: () => ipcRenderer.invoke('leadsghr:update:status'),
   checkForUpdates: () => ipcRenderer.invoke('leadsghr:update:check'),
