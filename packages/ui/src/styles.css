@@ -1437,3 +1437,21 @@ a { color: var(--la-accent); }
 .la-sidebar > * { flex-shrink: 0; }
 .la-sidebar .la-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; scrollbar-width: thin; scrollbar-color: #D4D4D8 transparent; }
 .la-sidebar .la-sidebar-bottom { flex: none; }
+/* Preferences: a settings menu beside the main sidebar, like a two-level settings page. */
+.la-main:has(.la-pref-layout) .la-content { padding: 0; }
+.la-main:has(.la-pref-layout) .la-profile { max-width: none; }
+.la-pref-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; background: #FFFFFF; }
+.la-pref-nav { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 22px 12px; border-right: 1px solid var(--la-line); background: #FFFFFF; scrollbar-width: thin; scrollbar-color: #D4D4D8 transparent; }
+.la-pref-nav-title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 0 10px; color: #8A8D93; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.la-pref-nav button { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 36px; margin-bottom: 2px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: #3A3F47; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.la-pref-nav button:hover { background: #F6F5F9; }
+.la-pref-nav button[aria-current='page'] { background: #F4F1FB; color: #5B12C9; font-weight: 600; }
+.la-pref-nav button[aria-current='page']::before { content: ''; position: absolute; left: -12px; top: 6px; bottom: 6px; width: 3px; border-radius: 0 3px 3px 0; background: #5B12C9; }
+.la-pref-nav button svg { flex: none; color: #8A8D93; }
+.la-pref-nav button:focus-visible { outline: 2px solid #5B12C9; outline-offset: 1px; }
+.la-pref-main { min-width: 0; display: flex; flex-direction: column; }
+.la-pref-head { padding: 20px 32px 16px; border-bottom: 1px solid var(--la-line); }
+.la-pref-head h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+.la-pref-head p { margin: 4px 0 0; color: var(--la-muted); font-size: 12.5px; }
+.la-pref-body { width: 100%; max-width: 1000px; padding: 24px 32px 40px; }
+@media (max-width: 900px) { .la-pref-layout { grid-template-columns: 1fr; } .la-pref-nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--la-line); } }
