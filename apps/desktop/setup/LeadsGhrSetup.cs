@@ -1,6 +1,6 @@
 // LeadsGhr Setup: the small LeadsGhr-Setup.exe people download.
 //
-// It shows one branded window (design "3A": white, splash fan lines, logo in rings) while it
+// It shows one branded window (design "3A": white, the splash dot-grid background, logo in rings) while it
 //   1. reads latest.yml from the newest GitHub Release,
 //   2. downloads the electron-builder installer (LeadsGhr-Installer.exe) and the app package
 //      (LeadsGhr-App-x64.nsis.7z) and checks both against the SHA-512 hashes in latest.yml,
@@ -342,36 +342,11 @@ namespace LeadsGhr.Setup
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.ScaleTransform(scale, scale);
 
-            DrawFanLines(g);
+            LeadsGhr.Branding.Brand.DrawDotGrid(g, W, H);
             DrawBrand(g);
             DrawOrb(g);
             DrawHeadline(g);
             DrawFooter(g);
-        }
-
-        // The splash screen's fan lines: quadratic curves from both edges toward the centre (SVG 1600x700, stretched).
-        void DrawFanLines(Graphics g)
-        {
-            float sx = W / 1600f, sy = H / 700f;
-            for (int y = -80; y <= 820; y += 53)
-            {
-                float cy = 350 + (y - 350) * 0.16f;
-                DrawFan(g, new PointF(0, y), new PointF(320, cy), new PointF(700, 350), sx, sy, false);
-                DrawFan(g, new PointF(1600, y), new PointF(1280, cy), new PointF(900, 350), sx, sy, true);
-            }
-        }
-
-        static void DrawFan(Graphics g, PointF p0, PointF q, PointF p2, float sx, float sy, bool fromRight)
-        {
-            // Quadratic -> cubic Bézier.
-            var c1 = new PointF(p0.X + 2f / 3f * (q.X - p0.X), p0.Y + 2f / 3f * (q.Y - p0.Y));
-            var c2 = new PointF(p2.X + 2f / 3f * (q.X - p2.X), p2.Y + 2f / 3f * (q.Y - p2.Y));
-            PointF a = new PointF(p0.X * sx, p0.Y * sy), b = new PointF(c1.X * sx, c1.Y * sy), c = new PointF(c2.X * sx, c2.Y * sy), d = new PointF(p2.X * sx, p2.Y * sy);
-            float x0 = Math.Min(a.X, d.X) - 1, x1 = Math.Max(a.X, d.X) + 1;
-            Color strong = Color.FromArgb(58, 0x5B, 0x12, 0xC9), clear = Color.FromArgb(0, 0x5B, 0x12, 0xC9);
-            using (var brush = new LinearGradientBrush(new PointF(x0, 0), new PointF(x1, 0), fromRight ? clear : strong, fromRight ? strong : clear))
-            using (var pen = new Pen(brush, 0.9f))
-                g.DrawBezier(pen, a, b, c, d);
         }
 
         void DrawBrand(Graphics g)

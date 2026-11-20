@@ -1,5 +1,5 @@
 // Shared look of LeadsGhr's small Windows programs (design 3A): colours, Instrument Sans fonts embedded
-// as resources, the splash screen's fan lines, and rounded shapes. C# 5 (see build-setup.ps1).
+// as resources, the splash screen's dot-grid background, and rounded shapes. C# 5 (see build-setup.ps1).
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -30,28 +30,47 @@ namespace LeadsGhr.Branding
             return s;
         }
 
-        /// <summary>The fan lines of the LeadsGhr splash screen (SVG 1600x700, stretched to width x height).</summary>
-        public static void DrawFanLines(Graphics g, float width, float height)
+        /// <summary>
+        /// The LeadsGhr splash background (packages/app/src/splash-screen.tsx, `.la-splash__dots`): a dot grid coloured
+        /// from purple to teal left to right, fading out behind the centre and at the edges, with a soft purple glow.
+        /// </summary>
+        public static void DrawDotGrid(Graphics g, float width, float height)
         {
-            float sx = width / 1600f, sy = height / 700f;
-            for (int y = -80; y <= 820; y += 53)
+            float cx = width / 2f, cy = height / 2f;
+            // The glow behind the content.
+            float glow = 0.4f * (float)Math.Sqrt(width * width + height * height) / 2f;
+            using (var path = new GraphicsPath())
             {
-                float cy = 350 + (y - 350) * 0.16f;
-                DrawFan(g, new PointF(0, y), new PointF(320, cy), new PointF(700, 350), sx, sy, false);
-                DrawFan(g, new PointF(1600, y), new PointF(1280, cy), new PointF(900, 350), sx, sy, true);
+                path.AddEllipse(cx - glow, height * 0.46f - glow, glow * 2, glow * 2);
+                using (var brush = new PathGradientBrush(path))
+                {
+                    brush.CenterPoint = new PointF(cx, height * 0.46f);
+                    brush.CenterColor = Color.FromArgb(24, Purple);
+                    brush.SurroundColors = new[] { Color.FromArgb(0, Purple) };
+                    g.FillPath(brush, path);
+                }
             }
+            // The dots: the same fade as the CSS mask (an ellipse through the corners; clear inside 22%, full 58%, gone 92%).
+            const float step = 14f, dot = 1.15f;
+            Color violet = Color.FromArgb(0x8B, 0x5C, 0xF6);
+            float rx = cx * 1.4142f, ry = cy * 1.4142f;
+            for (float y = step / 2f; y < height; y += step)
+                for (float x = step / 2f; x < width; x += step)
+                {
+                    float dx = (x - cx) / rx, dy = (y - cy) / ry;
+                    float d = (float)Math.Sqrt(dx * dx + dy * dy);
+                    float fade = d < 0.22f ? 0 : d < 0.58f ? (d - 0.22f) / 0.36f : d < 0.92f ? 1 - (d - 0.58f) / 0.34f : 0;
+                    if (fade <= 0.01f) continue;
+                    float t = x / width;
+                    Color c = t < 0.5f ? Mix(Purple, violet, t * 2) : Mix(violet, Teal, (t - 0.5f) * 2);
+                    using (var brush = new SolidBrush(Color.FromArgb((int)(fade * 0.5f * 255), c)))
+                        g.FillEllipse(brush, x - dot, y - dot, dot * 2, dot * 2);
+                }
         }
 
-        static void DrawFan(Graphics g, PointF p0, PointF q, PointF p2, float sx, float sy, bool fromRight)
+        static Color Mix(Color a, Color b, float t)
         {
-            var c1 = new PointF(p0.X + 2f / 3f * (q.X - p0.X), p0.Y + 2f / 3f * (q.Y - p0.Y));
-            var c2 = new PointF(p2.X + 2f / 3f * (q.X - p2.X), p2.Y + 2f / 3f * (q.Y - p2.Y));
-            PointF a = new PointF(p0.X * sx, p0.Y * sy), b = new PointF(c1.X * sx, c1.Y * sy), c = new PointF(c2.X * sx, c2.Y * sy), d = new PointF(p2.X * sx, p2.Y * sy);
-            float x0 = Math.Min(a.X, d.X) - 1, x1 = Math.Max(a.X, d.X) + 1;
-            Color strong = Color.FromArgb(50, Purple), clear = Color.FromArgb(0, Purple);
-            using (var brush = new LinearGradientBrush(new PointF(x0, 0), new PointF(x1, 0), fromRight ? clear : strong, fromRight ? strong : clear))
-            using (var pen = new Pen(brush, 0.9f))
-                g.DrawBezier(pen, a, b, c, d);
+            return Color.FromArgb((int)(a.R + (b.R - a.R) * t), (int)(a.G + (b.G - a.G) * t), (int)(a.B + (b.B - a.B) * t));
         }
 
         public static GraphicsPath RoundRect(RectangleF r, float radius)

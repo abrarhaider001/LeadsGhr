@@ -14,7 +14,7 @@ $fonts = @('InstrumentSans-Regular.ttf', 'InstrumentSans-SemiBold.ttf', 'Instrum
 if ($Target -eq 'setup') {
   $out = Join-Path $here '..\dist-installer\nsis-web'
   $exe = Join-Path $out 'LeadsGhr-Setup.exe'
-  $sources = @(Join-Path $here 'LeadsGhrSetup.cs')
+  $sources = @((Join-Path $here 'Brand.cs'), (Join-Path $here 'LeadsGhrSetup.cs'))
   $resourceFiles = @('logo-256.png') + $fonts
 } else {
   $out = Join-Path $here 'out'
