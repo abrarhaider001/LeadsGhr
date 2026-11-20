@@ -1,5 +1,5 @@
 // Shared look of LeadsGhr's small Windows programs (design 3A): colours, Instrument Sans fonts embedded
-// as resources, the splash screen's dot-grid background, and rounded shapes. C# 5 (see build-setup.ps1).
+// as resources and rounded shapes. C# 5 (see build-setup.ps1).
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -28,49 +28,6 @@ namespace LeadsGhr.Branding
             Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
             if (s == null) throw new InvalidOperationException("Missing resource " + name);
             return s;
-        }
-
-        /// <summary>
-        /// The LeadsGhr splash background (packages/app/src/splash-screen.tsx, `.la-splash__dots`): a dot grid coloured
-        /// from purple to teal left to right, fading out behind the centre and at the edges, with a soft purple glow.
-        /// </summary>
-        public static void DrawDotGrid(Graphics g, float width, float height)
-        {
-            float cx = width / 2f, cy = height / 2f;
-            // The glow behind the content.
-            float glow = 0.4f * (float)Math.Sqrt(width * width + height * height) / 2f;
-            using (var path = new GraphicsPath())
-            {
-                path.AddEllipse(cx - glow, height * 0.46f - glow, glow * 2, glow * 2);
-                using (var brush = new PathGradientBrush(path))
-                {
-                    brush.CenterPoint = new PointF(cx, height * 0.46f);
-                    brush.CenterColor = Color.FromArgb(24, Purple);
-                    brush.SurroundColors = new[] { Color.FromArgb(0, Purple) };
-                    g.FillPath(brush, path);
-                }
-            }
-            // The dots: the same fade as the CSS mask (an ellipse through the corners; clear inside 22%, full 58%, gone 92%).
-            const float step = 14f, dot = 1.15f;
-            Color violet = Color.FromArgb(0x8B, 0x5C, 0xF6);
-            float rx = cx * 1.4142f, ry = cy * 1.4142f;
-            for (float y = step / 2f; y < height; y += step)
-                for (float x = step / 2f; x < width; x += step)
-                {
-                    float dx = (x - cx) / rx, dy = (y - cy) / ry;
-                    float d = (float)Math.Sqrt(dx * dx + dy * dy);
-                    float fade = d < 0.22f ? 0 : d < 0.58f ? (d - 0.22f) / 0.36f : d < 0.92f ? 1 - (d - 0.58f) / 0.34f : 0;
-                    if (fade <= 0.01f) continue;
-                    float t = x / width;
-                    Color c = t < 0.5f ? Mix(Purple, violet, t * 2) : Mix(violet, Teal, (t - 0.5f) * 2);
-                    using (var brush = new SolidBrush(Color.FromArgb((int)(fade * 0.5f * 255), c)))
-                        g.FillEllipse(brush, x - dot, y - dot, dot * 2, dot * 2);
-                }
-        }
-
-        static Color Mix(Color a, Color b, float t)
-        {
-            return Color.FromArgb((int)(a.R + (b.R - a.R) * t), (int)(a.G + (b.G - a.G) * t), (int)(a.B + (b.B - a.B) * t));
         }
 
         public static GraphicsPath RoundRect(RectangleF r, float radius)

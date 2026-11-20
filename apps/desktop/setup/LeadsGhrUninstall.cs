@@ -250,7 +250,6 @@ namespace LeadsGhr.Uninstall
             g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.ScaleTransform(scale, scale);
-            Brand.DrawDotGrid(g, W, H);
 
             switch (view)
             {

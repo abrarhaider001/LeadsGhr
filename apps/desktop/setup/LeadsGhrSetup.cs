@@ -1,6 +1,6 @@
 // LeadsGhr Setup: the small LeadsGhr-Setup.exe people download.
 //
-// It shows one branded window (design "3A": white, the splash dot-grid background, logo in rings) while it
+// It shows one branded window (design "3A": plain white, logo in rings) while it
 //   1. reads latest.yml from the newest GitHub Release,
 //   2. downloads the electron-builder installer (LeadsGhr-Installer.exe) and the app package
 //      (LeadsGhr-App-x64.nsis.7z) and checks both against the SHA-512 hashes in latest.yml,
@@ -342,7 +342,6 @@ namespace LeadsGhr.Setup
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.ScaleTransform(scale, scale);
 
-            LeadsGhr.Branding.Brand.DrawDotGrid(g, W, H);
             DrawBrand(g);
             DrawOrb(g);
             DrawHeadline(g);
