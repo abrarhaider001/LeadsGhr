@@ -352,15 +352,15 @@ namespace LeadsGhr.Setup
             using (var line1 = new GraphicsPath(FillMode.Winding))
             using (var line2 = new GraphicsPath(FillMode.Winding))
             {
-                line1.AddString("Your lead workspace is", bold, (int)FontStyle.Regular, em, new PointF(46, 132), fmt);
-                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)FontStyle.Regular, em, new PointF(46, 172), fmt);
+                line1.AddString("Your lead workspace is", bold, (int)FontStyle.Regular, em, new PointF(46, 40), fmt);
+                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)FontStyle.Regular, em, new PointF(46, 80), fmt);
                 using (var ink = new SolidBrush(Ink)) g.FillPath(ink, line1);
                 RectangleF b = line2.GetBounds();
                 using (var grad = new LinearGradientBrush(new PointF(b.Left - 1, 0), new PointF(b.Right + 1, 0), Purple, Teal)) g.FillPath(grad, line2);
             }
             using (var f = new Font(regular, 15, FontStyle.Regular, GraphicsUnit.Pixel))
             using (var brush = new SolidBrush(Muted))
-                g.DrawString("Real businesses. Public data. More opportunities.", f, brush, 48, 226, fmt);
+                g.DrawString("Real businesses. Public data. More opportunities.", f, brush, 48, 134, fmt);
         }
 
         void DrawFooter(Graphics g)
