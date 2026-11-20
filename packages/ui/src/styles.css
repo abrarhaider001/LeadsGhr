@@ -1472,3 +1472,13 @@ a { color: var(--la-accent); }
 .la-sidebar .la-sidebar-footer[aria-current='page'] strong { color: #5B12C9; }
 .la-sidebar .la-sidebar-footer[aria-current='page'] small { color: var(--la-muted); }
 @media (max-width: 900px) { .la-sidebar .la-nav button[aria-current='page']::after { display: none; } }
+
+/* Settings submenu in the sidebar slides open from the top and closes the same way; the caret turns up when open. */
+.la-sidebar .la-nav .la-nav-caret { flex: none; width: 14px; height: 14px; margin-left: auto; color: #8A8D93; transition: transform .28s ease; }
+.la-sidebar .la-nav button[aria-expanded='true'] .la-nav-caret { transform: rotate(180deg); }
+.la-sidebar-settings-collapse { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
+.la-sidebar-settings-collapse[data-open='true'] { grid-template-rows: 1fr; opacity: 1; }
+.la-sidebar-settings-clip { min-height: 0; overflow: hidden; }
+.la-sidebar-settings-collapse .la-sidebar-settings-children { transform: translateY(-6px); transition: transform .3s ease; }
+.la-sidebar-settings-collapse[data-open='true'] .la-sidebar-settings-children { transform: none; }
+@media (prefers-reduced-motion: reduce) { .la-sidebar-settings-collapse, .la-sidebar-settings-collapse .la-sidebar-settings-children, .la-sidebar .la-nav .la-nav-caret { transition: none; } }
