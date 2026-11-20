@@ -1436,7 +1436,8 @@ a { color: var(--la-accent); }
 .la-license { position: relative; isolation: isolate; overflow: hidden; display: grid; place-items: center; min-height: 100vh; padding: 24px 16px; background: #FFFFFF; color: var(--la-text); }
 .la-license .la-splash__background { opacity: .38; }
 .la-license-form { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: min(100%, 460px); text-align: center; animation: la-splash-enter 650ms ease-out both; }
-.la-license-logo { display: block; width: clamp(170px, 18vw, 250px); height: auto; margin-bottom: 30px; }
+.la-license-corner-logo { position: absolute; top: 28px; left: 32px; z-index: 1; width: 150px; height: auto; }
+.la-license-key-art { display: block; width: clamp(140px, 12vw, 190px); height: auto; margin-bottom: 6px; filter: drop-shadow(0 18px 24px rgba(91, 18, 201, .18)); }
 .la-license-form h1 { margin: 0; white-space: nowrap; font-size: clamp(28px, 3.5vw, 44px); font-weight: 700; line-height: 1.08; letter-spacing: -.045em; }
 .la-license-form h1 span, .la-license-settings h1 span { background: linear-gradient(90deg, #5B12C9, #1FA9C9); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .la-license-form > p.la-license-lead { margin: 17px 0 0; color: var(--la-muted); font-size: clamp(14px, 1.3vw, 17px); line-height: 1.5; }

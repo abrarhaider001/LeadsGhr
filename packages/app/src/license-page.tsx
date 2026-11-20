@@ -4,6 +4,7 @@ import { useMaskedKey } from '@leadsghr/license/masked-key'
 import { SplashBackground } from './splash-screen'
 
 const logoUrl = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
+const keyArtUrl = new URL('../../../public/leadsghr-license-key.svg', import.meta.url).href
 const productLogos: Partial<Record<LicenseProduct, string>> = {
   mailer: new URL('../../../public/leadsghr-mailer-icon.svg', import.meta.url).href,
   tracker: new URL('../../../public/leadsghr-tracker-icon.svg', import.meta.url).href,
@@ -27,7 +28,7 @@ const productIcon = (product: LicenseProduct, size = 18) => productLogos[product
 const formatDate = (value: string) => new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 const daysLeft = (value: string) => Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 86400000))
 
-/** Shown after the splash screen until this computer has an active license (design 1: splash style). */
+/** Shown after the splash screen until this computer has an active license (splash style with the key illustration as the hero). */
 export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView, { state: 'locked' }>; onActivated(next: LicenseView): void }) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState(view.reason === 'missing' ? '' : view.message)
@@ -48,8 +49,9 @@ export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView
   const onKey = (event: React.KeyboardEvent<HTMLTextAreaElement>) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }
   return <main className="la-license" aria-labelledby="la-license-title">
     <SplashBackground />
+    <img className="la-license-corner-logo" src={logoUrl} alt="LeadsGhr" />
     <form className="la-license-form" onSubmit={(event) => void submit(event)}>
-      <img className="la-license-logo" src={logoUrl} alt="LeadsGhr" />
+      <img className="la-license-key-art" src={keyArtUrl} alt="" />
       <h1 id="la-license-title">Unlock your <span>lead workspace</span></h1>
       <p className="la-license-lead">Enter the license key you received from your admin.</p>
       <label className="la-license-label" htmlFor="la-license-key">License key</label>
