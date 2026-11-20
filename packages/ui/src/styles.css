@@ -1431,3 +1431,9 @@ a { color: var(--la-accent); }
 .la-export-foot button.primary { border-color: #5B12C9; background: #5B12C9; color: #FFFFFF; }
 .la-export-foot button.primary:disabled { border-color: #ECE8F2; background: #ECE8F2; color: var(--la-muted); cursor: default; }
 
+
+/* Sidebar: the page list scrolls on its own; the search box and profile stay in place. */
+.la-sidebar { overflow: hidden; }
+.la-sidebar > * { flex-shrink: 0; }
+.la-sidebar .la-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; scrollbar-width: thin; scrollbar-color: #D4D4D8 transparent; }
+.la-sidebar .la-sidebar-bottom { flex: none; }
