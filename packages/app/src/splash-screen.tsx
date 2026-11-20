@@ -2,19 +2,10 @@ import { useEffect, useState } from 'react'
 import { useAppVersion } from './updates'
 
 const logoUrl = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
-const fanLines = Array.from({ length: 17 }, (_, index) => -80 + index * 53)
 
 function SplashBackground() {
-  return <svg className="la-splash__background" viewBox="0 0 1600 700" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-    <defs>
-      <linearGradient id="la-splash-fan-left" x1="0" y1="0" x2="1" y2="0"><stop stopColor="#5B12C9" stopOpacity=".55"/><stop offset="1" stopColor="#5B12C9" stopOpacity="0"/></linearGradient>
-      <linearGradient id="la-splash-fan-right" x1="1" y1="0" x2="0" y2="0"><stop stopColor="#5B12C9" stopOpacity=".55"/><stop offset="1" stopColor="#5B12C9" stopOpacity="0"/></linearGradient>
-    </defs>
-    {fanLines.map((y) => <g key={y} fill="none" strokeWidth="1.3" vectorEffect="non-scaling-stroke">
-      <path d={`M 0 ${y} Q 320 ${350 + (y - 350) * .16} 700 350`} stroke="url(#la-splash-fan-left)"/>
-      <path d={`M 1600 ${y} Q 1280 ${350 + (y - 350) * .16} 900 350`} stroke="url(#la-splash-fan-right)"/>
-    </g>)}
-  </svg>
+  // A dot grid coloured from brand purple to teal, fading out behind the content and at the edges, with a soft purple glow.
+  return <div className="la-splash__background la-splash__dots" aria-hidden="true" />
 }
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {

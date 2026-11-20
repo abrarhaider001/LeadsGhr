@@ -1,6 +1,6 @@
 // LeadsGhr Setup: the small LeadsGhr-Setup.exe people download.
 //
-// It shows one branded window (design "3A": white, splash fan lines, logo in rings) while it
+// It shows one branded window (design "3A": plain white, headline and progress only) while it
 //   1. reads latest.yml from the newest GitHub Release,
 //   2. downloads the electron-builder installer (LeadsGhr-Installer.exe) and the app package
 //      (LeadsGhr-App-x64.nsis.7z) and checks both against the SHA-512 hashes in latest.yml,
@@ -89,7 +89,6 @@ namespace LeadsGhr.Setup
         readonly PrivateFontCollection fonts = new PrivateFontCollection();
         readonly List<IntPtr> fontMemory = new List<IntPtr>();
         FontFamily regular, semibold, bold;
-        readonly Image logo;
         readonly float scale;
         readonly System.Windows.Forms.Timer animation = new System.Windows.Forms.Timer();
         readonly Button retry = new Button();
@@ -108,7 +107,6 @@ namespace LeadsGhr.Setup
             this.feed = feed;
             this.dryRun = dryRun;
             LoadFonts();
-            logo = Image.FromStream(Resource("logo-256.png"));
 
             Text = "LeadsGhr Setup";
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
@@ -201,7 +199,7 @@ namespace LeadsGhr.Setup
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { animation.Dispose(); logo.Dispose(); fonts.Dispose(); }
+            if (disposing) { animation.Dispose(); fonts.Dispose(); }
             foreach (IntPtr p in fontMemory) Marshal.FreeCoTaskMem(p);
             fontMemory.Clear();
             base.Dispose(disposing);
@@ -342,89 +340,8 @@ namespace LeadsGhr.Setup
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.ScaleTransform(scale, scale);
 
-            DrawFanLines(g);
-            DrawBrand(g);
-            DrawOrb(g);
             DrawHeadline(g);
             DrawFooter(g);
-        }
-
-        // The splash screen's fan lines: quadratic curves from both edges toward the centre (SVG 1600x700, stretched).
-        void DrawFanLines(Graphics g)
-        {
-            float sx = W / 1600f, sy = H / 700f;
-            for (int y = -80; y <= 820; y += 53)
-            {
-                float cy = 350 + (y - 350) * 0.16f;
-                DrawFan(g, new PointF(0, y), new PointF(320, cy), new PointF(700, 350), sx, sy, false);
-                DrawFan(g, new PointF(1600, y), new PointF(1280, cy), new PointF(900, 350), sx, sy, true);
-            }
-        }
-
-        static void DrawFan(Graphics g, PointF p0, PointF q, PointF p2, float sx, float sy, bool fromRight)
-        {
-            // Quadratic -> cubic Bézier.
-            var c1 = new PointF(p0.X + 2f / 3f * (q.X - p0.X), p0.Y + 2f / 3f * (q.Y - p0.Y));
-            var c2 = new PointF(p2.X + 2f / 3f * (q.X - p2.X), p2.Y + 2f / 3f * (q.Y - p2.Y));
-            PointF a = new PointF(p0.X * sx, p0.Y * sy), b = new PointF(c1.X * sx, c1.Y * sy), c = new PointF(c2.X * sx, c2.Y * sy), d = new PointF(p2.X * sx, p2.Y * sy);
-            float x0 = Math.Min(a.X, d.X) - 1, x1 = Math.Max(a.X, d.X) + 1;
-            Color strong = Color.FromArgb(58, 0x5B, 0x12, 0xC9), clear = Color.FromArgb(0, 0x5B, 0x12, 0xC9);
-            using (var brush = new LinearGradientBrush(new PointF(x0, 0), new PointF(x1, 0), fromRight ? clear : strong, fromRight ? strong : clear))
-            using (var pen = new Pen(brush, 0.9f))
-                g.DrawBezier(pen, a, b, c, d);
-        }
-
-        void DrawBrand(Graphics g)
-        {
-            var tile = new RectangleF(48, 40, 38, 38);
-            using (GraphicsPath shadow = RoundRect(new RectangleF(tile.X, tile.Y + 2, tile.Width, tile.Height), 10))
-            using (var sb = new SolidBrush(Color.FromArgb(18, Ink))) g.FillPath(sb, shadow);
-            using (GraphicsPath path = RoundRect(tile, 10)) { g.FillPath(Brushes.White, path); }
-            g.DrawImage(logo, tile.X + 4, tile.Y + 4, 30, 30);
-
-            using (var f = new Font(bold, 24, FontStyle.Regular, GraphicsUnit.Pixel))
-            using (var inkBrush = new SolidBrush(Ink))
-            using (var purpleBrush = new SolidBrush(Purple))
-            {
-                StringFormat fmt = StringFormat.GenericTypographic;
-                float x = 96, y = 59 - f.GetHeight(g) / 2 + 1;
-                g.DrawString("Leads", f, inkBrush, x, y, fmt);
-                float w = g.MeasureString("Leads", f, PointF.Empty, fmt).Width;
-                g.DrawString("Ghr", f, purpleBrush, x + w, y, fmt);
-            }
-        }
-
-        void DrawOrb(Graphics g)
-        {
-            float cx = W - 56 - 85, cy = 70 + 85;
-            var outer = new RectangleF(cx - 85, cy - 85, 170, 170);
-            using (var path = new GraphicsPath())
-            {
-                path.AddEllipse(outer);
-                using (var brush = new PathGradientBrush(path))
-                {
-                    brush.CenterColor = Color.FromArgb(0xF4, 0xEE, 0xFF);
-                    brush.SurroundColors = new[] { Color.White };
-                    g.FillPath(brush, path);
-                }
-            }
-            using (var pen = new Pen(Color.FromArgb(0xD9, 0xCC, 0xF5), 1)) g.DrawEllipse(pen, outer);
-            using (var pen = new Pen(Color.FromArgb(0xBD, 0xEF, 0xF8), 1)) g.DrawEllipse(pen, cx - 63, cy - 63, 126, 126);
-
-            // Soft glow under the logo, then the logo (slowly breathing while work is in progress).
-            float pulse = (stage == Stage.Preparing || stage == Stage.Installing) ? (float)(Math.Sin(tick / 12.0) * 2) : 0;
-            using (var glow = new GraphicsPath())
-            {
-                glow.AddEllipse(cx - 46, cy - 30, 92, 80);
-                using (var brush = new PathGradientBrush(glow))
-                {
-                    brush.CenterColor = Color.FromArgb(40, Purple);
-                    brush.SurroundColors = new[] { Color.FromArgb(0, Purple) };
-                    g.FillPath(brush, glow);
-                }
-            }
-            float size = 76 + pulse;
-            g.DrawImage(logo, cx - size / 2, cy - size / 2, size, size);
         }
 
         void DrawHeadline(Graphics g)
@@ -435,15 +352,15 @@ namespace LeadsGhr.Setup
             using (var line1 = new GraphicsPath(FillMode.Winding))
             using (var line2 = new GraphicsPath(FillMode.Winding))
             {
-                line1.AddString("Your lead workspace is", bold, (int)FontStyle.Regular, em, new PointF(46, 132), fmt);
-                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)FontStyle.Regular, em, new PointF(46, 172), fmt);
+                line1.AddString("Your lead workspace is", bold, (int)FontStyle.Regular, em, new PointF(46, 40), fmt);
+                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)FontStyle.Regular, em, new PointF(46, 80), fmt);
                 using (var ink = new SolidBrush(Ink)) g.FillPath(ink, line1);
                 RectangleF b = line2.GetBounds();
                 using (var grad = new LinearGradientBrush(new PointF(b.Left - 1, 0), new PointF(b.Right + 1, 0), Purple, Teal)) g.FillPath(grad, line2);
             }
             using (var f = new Font(regular, 15, FontStyle.Regular, GraphicsUnit.Pixel))
             using (var brush = new SolidBrush(Muted))
-                g.DrawString("Real businesses. Public data. More opportunities.", f, brush, 48, 226, fmt);
+                g.DrawString("Real businesses. Public data. More opportunities.", f, brush, 48, 134, fmt);
         }
 
         void DrawFooter(Graphics g)

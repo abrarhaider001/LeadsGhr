@@ -1,5 +1,5 @@
 // Shared look of LeadsGhr's small Windows programs (design 3A): colours, Instrument Sans fonts embedded
-// as resources, the splash screen's fan lines, and rounded shapes. C# 5 (see build-setup.ps1).
+// as resources and rounded shapes. C# 5 (see build-setup.ps1).
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -28,30 +28,6 @@ namespace LeadsGhr.Branding
             Stream s = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
             if (s == null) throw new InvalidOperationException("Missing resource " + name);
             return s;
-        }
-
-        /// <summary>The fan lines of the LeadsGhr splash screen (SVG 1600x700, stretched to width x height).</summary>
-        public static void DrawFanLines(Graphics g, float width, float height)
-        {
-            float sx = width / 1600f, sy = height / 700f;
-            for (int y = -80; y <= 820; y += 53)
-            {
-                float cy = 350 + (y - 350) * 0.16f;
-                DrawFan(g, new PointF(0, y), new PointF(320, cy), new PointF(700, 350), sx, sy, false);
-                DrawFan(g, new PointF(1600, y), new PointF(1280, cy), new PointF(900, 350), sx, sy, true);
-            }
-        }
-
-        static void DrawFan(Graphics g, PointF p0, PointF q, PointF p2, float sx, float sy, bool fromRight)
-        {
-            var c1 = new PointF(p0.X + 2f / 3f * (q.X - p0.X), p0.Y + 2f / 3f * (q.Y - p0.Y));
-            var c2 = new PointF(p2.X + 2f / 3f * (q.X - p2.X), p2.Y + 2f / 3f * (q.Y - p2.Y));
-            PointF a = new PointF(p0.X * sx, p0.Y * sy), b = new PointF(c1.X * sx, c1.Y * sy), c = new PointF(c2.X * sx, c2.Y * sy), d = new PointF(p2.X * sx, p2.Y * sy);
-            float x0 = Math.Min(a.X, d.X) - 1, x1 = Math.Max(a.X, d.X) + 1;
-            Color strong = Color.FromArgb(50, Purple), clear = Color.FromArgb(0, Purple);
-            using (var brush = new LinearGradientBrush(new PointF(x0, 0), new PointF(x1, 0), fromRight ? clear : strong, fromRight ? strong : clear))
-            using (var pen = new Pen(brush, 0.9f))
-                g.DrawBezier(pen, a, b, c, d);
         }
 
         public static GraphicsPath RoundRect(RectangleF r, float radius)
