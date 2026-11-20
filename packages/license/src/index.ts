@@ -32,7 +32,7 @@ export type StoredLicense = { key: string; expiresAt: string; keyEnd: string; pr
 
 /** What the UI is allowed to see: never the full key. */
 export type LicenseView =
-  | { state: 'active'; expiresAt: string; keyEnd: string; products: ProductSlots; activatedAt: string; lastCheckedAt: string; offline: boolean }
+  | { state: 'active'; expiresAt: string; keyEnd: string; keyLength?: number; products: ProductSlots; activatedAt: string; lastCheckedAt: string; offline: boolean }
   | { state: 'locked'; reason: LicenseServerStatus | 'missing' | 'offline' | 'error'; message: string; expiresAt?: string; products?: ProductSlots }
 
 /**
@@ -52,7 +52,8 @@ export function normalizeLicenseKey(input: string): string | null {
 }
 
 /** Shows only the last eight characters of a key. */
-export const maskLicenseKey = (keyEnd: string) => `••••••••••••…${keyEnd}`
+/** The key at its real length: one dot for each hidden character, then the last characters as they are. */
+export const maskLicenseKey = (keyEnd: string, keyLength = LICENSE_KEY_LENGTH) => KEY_MASK_CHAR.repeat(Math.max(0, keyLength - keyEnd.length)) + keyEnd
 
 const productName = (product: LicenseProduct) => LICENSE_PRODUCTS.find((item) => item.id === product)?.name ?? product
 
@@ -91,7 +92,7 @@ export function withinOfflineGrace(stored: StoredLicense, now = Date.now()): boo
 export function applyLicenseResponse(key: string, product: LicenseProduct, response: LicenseResponse, previous?: StoredLicense, now = new Date()): { stored: StoredLicense | null; view: LicenseView } {
   if (response.status === 'active' && response.expiresAt && response.keyEnd) {
     const stored: StoredLicense = { key, expiresAt: response.expiresAt, keyEnd: response.keyEnd, products: response.products ?? previous?.products ?? {}, activatedAt: response.activatedAt ?? previous?.activatedAt ?? now.toISOString(), lastCheckedAt: now.toISOString() }
-    return { stored, view: { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false } }
+    return { stored, view: { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, keyLength: stored.key.length, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false } }
   }
   const reason = response.status === 'active' ? 'error' : response.status
   return { stored: null, view: { state: 'locked', reason, message: licenseMessage(reason, product, response.expiresAt), expiresAt: response.expiresAt, products: response.products } }
@@ -103,7 +104,7 @@ export async function checkStoredLicense(stored: StoredLicense | null, product: 
   try {
     return applyLicenseResponse(stored.key, product, await callLicenseService({ action: 'check', key: stored.key, product, installationId }, fetchImpl), stored)
   } catch {
-    if (withinOfflineGrace(stored)) return { stored, view: { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: true } }
+    if (withinOfflineGrace(stored)) return { stored, view: { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, keyLength: stored.key.length, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: true } }
     return { stored, view: { state: 'locked', reason: 'offline', message: licenseMessage('offline', product) } }
   }
 }

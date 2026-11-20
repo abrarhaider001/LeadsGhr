@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, type LicenseProduct, type LicenseView } from '@leadsghr/license'
+import { LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, maskLicenseKey, type LicenseProduct, type LicenseView } from '@leadsghr/license'
 import { useMaskedKey } from '@leadsghr/license/masked-key'
 import { SplashBackground } from './splash-screen'
 
@@ -95,7 +95,7 @@ export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | nu
     <div className="la-license-card">
       <div className="la-license-card-top"><span className="la-license-badge">{checkIcon}{view.offline ? 'Active (offline)' : 'Active'}</span><span>Activated {formatDate(view.activatedAt)} on this computer</span></div>
       <div className="la-license-card-grid">
-        <div><small>License key</small><div className="la-license-key-row"><strong className="la-license-mono">{view.keyEnd}</strong><button type="button" className={`la-license-copy${copied ? ' is-copied' : ''}`} onClick={() => void copyKey()} aria-label={copied ? 'License key copied' : 'Copy license key'} title={copied ? 'Copied' : 'Copy license key'}>{copied ? copiedIcon : copyIcon}</button></div></div>
+        <div><small>License key</small><div className="la-license-key-row"><strong className="la-license-mono">{maskLicenseKey(view.keyEnd, view.keyLength)}</strong><button type="button" className={`la-license-copy${copied ? ' is-copied' : ''}`} onClick={() => void copyKey()} aria-label={copied ? 'License key copied' : 'Copy license key'} title={copied ? 'Copied' : 'Copy license key'}>{copied ? copiedIcon : copyIcon}</button></div></div>
       </div>
       <div className="la-license-expiry">
         <div className="la-license-expiry-head"><strong>Expires {formatDate(view.expiresAt)}</strong><span>{left} day{left === 1 ? '' : 's'} left</span></div>
@@ -109,7 +109,7 @@ export function LicenseSettingsPage({ view, onChange }: { view: LicenseView | nu
         const used = product.id === 'desktop' || view.products[product.id] === 'used'
         return <li key={product.id}>{productIcon(product.id)}<strong>{product.name}</strong><span className={used ? 'is-used' : ''}>{product.id === 'desktop' ? 'This computer' : used ? 'Activated' : 'Not activated yet'}</span></li>
       })}</ul>
-      <p className="la-license-settings-note">The key is stored encrypted on this computer; only its last 8 characters are shown, and the copy button copies the full key.{view.offline ? ' LeadsGhr could not reach the license service and is working offline; it checks again at the next start.' : ''}</p>
+      <p className="la-license-settings-note">The key is stored encrypted on this computer; only its last 8 characters are shown, and the copy button copies the complete key.{view.offline ? ' LeadsGhr could not reach the license service and is working offline; it checks again at the next start.' : ''}</p>
     </div>
   </section>
 }

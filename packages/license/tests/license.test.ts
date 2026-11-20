@@ -16,7 +16,8 @@ test('32-character keys with special characters are read from pasted text', () =
   assert.equal(normalizeLicenseKey(`${KEY.slice(0, 31)}'`), null) // quote is not in the alphabet
   assert.equal(normalizeLicenseKey(`${KEY.slice(0, 31)}O`), null) // look-alike letters are left out
   assert.equal(normalizeLicenseKey(OLD_KEY.toUpperCase()), OLD_KEY) // older 64-character keys still work
-  assert.equal(maskLicenseKey(KEY.slice(-8)), `••••••••••••…${KEY.slice(-8)}`)
+  assert.equal(maskLicenseKey(KEY.slice(-8)), '•'.repeat(24) + KEY.slice(-8)) // same length as the key
+  assert.equal(maskLicenseKey(OLD_KEY.slice(-8), 64).length, 64)
 })
 
 test('activation stores the license only when the service says active', async () => {

@@ -63,7 +63,7 @@ async function saveLicense(stored: StoredLicense | null): Promise<void> {
 export async function checkExtensionLicense(product: LicenseProduct, options: { force?: boolean } = {}): Promise<LicenseView> {
   const stored = await readLicense()
   if (stored && !options.force && Date.now() - new Date(stored.lastCheckedAt).getTime() < RECHECK_MS && new Date(stored.expiresAt).getTime() > Date.now()) {
-    return { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false }
+    return { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, keyLength: stored.key.length, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false }
   }
   const result = await checkStoredLicense(stored, product, await installationId())
   if (result.view.state === 'locked' && result.view.reason !== 'offline') await saveLicense(null)

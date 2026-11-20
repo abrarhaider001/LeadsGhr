@@ -1461,7 +1461,7 @@ a { color: var(--la-accent); }
 .la-license-card::after { content: ''; position: absolute; right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, rgba(41, 203, 234, .4), transparent 65%); }
 .la-license-card-top { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; color: #DCD0F5; font-size: 13px; }
 .la-license-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; background: #FFFFFF; color: #1D6B3A; font-size: 12px; font-weight: 600; }
-.la-license-card-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px; }
+.la-license-card-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 20px; }
 .la-license-card-grid small { display: block; color: #DCD0F5; font-size: 12px; }
 .la-license-card-grid strong { display: block; margin-top: 4px; font-size: 18px; }
 .la-license-card-grid em { font-style: normal; font-weight: 400; font-size: 13px; color: #DCD0F5; }
@@ -1491,7 +1491,7 @@ a { color: var(--la-accent); }
 .la-sidebar .la-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; scrollbar-width: thin; scrollbar-color: #D4D4D8 transparent; }
 .la-sidebar .la-sidebar-bottom { flex: none; }
 .la-license-key-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
-.la-license-key-row strong { margin-top: 0; letter-spacing: .06em; }
+.la-license-key-row strong { margin-top: 0; letter-spacing: .04em; white-space: nowrap; }
 .la-license-copy { display: inline-grid; place-items: center; width: 32px; height: 32px; border: 1px solid rgba(255, 255, 255, .28); border-radius: 8px; background: rgba(255, 255, 255, .12); color: #FFFFFF; cursor: pointer; transition: background .15s ease; }
 .la-license-copy:hover { background: rgba(255, 255, 255, .22); }
 .la-license-copy:focus-visible { outline: 2px solid #FFFFFF; outline-offset: 2px; }
