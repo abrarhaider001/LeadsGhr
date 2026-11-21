@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { readFile, writeFile, copyFile, mkdir, stat } from 'node:fs/promises'
 import Database from 'better-sqlite3'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, buildPreferencesFile, applyPreferencesFile, type DesktopPreferences } from '@leadsghr/schemas'
+import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, buildPreferencesFile, applyPreferencesFile, type DesktopPreferences, clampDisplaySize, DISPLAY_SIZE_STEP } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
 import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory, leadsGhrSettingsDirectory } from './paths'
@@ -44,6 +44,13 @@ function localStore() {
   return { db, adapters: adapters! }
 }
 
+/** Save a display size chosen with the keyboard, keeping every other preference. */
+async function saveDisplaySize(displaySize: number) {
+  const preferences = { ...(await readPreferences()), displaySize }
+  preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(leadsGhrDataFile('preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
+  await preferencesWrite
+}
+
 function createWindow(crawlStore: ReturnType<typeof createCrawlRunStore>) {
   const window = new BrowserWindow({
     width: 1440, height: 900, minWidth: 800, minHeight: 600,
@@ -59,19 +66,30 @@ function createWindow(crawlStore: ReturnType<typeof createCrawlRunStore>) {
     },
   })
   window.once('ready-to-show', () => { window.maximize(); window.show() })
-  window.webContents.on('did-finish-load', () => window.webContents.setZoomFactor(1))
+  // Display size (zoom) is a saved preference: applied on load, changed with Ctrl + / Ctrl - / Ctrl 0 or in
+  // Settings → Preferences → Appearance. Keyboard changes are saved here and sent to the page so the setting follows.
+  window.webContents.on('did-finish-load', () => {
+    void readPreferences().then((preferences) => window.webContents.setZoomFactor(preferences.displaySize / 100), () => window.webContents.setZoomFactor(1))
+  })
+  const setDisplaySize = (next: number) => {
+    const size = clampDisplaySize(next)
+    window.webContents.setZoomFactor(size / 100)
+    window.webContents.send('leadsghr:display-size:changed', size)
+    void saveDisplaySize(size).catch(() => undefined)
+  }
+  const currentDisplaySize = () => Math.round(window.webContents.getZoomFactor() * 100)
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown' || !(input.control || input.meta) || input.alt) return
     const key = input.key.toLowerCase()
     if (key === '0') {
       event.preventDefault()
-      window.webContents.setZoomFactor(1)
+      setDisplaySize(100)
     } else if (key === '+' || key === '=' || key === 'add') {
       event.preventDefault()
-      window.webContents.setZoomFactor(Math.min(2, Math.round((window.webContents.getZoomFactor() + 0.1) * 10) / 10))
+      setDisplaySize(currentDisplaySize() + DISPLAY_SIZE_STEP)
     } else if (key === '-' || key === 'subtract') {
       event.preventDefault()
-      window.webContents.setZoomFactor(Math.max(0.7, Math.round((window.webContents.getZoomFactor() - 0.1) * 10) / 10))
+      setDisplaySize(currentDisplaySize() - DISPLAY_SIZE_STEP)
     }
   })
   registerCrawlerTest(window, desktopHttp)
@@ -214,6 +232,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(leadsGhrDataFile('preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
     applyAutoUpdatePreference(preferences.autoUpdate)
+    event.sender.setZoomFactor(preferences.displaySize / 100)
     return preferences
   })
   // Preferences → Export settings: write the current preferences to C:\LeadsGhr\settings and return the file path.
@@ -251,6 +270,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(leadsGhrDataFile('preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
     applyAutoUpdatePreference(preferences.autoUpdate)
+    event.sender.setZoomFactor(preferences.displaySize / 100)
     return { preferences, path, applied: imported.applied.length, skipped: imported.skipped.length, ignored: imported.ignored.length }
   })
   // "Show in folder" for an exported settings file (only files inside C:\LeadsGhr\settings).

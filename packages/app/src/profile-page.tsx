@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Avatar, { genConfig } from 'react-nice-avatar'
-import { PREFERENCE_SECTIONS, type DesktopPreferences } from '@leadsghr/schemas'
+import { PREFERENCE_SECTIONS, DISPLAY_SIZE_MAX, DISPLAY_SIZE_MIN, DISPLAY_SIZE_STEP, clampDisplaySize, type DesktopPreferences } from '@leadsghr/schemas'
+import { Button } from '@leadsghr/ui'
 import { saveLocalAccount, type LocalAccount } from './account-data'
 import { UpdatesPanel, type UpdateState } from './updates'
 
@@ -38,6 +39,7 @@ function describeValue(key: PreferenceKeyName, value: DesktopPreferences[Prefere
   if (key === 'crawlerFetchMethod') return value === 'http' ? 'Lightweight HTTP' : 'Browser rendering'
   if (key === 'emailVerifyPaceMs') return `${value} ms`
   if (key === 'theme') return value === 'dark' ? 'Dark' : value === 'system' ? 'Match Windows' : 'Light'
+  if (key === 'displaySize') return `${value}%`
   return String(value)
 }
 
@@ -166,7 +168,7 @@ function SettingsTransfer({ preferences, onImported }: { preferences: DesktopPre
   </div>
 }
 
-type PreferenceKey = Exclude<keyof DesktopPreferences, 'crawlerEmailSource' | 'crawlerFetchMethod' | 'crawlerConcurrentPages' | 'emailVerifyMailFrom' | 'emailVerifyEhlo' | 'emailVerifyPerSession' | 'emailVerifyPaceMs' | 'theme'>
+type PreferenceKey = Exclude<keyof DesktopPreferences, 'crawlerEmailSource' | 'crawlerFetchMethod' | 'crawlerConcurrentPages' | 'emailVerifyMailFrom' | 'emailVerifyEhlo' | 'emailVerifyPerSession' | 'emailVerifyPaceMs' | 'theme' | 'displaySize'>
 const groups: { title: string; description: string; options: { key: PreferenceKey; title: string; detail: string }[] }[] = [
   { title: 'Crawler', description: 'Control the public webpage test view.', options: [
     { key: 'showCrawlerPreview', title: 'Show webpage in Crawler', detail: 'Display the live page while the crawler scrolls and extracts emails.' },
@@ -208,6 +210,27 @@ function ThemePreview({ theme }: { theme: 'light' | 'dark' }) {
     <span className="la-theme-mini-main"><i className="la-theme-mini-title" /><span className="la-theme-mini-cards"><i /><i /><i /></span><span className="la-theme-mini-panel"><i className="la-theme-mini-line" /><i className="la-theme-mini-button" /></span></span>
   </span>
 }
+const DISPLAY_SIZE_PRESETS = [80, 90, 100, 110, 125, 150]
+const ZOOM_SHORTCUTS: { keys: string[]; label: string }[] = [
+  { keys: ['Ctrl', '+'], label: 'Make everything larger' },
+  { keys: ['Ctrl', '−'], label: 'Make everything smaller' },
+  { keys: ['Ctrl', '0'], label: 'Back to 100%' },
+]
+/** Appearance → Display size: the window zoom in percent, the same setting Ctrl + / Ctrl - / Ctrl 0 change. */
+function DisplaySizeSetting({ value, onChange }: { value: number; onChange(next: number): void }) {
+  const set = (next: number) => { const size = clampDisplaySize(next); if (size !== value) onChange(size) }
+  return <section className="la-profile-preference-group"><div><h2>Display size</h2><p>Make text and controls larger or smaller. The keyboard shortcuts change the same setting.</p></div>
+    <div className="la-display-size">
+      <div className="la-display-size-control">
+        <Button type="button" variant="outline" size="icon" className="la-display-size-step" onClick={() => set(value - DISPLAY_SIZE_STEP)} disabled={value <= DISPLAY_SIZE_MIN} aria-label="Smaller">−</Button>
+        <output className="la-display-size-value" aria-live="polite">{value}%</output>
+        <Button type="button" variant="outline" size="icon" className="la-display-size-step" onClick={() => set(value + DISPLAY_SIZE_STEP)} disabled={value >= DISPLAY_SIZE_MAX} aria-label="Larger">+</Button>
+        <input className="la-display-size-range" type="range" min={DISPLAY_SIZE_MIN} max={DISPLAY_SIZE_MAX} step={DISPLAY_SIZE_STEP} value={value} onChange={(event) => set(Number(event.currentTarget.value))} aria-label="Display size" />
+      </div>
+      <div className="la-display-size-presets" role="group" aria-label="Display size presets">{DISPLAY_SIZE_PRESETS.map((size) => <button type="button" key={size} aria-pressed={value === size} onClick={() => set(size)}>{size}%{size === 100 ? ' · Default' : ''}</button>)}</div>
+      <ul className="la-display-size-shortcuts" aria-label="Keyboard shortcuts">{ZOOM_SHORTCUTS.map((shortcut) => <li key={shortcut.label}><span className="la-kbd-group">{shortcut.keys.map((key, index) => <span key={key}>{index > 0 && <span className="la-kbd-plus">+</span>}<kbd className="la-kbd">{key}</kbd></span>)}</span><span>{shortcut.label}</span></li>)}</ul>
+    </div></section>
+}
 type PreferenceCategory = 'Appearance' | 'Crawler' | 'Search' | 'Email Validation' | 'Updates'
 const PREFERENCE_CATEGORIES: { name: PreferenceCategory; description: string }[] = [
   { name: 'Appearance', description: 'How LeadsGhr looks on this computer.' },
@@ -248,6 +271,7 @@ export function ProfilePage({ section, updateState, preferences, onPreferencesCh
       <SettingsTransfer preferences={preferences} onImported={onPreferencesImported} />
       <div className="la-preference-content" id="la-preference-panel" aria-label={`${preferenceCategory} preferences`}>
         {preferenceCategory === 'Appearance' && <section className="la-profile-preference-group"><div><h2>Theme</h2><p>Choose a light or dark look, or match the Windows setting.</p></div><div className="la-theme-options" role="radiogroup" aria-label="Theme">{THEME_OPTIONS.map((option) => <label key={option.value} className={`la-theme-option${preferences.theme === option.value ? ' is-selected' : ''}`}><span className="la-theme-preview">{option.value === 'system' ? <><ThemePreview theme="light" /><ThemePreview theme="dark" /></> : <ThemePreview theme={option.value} />}</span><span className="la-theme-label"><input type="radio" name="theme" checked={preferences.theme === option.value} onChange={() => onPreferencesChange({ ...preferences, theme: option.value })} /><span><strong>{option.label}</strong><small>{option.hint}</small></span></span></label>)}</div></section>}
+        {preferenceCategory === 'Appearance' && <DisplaySizeSetting value={preferences.displaySize} onChange={(displaySize) => onPreferencesChange({ ...preferences, displaySize })} />}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Crawler email source</h2><p>Choose how the Crawler test finds addresses on public pages.</p></div><div className="la-profile-option-list"><label className="la-profile-option"><span><strong>Our behavior</strong><small>Use the existing LeadsGhr page extraction and URL queue.</small></span><input type="radio" name="crawler-email-source" checked={preferences.crawlerEmailSource === 'leadsghr'} onChange={() => onPreferencesChange({ ...preferences, crawlerEmailSource: 'leadsghr' })} /></label><label className="la-profile-option"><span><strong>Email Hunter-style</strong><small>Scan the complete rendered HTML, including scripts and attributes. This can include placeholders and false matches; it does not access the installed Chrome extension or its saved results.</small></span><input type="radio" name="crawler-email-source" checked={preferences.crawlerEmailSource === 'email-hunter'} onChange={() => onPreferencesChange({ ...preferences, crawlerEmailSource: 'email-hunter' })} /></label></div></section>}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Page fetch method</h2><p>Choose how Crawler and Pipeline inspect public websites. Search listings still use their existing browser flow.</p></div><div className="la-profile-option-list"><label className="la-profile-option"><span><strong>Browser rendering</strong><small>Open each page in an isolated Electron browser and scroll it. Slower, but can find content added by JavaScript.</small></span><input type="radio" name="crawler-fetch-method" checked={preferences.crawlerFetchMethod === 'browser'} onChange={() => onPreferencesChange({ ...preferences, crawlerFetchMethod: 'browser' })} /></label><label className="la-profile-option"><span><strong>Direct HTTP</strong><small>Inspect the public HTML response without loading a browser. Faster, but JavaScript-added content will be missed.</small></span><input type="radio" name="crawler-fetch-method" checked={preferences.crawlerFetchMethod === 'http'} onChange={() => onPreferencesChange({ ...preferences, crawlerFetchMethod: 'http' })} /></label></div></section>}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Concurrent pages</h2><p>Maximum pages inspected at once in Crawler and Pipeline. Same-site requests still respect robots.txt and crawl delays.</p></div><div className="la-profile-option-list"><label className="la-profile-option la-profile-concurrency-option"><span><strong>Workers</strong><small>Choose 1 to 8 pages to process at once.</small></span><input type="number" min="1" max="8" step="1" value={preferences.crawlerConcurrentPages} onChange={(event) => { const value = Number(event.currentTarget.value); if (Number.isInteger(value) && value >= 1 && value <= 8) onPreferencesChange({ ...preferences, crawlerConcurrentPages: value }) }} aria-label="Concurrent pages" /></label></div></section>}

@@ -68,7 +68,7 @@ const descriptions: Record<string, string> = {
 }
 type LocalLead = { name: string; emails: string[]; phones: string[]; sourceUrl: string }
 type LocalRun = { id: string; url: string; status: string; startedAt?: string; finishedAt?: string; error?: string }
-type DesktopBridge = { leads(): Promise<LocalLead[]>; runs(): Promise<LocalRun[]>; loadPreferences(): Promise<DesktopPreferences>; savePreferences(input: DesktopPreferences): Promise<DesktopPreferences> }
+type DesktopBridge = { leads(): Promise<LocalLead[]>; runs(): Promise<LocalRun[]>; loadPreferences(): Promise<DesktopPreferences>; savePreferences(input: DesktopPreferences): Promise<DesktopPreferences>; onDisplaySizeChanged?(callback: (size: number) => void): () => void }
 const bridge = () => (window as Window & { leadsGhrDesktop?: DesktopBridge }).leadsGhrDesktop
 
 export function LeadsGhrApp() {
@@ -93,6 +93,8 @@ export function LeadsGhrApp() {
   const [preferences, setPreferences] = useState<DesktopPreferences>(defaultDesktopPreferences)
   const [preferencesMessage, setPreferencesMessage] = useState('')
   useEffect(() => { applyTheme(preferences.theme); return followSystemTheme(preferences.theme) }, [preferences.theme])
+  // Ctrl + / Ctrl - / Ctrl 0 change the zoom in the main process, which saves it; mirror it here so Appearance shows it.
+  useEffect(() => bridge()?.onDisplaySizeChanged?.((displaySize) => setPreferences((current) => ({ ...current, displaySize }))), [])
   const [account, setAccount] = useState(loadLocalAccount)
   const appVersion = useAppVersion()
   const updateState = useUpdateState()
