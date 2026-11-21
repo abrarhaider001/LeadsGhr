@@ -1,6 +1,7 @@
 export { Icon, type IconName } from './primitives'
 export { EmptyTable } from './empty-table'
 export { BrandLogo, BrandMark, MailerMark, TrackerMark } from './brand-logo'
+export { NavIcon, type NavIconName } from './nav-icons'
 export { cn } from './lib/utils'
 export { Button, buttonVariants, type ButtonProps } from './components/ui/button'
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './components/ui/card'

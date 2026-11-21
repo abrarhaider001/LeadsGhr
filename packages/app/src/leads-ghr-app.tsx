@@ -19,32 +19,30 @@ import { PipelineOverviewPage } from './pipeline-overview-page'
 import { PipelineTimeline } from './pipeline-timeline'
 import type { PipelineDraft } from './pipeline-draft'
 import { CustomSelect } from './custom-select'
-import { Card, EmptyTable, Icon, type IconName, BrandLogo, BrandMark, MailerMark, TrackerMark } from '@leadsghr/ui'
+import { Card, EmptyTable, Icon, BrandLogo, BrandMark, NavIcon, type NavIconName } from '@leadsghr/ui'
 import Avatar, { genConfig } from 'react-nice-avatar'
-import { GrSearchAdvanced } from 'react-icons/gr'
-import { TbFilterBolt } from 'react-icons/tb'
-import { FiSettings } from 'react-icons/fi'
 import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed, syncProfileFromDisk } from './account-data'
 import { EmailSendingPage } from './email-sending-page'
 import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
 
-const navigation: { label: string; icon: IconName | 'advancedSearch' | 'filterBolt' | 'gear' }[] = [
+/** Sidebar tabs. Each icon is a NavIcon in the duotone line style (packages/ui/src/nav-icons.tsx; AGENTS.md, "Sidebar icons"). */
+const navigation: { label: string; icon: NavIconName }[] = [
   { label: 'Dashboard', icon: 'dashboard' },
   { label: 'Pipeline', icon: 'pipeline' },
-  { label: 'Crawler', icon: 'spider' },
-  { label: 'New Search', icon: 'advancedSearch' },
-  { label: 'Niche Library', icon: 'library' },
-  { label: 'Email Filtering', icon: 'filterBolt' },
-  { label: 'Email Validation', icon: 'mailCheck' },
-  { label: 'Email Spam Check', icon: 'spamCheck' },
-  { label: 'Email Sending', icon: 'mailSend' },
-  { label: 'Email Tracking', icon: 'mailTracking' },
+  { label: 'Crawler', icon: 'crawler' },
+  { label: 'New Search', icon: 'newSearch' },
+  { label: 'Niche Library', icon: 'nicheLibrary' },
+  { label: 'Email Filtering', icon: 'emailFiltering' },
+  { label: 'Email Validation', icon: 'emailValidation' },
+  { label: 'Email Spam Check', icon: 'emailSpamCheck' },
+  { label: 'Email Sending', icon: 'emailSending' },
+  { label: 'Email Tracking', icon: 'emailTracking' },
   { label: 'Leads', icon: 'leads' },
   { label: 'Runs', icon: 'runs' },
   { label: 'Profiles', icon: 'profiles' },
   { label: 'Exports', icon: 'exports' },
-  { label: 'Compliance', icon: 'shield' },
-  { label: 'Settings', icon: 'gear' },
+  { label: 'Compliance', icon: 'compliance' },
+  { label: 'Settings', icon: 'settings' },
 ]
 const descriptions: Record<string, string> = {
   Dashboard: 'Real businesses. Public data. More opportunities.',
@@ -195,7 +193,7 @@ export function LeadsGhrApp() {
       <div className="la-brand"><BrandLogo className="la-brand-wordmark" /><BrandMark className="la-brand-symbol" size={32} /></div>
       <label className="la-sidebar-search"><Icon name="search" size={15}/><input ref={navSearchRef} type="search" value={navQuery} onChange={(event) => setNavQuery(event.target.value)} placeholder="Search..." aria-label="Find a page" /><kbd>Ctrl K</kbd></label>
       <nav className="la-nav" aria-label="Main navigation">
-        {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase()) || (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase()))).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={label !== 'Settings' && (page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin)) ? 'page' : undefined} aria-expanded={label === 'Settings' ? settingsExpanded : undefined} aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined} onClick={() => label === 'Settings' ? setSettingsExpanded((current) => !current) : void showPage(label)} title={label}>{icon === 'mailSend' ? <MailerMark size={17} /> : icon === 'mailTracking' ? <TrackerMark size={17} /> : icon === 'advancedSearch' ? <GrSearchAdvanced size={16} aria-hidden="true"/> : icon === 'filterBolt' ? <TbFilterBolt size={17} aria-hidden="true"/> : icon === 'gear' ? <FiSettings size={16} aria-hidden="true" /> : <Icon name={icon} size={16}/>}<span>{label}</span>{label === 'Settings' && <svg className="la-nav-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>}</button>{label === 'Settings' && <div className="la-sidebar-settings-collapse" data-open={Boolean(settingsExpanded || navQuery.trim())} inert={!(settingsExpanded || navQuery.trim())}><div className="la-sidebar-settings-clip"><div className="la-sidebar-settings-children" id="la-settings-submenu"><button type="button" aria-current={page === 'Preferences' ? 'page' : undefined} onClick={() => void showPage('Preferences')}>Preferences</button></div></div></div>}</div>)}
+        {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase()) || (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase()))).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={label !== 'Settings' && (page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin)) ? 'page' : undefined} aria-expanded={label === 'Settings' ? settingsExpanded : undefined} aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined} onClick={() => label === 'Settings' ? setSettingsExpanded((current) => !current) : void showPage(label)} title={label}><NavIcon name={icon} size={18} /><span>{label}</span>{label === 'Settings' && <svg className="la-nav-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>}</button>{label === 'Settings' && <div className="la-sidebar-settings-collapse" data-open={Boolean(settingsExpanded || navQuery.trim())} inert={!(settingsExpanded || navQuery.trim())}><div className="la-sidebar-settings-clip"><div className="la-sidebar-settings-children" id="la-settings-submenu"><button type="button" aria-current={page === 'Preferences' ? 'page' : undefined} onClick={() => void showPage('Preferences')}>Preferences</button></div></div></div>}</div>)}
       </nav>
       <div className="la-sidebar-bottom"><button className="la-sidebar-footer" type="button" aria-label="Open profile" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace{appVersion ? ` · v${appVersion}` : ''}</small></span></button></div>
     </aside>
