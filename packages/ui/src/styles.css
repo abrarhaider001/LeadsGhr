@@ -56,7 +56,6 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--ui-color-text);
 .la-crawler-intro { display: flex; justify-content: space-between; align-items: center; gap: var(--ui-space-5); padding: var(--ui-space-2) 0 var(--ui-space-1); }
 .la-crawler-intro h2 { margin: 0 0 var(--ui-space-2); font-size: var(--ui-text-6xl); letter-spacing: -.03em; }
 .la-crawler-intro p { margin: 0; color: var(--ui-color-text); opacity: .7; }
-.la-crawler-badge { flex: none; border: 1px solid var(--ui-color-text-muted); border-radius: var(--ui-radius-full); padding: var(--ui-space-2) var(--ui-space-3); font: var(--ui-text-xs) var(--ui-font-mono); letter-spacing: .04em; }
 .la-crawler-form { display: grid; gap: var(--ui-space-2-5); }
 .la-crawler-form label { font-size: var(--ui-text-md); font-weight: var(--ui-weight-strong); }
 .la-crawler-form-row { display: flex; gap: var(--ui-space-3); }
@@ -94,7 +93,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--ui-color-text);
 @keyframes la-crawler-pulse { 50% { opacity: .45; } }
 @keyframes la-crawler-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 1100px) { .la-crawler-grid { grid-template-columns: 1fr; } .la-crawler-webview-frame { height: 520px; } }
-@media (max-width: 640px) { .la-crawler-intro, .la-crawler-form-row { align-items: stretch; flex-direction: column; } .la-crawler-badge { align-self: start; } }
+@media (max-width: 640px) { .la-crawler-intro, .la-crawler-form-row { align-items: stretch; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { .la-crawler-live, .la-crawler-progress span, .la-crawler-event, .la-crawler-event--working .la-crawler-dot { animation: none; } }
 
 /* Desktop dashboard refresh */
@@ -352,7 +351,6 @@ ol.la-extension-steps, .la-tracking-flow, .la-tracking-legend, .la-tracking-note
 .la-crawler { gap: var(--ui-space-3-5); }
 .la-crawler-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-3); }
 .la-crawler-heading h2 { margin: 0; font-size: var(--ui-text-2xl); letter-spacing: -.02em; }
-.la-crawler-badge { border-radius: var(--ui-radius-xl); color: var(--ui-color-text); border-color: var(--ui-color-text-muted); }
 .la-crawler > .la-card { padding: var(--ui-space-4) var(--ui-space-4-5); }
 .la-crawler-form-row input { min-height: var(--ui-field-height); border-color: var(--ui-color-border); border-radius: var(--ui-field-radius-lg); }
 .la-crawler-form-row .la-button { min-width: 122px; }
@@ -1423,8 +1421,8 @@ a { color: var(--ui-color-primary); }
 .la-main:has(.la-pref-layout) .la-profile { max-width: none; }
 .la-pref-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; background: var(--ui-color-surface); }
 .la-pref-nav { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: var(--ui-space-5-5) var(--ui-space-3); border-right: 1px solid var(--ui-color-border); background: var(--ui-color-surface); scrollbar-width: thin; scrollbar-color: var(--ui-color-border-strong) transparent; }
-.la-pref-nav-title { display: flex; align-items: center; gap: var(--ui-space-2); margin: 0 0 var(--ui-space-3); padding: 0 var(--ui-space-2-5); color: var(--ui-color-text-tertiary); font-size: var(--ui-text-sm); font-weight: var(--ui-weight-semibold); letter-spacing: .08em; text-transform: uppercase; }
-.la-pref-nav button { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-2); width: 100%; min-height: 36px; margin-bottom: var(--ui-space-0-5); padding: 0 var(--ui-space-2-5); border: 0; border-radius: var(--ui-radius-md); background: transparent; color: var(--ui-color-text); font: inherit; font-size: var(--ui-text-md); text-align: left; cursor: pointer; }
+.la-pref-nav-title { display: flex; align-items: center; gap: var(--ui-space-2); margin: 0 0 var(--ui-space-3); padding: 0 var(--ui-space-2-5); color: var(--ui-color-text-tertiary); font-size: var(--ui-text-2xs); font-weight: var(--ui-weight-semibold); letter-spacing: .08em; text-transform: uppercase; }
+.la-pref-nav button { position: relative; display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-2); width: 100%; min-height: 34px; margin-bottom: var(--ui-space-0-5); padding: 0 var(--ui-space-2-5); border: 0; border-radius: var(--ui-radius-md); background: transparent; color: var(--ui-color-text); font: inherit; font-size: var(--ui-text-xs); text-align: left; cursor: pointer; }
 .la-pref-nav button:hover { background: var(--ui-color-surface-muted); }
 .la-pref-nav button[aria-current='page'] { background: var(--ui-color-primary-soft); color: var(--ui-color-primary); font-weight: var(--ui-weight-semibold); }
 .la-pref-nav button[aria-current='page']::before { content: ''; position: absolute; left: -12px; top: 6px; bottom: 6px; width: 3px; border-radius: 0 var(--ui-radius-xs) var(--ui-radius-xs) 0; background: var(--ui-color-primary); }
@@ -1510,7 +1508,7 @@ a { color: var(--ui-color-primary); }
 .la-topbar-account .la-topbar-account-mark { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: var(--ui-radius-full); background: var(--ui-color-primary-subtle); }
 .la-topbar-account .la-topbar-account-mark svg { margin: 0; } /* the logo sits in the centre of its circle */
 .la-splash__logo.la-logo { width: auto; font-size: clamp(26px, 2.6vw, 36px); }
-.la-sidebar .la-brand { justify-content: center; } /* the LeadsGhr logo sits in the centre of the sidebar header */
+.la-sidebar .la-brand { justify-content: flex-start; padding-left: var(--ui-space-6); } /* the LeadsGhr logo sits on the left of the sidebar header, a little in from the edge */
 
 /* Every table sits in the same white card as the Leads table: surface background, one border, large radius.
    (The Crawler URL queue used to be see-through, so the grey page showed through its rows.) */

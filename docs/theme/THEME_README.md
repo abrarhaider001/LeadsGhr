@@ -1,6 +1,6 @@
 ﻿# Theme, fonts, sizing and motion
 
-LeadsGhr has a **light** and a **dark** theme, matching the new charcoal-and-green brand. Light: white cards on a soft grey canvas (`#F5F6F7`), charcoal text (`#1F2328`), green actions (`#16A34A`). Dark: charcoal surfaces (`#1F2328` on a `#15181C` canvas), light text (`#E8EAED`), bright green actions (`#4ADE80`) with dark text on them. The user picks **Light**, **Dark**, or **Match Windows** in **Settings → Preferences → Appearance** (preference `theme`, default Light); `packages/app/src/theme.ts` sets `data-theme` on the page, remembers the choice so the next start opens in the right theme without a flash, and follows Windows live when **Match Windows** is chosen. The Chrome extensions and the setup and uninstall windows use the light theme.
+LeadsGhr has a **light** and a **dark** theme, matching the new charcoal-and-green brand. Light: white cards on a very light grey canvas (`#FAFAFA`), charcoal text (`#1F2328`), green actions (`#16A34A`). Dark: charcoal surfaces (`#1F2328` on a `#15181C` canvas), light text (`#E8EAED`), bright green actions (`#4ADE80`) with dark text on them. The user picks **Light**, **Dark**, or **Match Windows** in **Settings → Preferences → Appearance** (preference `theme`, default Light); `packages/app/src/theme.ts` sets `data-theme` on the page, remembers the choice so the next start opens in the right theme without a flash, and follows Windows live when **Match Windows** is chosen. The Chrome extensions and the setup and uninstall windows use the light theme.
 
 ## Design tokens: one file for the whole look
 
@@ -32,7 +32,7 @@ Current theme values:
 | `--ui-brand-primary-hover` | `#15803D` | `#22C55E` | Primary hover and pressed |
 | `--ui-brand-ink` | `#1F2328` | `#E8EAED` | Main text |
 | `--ui-on-primary` | `#FFFFFF` | `#0E1A12` | Text and icons on primary buttons |
-| `--ui-canvas` | `#F5F6F7` | `#15181C` | App background behind cards |
+| `--ui-canvas` | `#FAFAFA` | `#15181C` | App background behind cards |
 | `--ui-neutral-0` | `#FFFFFF` | `#1F2328` | Cards, panels, inputs, sidebar |
 | `--ui-neutral-700` | `#6B7078` | `#9AA1AB` | Supporting labels and descriptions |
 | `--ui-line` | `#E6E8EB` | `#2E343C` | Input, card, and table dividers |

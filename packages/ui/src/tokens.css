@@ -39,7 +39,7 @@
   --ui-on-primary: #FFFFFF;           /* text and icons on primary buttons */
 
   /* --------------------------------------------------------------- Neutrals */
-  --ui-canvas: #F5F6F7;               /* app background behind cards */
+  --ui-canvas: #FAFAFA;               /* app background behind cards */
   --ui-neutral-0: #FFFFFF;            /* cards, panels, inputs */
   --ui-neutral-25: #FAFAFB;
   --ui-neutral-50: #F5F6F7;

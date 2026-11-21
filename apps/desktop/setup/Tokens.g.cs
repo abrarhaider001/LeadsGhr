@@ -13,7 +13,7 @@ namespace LeadsGhr.Branding
         public static readonly Color BrandHighlight = Color.FromArgb(255, 34, 197, 94);
         public static readonly Color BrandTint = Color.FromArgb(255, 134, 239, 172);
         public static readonly Color OnPrimary = Color.FromArgb(255, 255, 255, 255);
-        public static readonly Color Canvas = Color.FromArgb(255, 245, 246, 247);
+        public static readonly Color Canvas = Color.FromArgb(255, 250, 250, 250);
         public static readonly Color Neutral0 = Color.FromArgb(255, 255, 255, 255);
         public static readonly Color Neutral25 = Color.FromArgb(255, 250, 250, 251);
         public static readonly Color Neutral50 = Color.FromArgb(255, 245, 246, 247);
@@ -41,7 +41,7 @@ namespace LeadsGhr.Branding
         public static readonly Color DangerBorder = Color.FromArgb(255, 243, 196, 192);
         public static readonly Color Info = Color.FromArgb(255, 29, 78, 216);
         public static readonly Color InfoSoft = Color.FromArgb(255, 238, 243, 255);
-        public static readonly Color ColorBg = Color.FromArgb(255, 245, 246, 247);
+        public static readonly Color ColorBg = Color.FromArgb(255, 250, 250, 250);
         public static readonly Color ColorSurface = Color.FromArgb(255, 255, 255, 255);
         public static readonly Color ColorSurfaceSubtle = Color.FromArgb(255, 250, 250, 251);
         public static readonly Color ColorSurfaceMuted = Color.FromArgb(255, 245, 246, 247);
