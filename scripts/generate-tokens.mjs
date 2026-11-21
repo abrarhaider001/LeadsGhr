@@ -101,7 +101,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   for (const [kind, path] of Object.entries(outputs)) {
     let current = ''
     try { current = readFileSync(path, 'utf8') } catch {}
-    if (current === files[kind]) continue
+    const lf = (text) => text.replace(/\r\n/g, '\n') // Git may convert line endings on checkout
+    if (lf(current) === lf(files[kind])) continue
     if (check) stale.push(path)
     else writeFileSync(path, files[kind])
   }
