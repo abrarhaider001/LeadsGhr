@@ -59,6 +59,8 @@ export const searchCriteriaSchema = z.object({
 export type SearchCriteria = z.infer<typeof searchCriteriaSchema>
 
 export const desktopPreferencesSchema = z.object({
+  /** Light or dark look; `system` follows the Windows setting (Settings → Preferences → Appearance). */
+  theme: z.enum(['light', 'dark', 'system']).default('light'),
   showCrawlerPreview: z.boolean(),
   crawlerContactOnly: z.boolean().default(true),
   crawlerEmailSource: z.enum(['leadsghr', 'email-hunter']).default('leadsghr'),
@@ -83,6 +85,7 @@ export const desktopPreferencesSchema = z.object({
 })
 export type DesktopPreferences = z.infer<typeof desktopPreferencesSchema>
 export const defaultDesktopPreferences: DesktopPreferences = {
+  theme: 'light',
   showCrawlerPreview: true,
   crawlerContactOnly: true,
   crawlerEmailSource: 'leadsghr',

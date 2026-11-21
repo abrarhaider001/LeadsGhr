@@ -11,6 +11,7 @@ import { SearchSetupPage } from './search-setup-page'
 import { SearchResultsPage } from './search-results-page'
 import { ProfilePage } from './profile-page'
 import { defaultDesktopPreferences, type CrawlExport, type CrawlRunDetail, type CrawlRunSummary, type DesktopPreferences, type PipelineProvider, type SearchCriteria } from '@leadsghr/schemas'
+import { applyTheme, followSystemTheme } from './theme'
 import { crawlRunBridge } from './crawl-run-bridge'
 import { ExportsPage } from './exports-page'
 import { PipelineExportPage } from './pipeline-export-page'
@@ -28,6 +29,7 @@ import { EmailSendingPage } from './email-sending-page'
 import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
 
 const sidebarWordmark = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
+const sidebarWordmarkDark = new URL('../../../public/leadsghr-logo-sidebar.svg', import.meta.url).href // light lettering for the dark theme
 const mark = new URL('../../../public/logo-leadsghr.svg', import.meta.url).href
 const navigation: { label: string; icon: IconName | 'advancedSearch' | 'filterBolt' | 'gear' }[] = [
   { label: 'Dashboard', icon: 'dashboard' },
@@ -95,6 +97,7 @@ export function LeadsGhrApp() {
   const [searchOrigin, setSearchOrigin] = useState<'Pipeline' | 'New Search'>('Pipeline')
   const [preferences, setPreferences] = useState<DesktopPreferences>(defaultDesktopPreferences)
   const [preferencesMessage, setPreferencesMessage] = useState('')
+  useEffect(() => { applyTheme(preferences.theme); return followSystemTheme(preferences.theme) }, [preferences.theme])
   const [account, setAccount] = useState(loadLocalAccount)
   const appVersion = useAppVersion()
   const updateState = useUpdateState()
@@ -192,7 +195,7 @@ export function LeadsGhrApp() {
   if (!splashComplete) return <SplashScreen onComplete={() => setSplashComplete(true)} />
   return <div className="la-shell">
     <aside className="la-sidebar">
-      <div className="la-brand"><img className="la-brand-wordmark" src={sidebarWordmark} alt="LeadsGhr" /><img className="la-brand-symbol" src={mark} alt="LeadsGhr" /></div>
+      <div className="la-brand"><img className="la-brand-wordmark la-for-light" src={sidebarWordmark} alt="LeadsGhr" /><img className="la-brand-wordmark la-for-dark" src={sidebarWordmarkDark} alt="LeadsGhr" /><img className="la-brand-symbol" src={mark} alt="LeadsGhr" /></div>
       <label className="la-sidebar-search"><Icon name="search" size={15}/><input ref={navSearchRef} type="search" value={navQuery} onChange={(event) => setNavQuery(event.target.value)} placeholder="Search..." aria-label="Find a page" /><kbd>Ctrl K</kbd></label>
       <nav className="la-nav" aria-label="Main navigation">
         {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase()) || (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase()))).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={label !== 'Settings' && (page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin)) ? 'page' : undefined} aria-expanded={label === 'Settings' ? settingsExpanded : undefined} aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined} onClick={() => label === 'Settings' ? setSettingsExpanded((current) => !current) : void showPage(label)} title={label}>{icon === 'advancedSearch' ? <GrSearchAdvanced size={16} aria-hidden="true"/> : icon === 'filterBolt' ? <TbFilterBolt size={17} aria-hidden="true"/> : icon === 'gear' ? <FiSettings size={16} aria-hidden="true" /> : <Icon name={icon} size={16}/>}<span>{label}</span>{label === 'Settings' && <svg className="la-nav-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>}</button>{label === 'Settings' && <div className="la-sidebar-settings-collapse" data-open={Boolean(settingsExpanded || navQuery.trim())} inert={!(settingsExpanded || navQuery.trim())}><div className="la-sidebar-settings-clip"><div className="la-sidebar-settings-children" id="la-settings-submenu"><button type="button" aria-current={page === 'Preferences' ? 'page' : undefined} onClick={() => void showPage('Preferences')}>Preferences</button></div></div></div>}</div>)}

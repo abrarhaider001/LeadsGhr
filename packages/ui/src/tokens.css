@@ -9,8 +9,13 @@
  *     dev and every build). `pnpm.cmd --filter @leadsghr/ui test` fails if a copy is out of date or if a colour,
  *     font size, or radius is typed directly into a stylesheet or component instead of using a token.
  *
- * To re-theme: change the BRAND values (and the neutrals if needed). Tints such as soft purple backgrounds are
- * mixed from the brand colour, so they follow automatically. Never type a hex colour or px font size anywhere else.
+ * Two themes, light and dark (Settings → Preferences → Appearance sets data-theme on the page):
+ *   - LIGHT base values: the `:root, [data-theme='light']` block.
+ *   - DARK base values:  the `[data-theme='dark']` block (only the values that differ).
+ *   - Everything else (colours by role, type, spacing, corners, controls) is defined once from those base
+ *     values in the `:root, [data-theme]` block, so both themes stay in step.
+ * To re-theme: change the BRAND values in each theme block. Tints (selected rows, hover, chips, tinted borders)
+ * are mixed from the brand colour, so they follow automatically. Never type a hex colour or px font size anywhere else.
  */
 /* -------------------------------------------------------------------- Fonts
  * The font files live next to this file and are bundled into the app and the extensions (no internet needed).
@@ -21,28 +26,36 @@
 @font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-SemiBold.ttf') format('truetype'); font-weight: 600 800; font-display: swap; }
 
-:root {
+:root, [data-theme='light'] {
   color-scheme: light;
 
   /* ------------------------------------------------------------------ Brand */
-  --ui-brand-primary: #5B12C9;        /* buttons, active items, links, highlights */
-  --ui-brand-primary-hover: #450A9C;  /* hover/pressed primary */
-  --ui-brand-ink: #190B2D;            /* main text and dark surfaces */
-  --ui-brand-accent: #1FA9C9;         /* second brand colour (gradients, progress) */
-  --ui-brand-highlight: #29CBEA;      /* focus rings and bright accents */
-  --ui-brand-violet: #8B5CF6;         /* light purple used in gradients */
+  --ui-brand-primary: #16A34A;        /* buttons, active items, links, highlights */
+  --ui-brand-primary-hover: #15803D;  /* hover/pressed primary */
+  --ui-brand-ink: #1F2328;            /* main text and dark surfaces (charcoal) */
+  --ui-brand-accent: #4ADE80;         /* second brand colour (gradients, progress) */
+  --ui-brand-highlight: #22C55E;      /* focus rings and bright accents */
+  --ui-brand-tint: #86EFAC;           /* light brand colour used in gradients */
+  --ui-on-primary: #FFFFFF;           /* text and icons on primary buttons */
 
   /* --------------------------------------------------------------- Neutrals */
-  --ui-neutral-0: #FFFFFF;
-  --ui-neutral-25: #FAFAFA;
-  --ui-neutral-50: #F4F4F5;
-  --ui-neutral-100: #E9E9EB;
-  --ui-neutral-200: #E6E6E8;
-  --ui-neutral-300: #D4D4D8;
-  --ui-neutral-400: #A5A7AA;
-  --ui-neutral-500: #8A8D93;
-  --ui-neutral-600: #777B82;
-  --ui-neutral-700: #675E76;
+  --ui-canvas: #F5F6F7;               /* app background behind cards */
+  --ui-neutral-0: #FFFFFF;            /* cards, panels, inputs */
+  --ui-neutral-25: #FAFAFB;
+  --ui-neutral-50: #F5F6F7;
+  --ui-neutral-100: #EEF0F2;
+  --ui-neutral-200: #E8EAED;
+  --ui-neutral-300: #D3D6DB;
+  --ui-neutral-400: #A3A9B1;
+  --ui-neutral-500: #8A9099;
+  --ui-neutral-600: #7D848E;
+  --ui-neutral-700: #6B7078;
+  --ui-line: #E6E8EB;                 /* default divider colour */
+  --ui-line-subtle: #EEF0F2;
+  --ui-shadow-color: #1F2328;
+  --ui-tint-soft: 8%;                 /* how much brand colour the soft/subtle/muted tints mix in */
+  --ui-tint-subtle: 14%;
+  --ui-tint-muted: 30%;
 
   /* ----------------------------------------------------------------- Status */
   --ui-success: #087647;
@@ -57,30 +70,76 @@
   --ui-danger-border: #F3C4C0;
   --ui-info: #1D4ED8;
   --ui-info-soft: #EEF3FF;
+}
 
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ui-brand-primary: #4ADE80;
+  --ui-brand-primary-hover: #22C55E;
+  --ui-brand-ink: #E8EAED;            /* light text on dark surfaces */
+  --ui-brand-accent: #86EFAC;
+  --ui-brand-highlight: #4ADE80;
+  --ui-brand-tint: #BBF7D0;
+  --ui-on-primary: #0E1A12;           /* dark text on the bright green */
+
+  --ui-canvas: #15181C;
+  --ui-neutral-0: #1F2328;
+  --ui-neutral-25: #23282E;
+  --ui-neutral-50: #262B32;
+  --ui-neutral-100: #2E343C;
+  --ui-neutral-200: #2A2F36;
+  --ui-neutral-300: #3A4049;
+  --ui-neutral-400: #5C636D;
+  --ui-neutral-500: #7D848E;
+  --ui-neutral-600: #9AA1AB;
+  --ui-neutral-700: #9AA1AB;
+  --ui-line: #2E343C;
+  --ui-line-subtle: #262B32;
+  --ui-shadow-color: #000000;
+  --ui-tint-soft: 12%;
+  --ui-tint-subtle: 18%;
+  --ui-tint-muted: 34%;
+
+  --ui-success: #4ADE80;
+  --ui-success-soft: #1C3325;
+  --ui-success-border: #2F5A3D;
+  --ui-warning: #FBBF24;
+  --ui-warning-soft: #3A2F14;
+  --ui-warning-border: #5C4A1E;
+  --ui-danger: #F87171;
+  --ui-danger-hover: #EF4444;
+  --ui-danger-soft: #3A2222;
+  --ui-danger-border: #5C2B2B;
+  --ui-info: #7DB3FF;
+  --ui-info-soft: #1E2A44;
+}
+
+/* Everything below is built from the theme values above, for both themes. */
+:root, [data-theme] {
   /* ------------------------------------------------- Colours by role (use these) */
-  --ui-color-bg: var(--ui-neutral-0);                 /* app canvas */
+  --ui-color-bg: var(--ui-canvas);                    /* app canvas */
   --ui-color-surface: var(--ui-neutral-0);            /* cards, panels, inputs */
   --ui-color-surface-subtle: var(--ui-neutral-25);    /* faint panel backgrounds */
   --ui-color-surface-muted: var(--ui-neutral-50);     /* table heads, hover rows */
   --ui-color-surface-hover: var(--ui-neutral-100);    /* neutral hover/pressed */
-  --ui-color-surface-inverse: var(--ui-brand-ink);    /* dark panels */
+  --ui-color-surface-inverse: var(--ui-brand-ink);    /* panels in the opposite tone */
   --ui-color-text: var(--ui-brand-ink);
   --ui-color-text-muted: var(--ui-neutral-700);       /* secondary text */
   --ui-color-text-secondary: var(--ui-neutral-600);   /* grey labels */
   --ui-color-text-tertiary: var(--ui-neutral-500);    /* hints, captions */
   --ui-color-text-disabled: var(--ui-neutral-400);    /* placeholders, disabled */
-  --ui-color-on-primary: var(--ui-neutral-0);         /* text on primary/dark */
-  --ui-color-border: color-mix(in srgb, var(--ui-brand-primary) 10%, #EBEBF0); /* default lines */
-  --ui-color-border-subtle: color-mix(in srgb, var(--ui-brand-primary) 5%, #EFEFF3); /* faint dividers */
+  --ui-color-on-primary: var(--ui-on-primary);        /* text on primary and inverse panels */
+  --ui-color-border: color-mix(in srgb, var(--ui-brand-primary) 4%, var(--ui-line)); /* default lines */
+  --ui-color-border-subtle: color-mix(in srgb, var(--ui-brand-primary) 3%, var(--ui-line-subtle)); /* faint dividers */
   --ui-color-border-neutral: var(--ui-neutral-200);
   --ui-color-border-strong: var(--ui-neutral-300);
   --ui-color-primary: var(--ui-brand-primary);
   --ui-color-primary-hover: var(--ui-brand-primary-hover);
-  --ui-color-primary-soft: color-mix(in srgb, var(--ui-brand-primary) 6%, white);    /* selected rows, active nav */
-  --ui-color-primary-subtle: color-mix(in srgb, var(--ui-brand-primary) 12%, white); /* hover, chips */
-  --ui-color-primary-muted: color-mix(in srgb, var(--ui-brand-primary) 26%, white);  /* tinted borders */
-  --ui-color-primary-light: var(--ui-brand-violet);
+  --ui-color-primary-soft: color-mix(in srgb, var(--ui-brand-primary) var(--ui-tint-soft), var(--ui-neutral-0));     /* selected rows, active nav */
+  --ui-color-primary-subtle: color-mix(in srgb, var(--ui-brand-primary) var(--ui-tint-subtle), var(--ui-neutral-0)); /* hover, chips */
+  --ui-color-primary-muted: color-mix(in srgb, var(--ui-brand-primary) var(--ui-tint-muted), var(--ui-neutral-0));   /* tinted borders */
+  --ui-color-primary-light: var(--ui-brand-tint);
   --ui-color-accent: var(--ui-brand-accent);
   --ui-color-focus: var(--ui-brand-highlight);
   --ui-color-success: var(--ui-success);
@@ -95,6 +154,7 @@
   --ui-color-danger-border: var(--ui-danger-border);
   --ui-color-info: var(--ui-info);
   --ui-color-info-soft: var(--ui-info-soft);
+  --ui-color-shadow: var(--ui-shadow-color);
   --ui-gradient-brand: linear-gradient(90deg, var(--ui-brand-primary), var(--ui-brand-accent));
 
   /* ------------------------------------------------------------- Typography */
@@ -161,10 +221,10 @@
   --ui-border: var(--ui-border-width) solid var(--ui-color-border);
 
   /* ---------------------------------------------------------------- Shadows */
-  --ui-shadow-xs: 0 1px 2px color-mix(in srgb, var(--ui-color-text) 10%, transparent);
-  --ui-shadow-sm: 0 2px 8px color-mix(in srgb, var(--ui-color-text) 4%, transparent);
+  --ui-shadow-xs: 0 1px 2px color-mix(in srgb, var(--ui-color-shadow) 10%, transparent);
+  --ui-shadow-sm: 0 2px 8px color-mix(in srgb, var(--ui-color-shadow) 4%, transparent);
   --ui-shadow-md: 0 12px 28px color-mix(in srgb, var(--ui-color-primary) 22%, transparent);
-  --ui-shadow-lg: 0 20px 50px color-mix(in srgb, var(--ui-color-text) 22%, transparent);
+  --ui-shadow-lg: 0 20px 50px color-mix(in srgb, var(--ui-color-shadow) 22%, transparent);
   --ui-focus-ring: 2px solid var(--ui-color-focus);
 
   /* ----------------------------------------------------------------- Motion */

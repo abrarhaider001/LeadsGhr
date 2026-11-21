@@ -1,3 +1,4 @@
+import { tokens } from '@leadsghr/ui/tokens'
 import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
@@ -48,7 +49,7 @@ function createWindow(crawlStore: ReturnType<typeof createCrawlRunStore>) {
     width: 1440, height: 900, minWidth: 800, minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: tokens['color-surface'], // from packages/ui/src/tokens.css; the page paints its own theme before the window shows
     icon: app.isPackaged
       ? join(process.resourcesPath, 'icons/leadsghr-icon.png')
       : join(__dirname, '../../resources/leadsghr-icon.png'),

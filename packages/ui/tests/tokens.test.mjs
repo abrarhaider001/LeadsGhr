@@ -73,8 +73,20 @@ test('every token used in code exists in tokens.css', () => {
 test('re-theming is a one-line change: tints follow the brand colour', async () => {
   const { readTokens, resolve } = await import(pathToFileURL(join(root, 'scripts/generate-tokens.mjs')).href)
   const raw = readTokens()
-  raw.set('brand-primary', '#16A34A')
-  const green = resolve(raw)
-  assert.equal(green.get('color-primary'), '#16A34A')
-  assert.notEqual(green.get('color-primary-soft'), resolve(readTokens()).get('color-primary-soft'))
+  raw.set('brand-primary', '#5B12C9')
+  const purple = resolve(raw)
+  assert.equal(purple.get('color-primary'), '#5B12C9')
+  assert.notEqual(purple.get('color-primary-soft'), resolve(readTokens()).get('color-primary-soft'))
+})
+
+test('the dark theme is complete and differs from light', async () => {
+  const { readTokens, resolve } = await import(pathToFileURL(join(root, 'scripts/generate-tokens.mjs')).href)
+  const light = resolve(readTokens()); const dark = resolve(readTokens(undefined, 'dark'))
+  assert.deepEqual([...dark.keys()].sort(), [...light.keys()].sort())
+  for (const role of ['color-bg', 'color-surface', 'color-text', 'color-border', 'color-primary', 'color-on-primary', 'color-primary-soft'])
+    assert.notEqual(dark.get(role), light.get(role), `${role} should change in dark mode`)
+  // Light text on dark surfaces, and the reverse.
+  const lum = (hex) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)); return 0.2126 * r + 0.7152 * g + 0.0722 * b }
+  assert.ok(lum(light.get('color-text')) < lum(light.get('color-surface')))
+  assert.ok(lum(dark.get('color-text')) > lum(dark.get('color-surface')))
 })

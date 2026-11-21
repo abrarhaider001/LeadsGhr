@@ -13,10 +13,21 @@ const source = join(root, 'packages/ui/src/tokens.css')
 const outputs = { ts: join(root, 'packages/ui/src/tokens.generated.ts'), cs: join(root, 'apps/desktop/setup/Tokens.g.cs') }
 
 /** Reads `--ui-name: value;` declarations from the :root block (comments removed). */
-export function readTokens(css = readFileSync(source, 'utf8')) {
+/**
+ * Reads the `--ui-name: value;` declarations for one theme. Light uses every block except the
+ * `[data-theme='dark']` one; dark starts from those and applies the dark block on top.
+ */
+export function readTokens(css = readFileSync(source, 'utf8'), theme = 'light') {
   const body = css.replace(/\/\*[\s\S]*?\*\//g, '')
   const raw = new Map()
-  for (const m of body.matchAll(/--ui-([a-z0-9-]+)\s*:\s*([^;]+);/g)) raw.set(m[1], m[2].trim())
+  const dark = []
+  for (const rule of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (rule[1].includes('@font-face')) continue
+    const decls = [...rule[2].matchAll(/--ui-([a-z0-9-]+)\s*:\s*([^;]+);/g)]
+    if (/data-theme='dark'/.test(rule[1])) dark.push(...decls)
+    else for (const m of decls) raw.set(m[1], m[2].trim())
+  }
+  if (theme === 'dark') for (const m of dark) raw.set(m[1], m[2].trim())
   return raw
 }
 
@@ -78,13 +89,18 @@ function toHex([r, g, b, a = 1]) {
 const camel = (name) => name.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase())
 const pascal = (name) => camel(name).replace(/^./, (c) => c.toUpperCase())
 
-export function render(resolved) {
+export function render(resolved, resolvedDark = resolved) {
   const entries = [...resolved.entries()]
   const ts = ['// Generated from packages/ui/src/tokens.css by scripts/generate-tokens.mjs. Do not edit; edit tokens.css.',
     '// Resolved values for code that cannot use CSS variables (for example Gmail content scripts).',
+    '/** Light theme values. */',
     'export const tokens = {',
     ...entries.map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`),
-    '} as const', '', 'export type TokenName = keyof typeof tokens', '']
+    '} as const', '', 'export type TokenName = keyof typeof tokens', '',
+    '/** Dark theme values (Settings → Preferences → Appearance). */',
+    'export const tokensDark: Record<TokenName, string> = {',
+    ...[...resolvedDark.entries()].map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`),
+    '}', '']
   const colors = entries.filter(([, v]) => parseColor(v))
   const cs = ['// Generated from packages/ui/src/tokens.css by scripts/generate-tokens.mjs. Do not edit; edit tokens.css.',
     '// The colours of the LeadsGhr design tokens for the C# setup and uninstall windows.',
@@ -95,7 +111,7 @@ export function render(resolved) {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  const files = render(resolve(readTokens()))
+  const files = render(resolve(readTokens()), resolve(readTokens(undefined, 'dark')))
   const check = process.argv.includes('--check')
   let stale = []
   for (const [kind, path] of Object.entries(outputs)) {
