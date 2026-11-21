@@ -53,6 +53,7 @@
   --ui-line: #E6E8EB;                 /* default divider colour */
   --ui-line-subtle: #EEF0F2;
   --ui-shadow-color: #1F2328;
+  --ui-logo-soft: #D3D6DB;           /* the short bar of the logo */
   --ui-tint-soft: 8%;                 /* how much brand colour the soft/subtle/muted tints mix in */
   --ui-tint-subtle: 14%;
   --ui-tint-muted: 30%;
@@ -97,6 +98,7 @@
   --ui-line: #2E343C;
   --ui-line-subtle: #262B32;
   --ui-shadow-color: #000000;
+  --ui-logo-soft: #8A9099;
   --ui-tint-soft: 12%;
   --ui-tint-subtle: 18%;
   --ui-tint-muted: 34%;
@@ -155,6 +157,8 @@
   --ui-color-info: var(--ui-info);
   --ui-color-info-soft: var(--ui-info-soft);
   --ui-color-shadow: var(--ui-shadow-color);
+  --ui-logo-bar: var(--ui-color-text);                /* logo bars and "Leads" */
+  --ui-logo-bar-soft: var(--ui-logo-soft);
   --ui-gradient-brand: linear-gradient(90deg, var(--ui-brand-primary), var(--ui-brand-accent));
 
   /* ------------------------------------------------------------- Typography */

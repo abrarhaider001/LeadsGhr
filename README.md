@@ -85,7 +85,7 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev:desktop` is an equivalent explicit command. The splash screen shows the centered `public/leadsghr-logo-v1.svg` and a loading progress bar. The Electron window opens maximized with the light-on-dark LeadsGhr wordmark in the sidebar and the LG monogram desktop icon. Keep the terminal running while using it and press Ctrl+C to stop. The local SQLite file is `C:\LeadsGhr\data\leadsghr.sqlite` (see **Where LeadsGhr keeps your data**).
+`pnpm dev:desktop` is an equivalent explicit command. The splash screen shows the LeadsGhr logo (drawn by `BrandLogo` from the design tokens) and a loading progress bar. The Electron window opens maximized with the light-on-dark LeadsGhr wordmark in the sidebar and the LG monogram desktop icon. Keep the terminal running while using it and press Ctrl+C to stop. The local SQLite file is `C:\LeadsGhr\data\leadsghr.sqlite` (see **Where LeadsGhr keeps your data**).
 
 `pnpm install` rebuilds `better-sqlite3` for Electron. A binary built for plain Node fails at startup with a `NODE_MODULE_VERSION` mismatch; run `pnpm --filter @leadsghr/desktop run rebuild:native` to rebuild it again. If an earlier install skipped dependency scripts and reports `Electron uninstall`, run `pnpm --filter @leadsghr/desktop rebuild electron`. If your shell has `ELECTRON_RUN_AS_NODE=1`, clear it for that session with `Remove-Item Env:ELECTRON_RUN_AS_NODE` before `pnpm dev`.
 

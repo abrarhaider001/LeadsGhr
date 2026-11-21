@@ -1500,3 +1500,12 @@ a { color: var(--ui-color-primary); }
 
 /* Images with a light and a dark version (for example the logo lettering): show the one for the current theme. */
 :root:not([data-theme='dark']) .la-for-dark, [data-theme='dark'] .la-for-light { display: none !important; }
+
+/* The LeadsGhr logo (BrandLogo / BrandMark in packages/ui/src/brand-logo.tsx), drawn from tokens for both themes. */
+.la-logo { display: inline-flex; align-items: center; gap: 0.3em; font-family: var(--ui-font-sans); font-weight: var(--ui-weight-bold); letter-spacing: -0.03em; line-height: 1; color: var(--ui-logo-bar); white-space: nowrap; }
+.la-logo .la-logo-mark { width: 1.35em; height: 1.35em; flex: none; }
+.la-logo-word em { font-style: normal; color: var(--ui-color-primary); }
+.la-brand .la-brand-wordmark.la-logo { width: auto; font-size: var(--ui-text-3xl); }
+.la-brand .la-brand-symbol { width: 32px; height: 32px; }
+.la-topbar-account-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: var(--ui-radius-full); background: var(--ui-color-primary-subtle); }
+.la-splash__logo.la-logo { width: auto; font-size: clamp(26px, 2.6vw, 36px); }
