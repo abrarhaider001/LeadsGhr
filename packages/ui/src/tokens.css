@@ -54,6 +54,7 @@
   --ui-line-subtle: #EEF0F2;
   --ui-shadow-color: #1F2328;
   --ui-logo-soft: #D3D6DB;           /* the short bar of the logo */
+  --ui-logo-accent: var(--ui-brand-accent); /* the "opened" tick of the Tracker mark */
   --ui-tint-soft: 8%;                 /* how much brand colour the soft/subtle/muted tints mix in */
   --ui-tint-subtle: 14%;
   --ui-tint-muted: 30%;
@@ -99,6 +100,7 @@
   --ui-line-subtle: #262B32;
   --ui-shadow-color: #000000;
   --ui-logo-soft: #8A9099;
+  --ui-logo-accent: #16A34A;          /* darker green, readable on the light tile of the dark theme */
   --ui-tint-soft: 12%;
   --ui-tint-subtle: 18%;
   --ui-tint-muted: 34%;

@@ -3,6 +3,7 @@
 //   node scripts/regenerate-extension-icons.mjs
 // Writes:
 //   apps/mailer-extension/public/icon.svg and icon.png (128 px)  - LeadsGhr Mailer toolbar and popup icon
+//   apps/extension/public/icon.svg and icon.png (128 px)         - LeadsGhr Tracker toolbar and popup icon
 //   apps/mailer-extension/email-assets/leadsghr-mailer-logo.png - image used in outgoing emails (upload it to the
 //     Supabase `assets` bucket under email-assets/ yourself; uploading is a live service change)
 import { writeFileSync } from 'node:fs'
@@ -32,4 +33,13 @@ const mailer = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"
 writeFileSync('apps/mailer-extension/public/icon.svg', mailer)
 writeFileSync('apps/mailer-extension/public/icon.png', png(mailer, 128))
 writeFileSync('apps/mailer-extension/email-assets/leadsghr-mailer-logo.png', png(mailer, 128))
+// LeadsGhr Tracker: a double tick on the charcoal tile (like the LeadsGhr app icon): "sent" in white, "opened" in green.
+const tracker = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 1024 1024" role="img" aria-label="LeadsGhr Tracker logo">
+  <rect x="96" y="96" width="832" height="832" rx="190" fill="${t.get('brand-ink')}"/>
+  <path d="M250 560 L380 690 L600 430" fill="none" stroke="${t.get('on-primary')}" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M520 640 L570 690 L790 430" fill="none" stroke="${t.get('brand-accent')}" stroke-width="88" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+`
+writeFileSync('apps/extension/public/icon.svg', tracker)
+writeFileSync('apps/extension/public/icon.png', png(tracker, 128))
 console.log('Extension icons regenerated.')

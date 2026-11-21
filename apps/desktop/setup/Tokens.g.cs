@@ -28,6 +28,7 @@ namespace LeadsGhr.Branding
         public static readonly Color LineSubtle = Color.FromArgb(255, 238, 240, 242);
         public static readonly Color ShadowColor = Color.FromArgb(255, 31, 35, 40);
         public static readonly Color LogoSoft = Color.FromArgb(255, 211, 214, 219);
+        public static readonly Color LogoAccent = Color.FromArgb(255, 74, 222, 128);
         public static readonly Color Success = Color.FromArgb(255, 8, 118, 71);
         public static readonly Color SuccessSoft = Color.FromArgb(255, 236, 253, 243);
         public static readonly Color SuccessBorder = Color.FromArgb(255, 191, 227, 203);

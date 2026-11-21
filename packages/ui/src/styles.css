@@ -1477,8 +1477,8 @@ a { color: var(--ui-color-primary); }
 .la-theme-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ui-space-3); }
 .la-theme-option { display: flex; flex-direction: column; overflow: hidden; border: var(--ui-border-width) solid var(--ui-color-border); border-radius: var(--ui-radius-xl); background: var(--ui-color-surface); cursor: pointer; transition: border-color var(--ui-duration-fast) var(--ui-ease), box-shadow var(--ui-duration-fast) var(--ui-ease); }
 .la-theme-option:hover { border-color: var(--ui-color-border-strong); }
-.la-theme-option.is-selected { border-color: var(--ui-color-primary); box-shadow: 0 0 0 var(--ui-space-0-5) var(--ui-color-primary-subtle); }
-.la-theme-option:focus-within { outline: var(--ui-focus-ring); outline-offset: var(--ui-space-0-5); }
+.la-theme-option.is-selected { border-color: var(--ui-color-primary); box-shadow: inset 0 0 0 var(--ui-border-width) var(--ui-color-primary); } /* one 2 px border */
+.la-theme-option:has(input:focus-visible) { outline: var(--ui-focus-ring); outline-offset: var(--ui-space-0-5); } /* keyboard focus only */
 .la-theme-preview { display: flex; height: 112px; border-bottom: var(--ui-border-width) solid var(--ui-color-border); }
 .la-theme-label { display: flex; align-items: flex-start; gap: var(--ui-space-2-5); padding: var(--ui-space-3) var(--ui-space-3-5); }
 .la-theme-label input { margin: var(--ui-space-0-5) 0 0; accent-color: var(--ui-color-primary); }
