@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Avatar, { genConfig } from 'react-nice-avatar'
 import { PREFERENCE_SECTIONS, DISPLAY_SIZE_MAX, DISPLAY_SIZE_MIN, DISPLAY_SIZE_STEP, clampDisplaySize, type DesktopPreferences } from '@leadsghr/schemas'
-import { Button } from '@leadsghr/ui'
 import { saveLocalAccount, type LocalAccount } from './account-data'
 import { UpdatesPanel, type UpdateState } from './updates'
 
@@ -210,25 +209,36 @@ function ThemePreview({ theme }: { theme: 'light' | 'dark' }) {
     <span className="la-theme-mini-main"><i className="la-theme-mini-title" /><span className="la-theme-mini-cards"><i /><i /><i /></span><span className="la-theme-mini-panel"><i className="la-theme-mini-line" /><i className="la-theme-mini-button" /></span></span>
   </span>
 }
-const DISPLAY_SIZE_PRESETS = [80, 90, 100, 110, 125, 150]
-const ZOOM_SHORTCUTS: { keys: string[]; label: string }[] = [
-  { keys: ['Ctrl', '+'], label: 'Make everything larger' },
-  { keys: ['Ctrl', '−'], label: 'Make everything smaller' },
-  { keys: ['Ctrl', '0'], label: 'Back to 100%' },
+/** Appearance → Display size cards (design D, owner-chosen 2026-11-22); any other size shows only in the Custom stepper. */
+const DISPLAY_SIZE_CARDS: { size: number; label: string; preview: 'sm' | 'md' | 'lg' | 'xl' }[] = [
+  { size: 90, label: 'Compact', preview: 'sm' },
+  { size: 100, label: 'Default', preview: 'md' },
+  { size: 110, label: 'Large', preview: 'lg' },
+  { size: 125, label: 'Larger', preview: 'xl' },
 ]
+const ZOOM_SHORTCUTS: { keys: string[]; label: string }[] = [
+  { keys: ['Ctrl', '+'], label: 'larger' },
+  { keys: ['Ctrl', '−'], label: 'smaller' },
+  { keys: ['Ctrl', '0'], label: 'reset' },
+]
+const minusIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+const plusIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
 /** Appearance → Display size: the window zoom in percent, the same setting Ctrl + / Ctrl - / Ctrl 0 change. */
 function DisplaySizeSetting({ value, onChange }: { value: number; onChange(next: number): void }) {
   const set = (next: number) => { const size = clampDisplaySize(next); if (size !== value) onChange(size) }
-  return <section className="la-profile-preference-group"><div><h2>Display size</h2><p>Make text and controls larger or smaller. The keyboard shortcuts change the same setting.</p></div>
-    <div className="la-display-size">
-      <div className="la-display-size-control">
-        <Button type="button" variant="outline" size="icon" className="la-display-size-step" onClick={() => set(value - DISPLAY_SIZE_STEP)} disabled={value <= DISPLAY_SIZE_MIN} aria-label="Smaller">−</Button>
-        <output className="la-display-size-value" aria-live="polite">{value}%</output>
-        <Button type="button" variant="outline" size="icon" className="la-display-size-step" onClick={() => set(value + DISPLAY_SIZE_STEP)} disabled={value >= DISPLAY_SIZE_MAX} aria-label="Larger">+</Button>
-        <input className="la-display-size-range" type="range" min={DISPLAY_SIZE_MIN} max={DISPLAY_SIZE_MAX} step={DISPLAY_SIZE_STEP} value={value} onChange={(event) => set(Number(event.currentTarget.value))} aria-label="Display size" />
+  return <section className="la-profile-preference-group"><div><h2>Display size</h2><p>Make text and controls larger or smaller.</p></div>
+    <div className="la-size-options" role="radiogroup" aria-label="Display size">{DISPLAY_SIZE_CARDS.map((card) => <label key={card.size} className={`la-size-option${value === card.size ? ' is-selected' : ''}`}>
+      <span className={`la-size-preview la-size-preview--${card.preview}`} aria-hidden="true">Aa</span>
+      <span className="la-size-label"><input type="radio" name="display-size" checked={value === card.size} onChange={() => set(card.size)} /><span><strong>{card.label}</strong><small>{card.size}%</small></span></span>
+    </label>)}</div>
+    <div className="la-size-footer">
+      <div className="la-size-custom" role="group" aria-label="Custom display size">
+        <span className="la-size-custom-label">Custom</span>
+        <button type="button" onClick={() => set(value - DISPLAY_SIZE_STEP)} disabled={value <= DISPLAY_SIZE_MIN} aria-label="Smaller">{minusIcon}</button>
+        <output aria-live="polite">{value}%</output>
+        <button type="button" onClick={() => set(value + DISPLAY_SIZE_STEP)} disabled={value >= DISPLAY_SIZE_MAX} aria-label="Larger">{plusIcon}</button>
       </div>
-      <div className="la-display-size-presets" role="group" aria-label="Display size presets">{DISPLAY_SIZE_PRESETS.map((size) => <button type="button" key={size} aria-pressed={value === size} onClick={() => set(size)}>{size}%{size === 100 ? ' · Default' : ''}</button>)}</div>
-      <ul className="la-display-size-shortcuts" aria-label="Keyboard shortcuts">{ZOOM_SHORTCUTS.map((shortcut) => <li key={shortcut.label}><span className="la-kbd-group">{shortcut.keys.map((key, index) => <span key={key}>{index > 0 && <span className="la-kbd-plus">+</span>}<kbd className="la-kbd">{key}</kbd></span>)}</span><span>{shortcut.label}</span></li>)}</ul>
+      <ul className="la-size-shortcuts" aria-label="Keyboard shortcuts">{ZOOM_SHORTCUTS.map((shortcut) => <li key={shortcut.label}><span className="la-kbd-group">{shortcut.keys.map((key, index) => <span key={key}>{index > 0 && <span className="la-kbd-plus">+</span>}<kbd className="la-kbd">{key}</kbd></span>)}</span><span>{shortcut.label}</span></li>)}</ul>
     </div></section>
 }
 type PreferenceCategory = 'Appearance' | 'Crawler' | 'Search' | 'Email Validation' | 'Updates'

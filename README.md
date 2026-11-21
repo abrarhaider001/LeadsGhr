@@ -250,7 +250,7 @@ The specification describes Explorer, Starter, Professional and Agency plans. Th
 
 ## Desktop zoom
 
-**Display size:** Settings → Preferences → Appearance → **Display size** sets the window zoom from 70% to 200% in 10% steps (− and + buttons, a slider, or the 80–150% presets; 100% is the default) and lists the keyboard shortcuts. `Ctrl + Plus` (or `Ctrl + =`) makes everything larger, `Ctrl + Minus` smaller, and `Ctrl + 0` returns to 100%. The shortcuts and the setting are the same thing: either one is saved in `preferences.json`, shown on the Appearance page, and applied the next time LeadsGhr opens. Display size is part of the Appearance section in exported settings files.
+**Display size:** Settings → Preferences → Appearance → **Display size** sets the window zoom from 70% to 200% in 10% steps: pick a size card (Compact 90%, Default 100%, Large 110%, Larger 125%) or use the **Custom** − / + stepper for any other size, with the keyboard shortcuts listed beside it. `Ctrl + Plus` (or `Ctrl + =`) makes everything larger, `Ctrl + Minus` smaller, and `Ctrl + 0` returns to 100%. The shortcuts and the setting are the same thing: either one is saved in `preferences.json`, shown on the Appearance page, and applied the next time LeadsGhr opens. Display size is part of the Appearance section in exported settings files.
 
 The Crawler test lists same-site homepage links in a queue table and reports publicly exposed contact-form recipient addresses. It visits the contact page first, then other homepage links when the contact-only preference is off. It does not submit forms or save test results. Server-side form destinations are not visible to the crawler.
 
