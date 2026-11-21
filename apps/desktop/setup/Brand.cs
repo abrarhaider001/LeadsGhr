@@ -1,4 +1,5 @@
-// Shared look of LeadsGhr's small Windows programs (design 3A): colours, Instrument Sans fonts embedded
+// Shared look of LeadsGhr's small Windows programs (design 3A): colours (from Tokens.g.cs, generated from
+// packages/ui/src/tokens.css), Instrument Sans fonts embedded
 // as resources and rounded shapes. C# 5 (see build-setup.ps1).
 using System;
 using System.Collections.Generic;
@@ -13,15 +14,21 @@ namespace LeadsGhr.Branding
 {
     static class Brand
     {
-        public static readonly Color Ink = Color.FromArgb(0x19, 0x0B, 0x2D);
-        public static readonly Color Muted = Color.FromArgb(0x67, 0x5E, 0x76);
-        public static readonly Color Purple = Color.FromArgb(0x5B, 0x12, 0xC9);
-        public static readonly Color Cyan = Color.FromArgb(0x29, 0xCB, 0xEA);
-        public static readonly Color Teal = Color.FromArgb(0x1F, 0xA9, 0xC9);
-        public static readonly Color Line = Color.FromArgb(0xDF, 0xD9, 0xEC);
-        public static readonly Color Track = Color.FromArgb(0xEC, 0xE9, 0xFA);
-        public static readonly Color Danger = Color.FromArgb(0xB4, 0x23, 0x18);
-        public static readonly Color DangerSoft = Color.FromArgb(0xFD, 0xF0, 0xEF);
+        public static readonly Color Ink = Tokens.ColorText;
+        public static readonly Color Muted = Tokens.ColorTextMuted;
+        public static readonly Color Purple = Tokens.ColorPrimary;
+        public static readonly Color Cyan = Tokens.ColorFocus;
+        public static readonly Color Teal = Tokens.ColorAccent;
+        public static readonly Color Line = Tokens.ColorBorder;
+        public static readonly Color Track = Tokens.ColorPrimarySubtle;
+        public static readonly Color Danger = Tokens.ColorDanger;
+        public static readonly Color DangerSoft = Tokens.ColorDangerSoft;
+        public static readonly Color DangerHover = Tokens.ColorDangerHover;
+        public static readonly Color PrimaryHover = Tokens.ColorPrimaryHover;
+        public static readonly Color PrimarySoft = Tokens.ColorPrimarySoft;
+        public static readonly Color PrimaryMuted = Tokens.ColorPrimaryMuted;
+        public static readonly Color Surface = Tokens.ColorSurface;
+        public static readonly Color OnPrimary = Tokens.ColorOnPrimary;
 
         public static Stream Resource(string name)
         {

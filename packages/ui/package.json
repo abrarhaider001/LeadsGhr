@@ -6,12 +6,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./globals.css": "./src/globals.css",
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./tokens.css": "./src/tokens.css",
+    "./tokens": "./src/tokens.generated.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "node --test tests/tokens.test.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

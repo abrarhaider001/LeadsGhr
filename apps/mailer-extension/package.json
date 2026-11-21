@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
+    "dev": "node ../../scripts/generate-tokens.mjs && vite --host 0.0.0.0",
+    "build": "node ../../scripts/generate-tokens.mjs && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@leadsghr/ui": "workspace:*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "read-excel-file": "^9.3.14"

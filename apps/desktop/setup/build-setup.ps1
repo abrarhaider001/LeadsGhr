@@ -14,12 +14,12 @@ $fonts = @('InstrumentSans-Regular.ttf', 'InstrumentSans-SemiBold.ttf', 'Instrum
 if ($Target -eq 'setup') {
   $out = Join-Path $here '..\dist-installer\nsis-web'
   $exe = Join-Path $out 'LeadsGhr-Setup.exe'
-  $sources = @(Join-Path $here 'LeadsGhrSetup.cs')
+  $sources = @((Join-Path $here 'Tokens.g.cs'), (Join-Path $here 'LeadsGhrSetup.cs'))
   $resourceFiles = $fonts
 } else {
   $out = Join-Path $here 'out'
   $exe = Join-Path $out 'LeadsGhr-Uninstall.exe'
-  $sources = @((Join-Path $here 'Brand.cs'), (Join-Path $here 'LeadsGhrUninstall.cs'))
+  $sources = @((Join-Path $here 'Tokens.g.cs'), (Join-Path $here 'Brand.cs'), (Join-Path $here 'LeadsGhrUninstall.cs'))
   $resourceFiles = $fonts
 }
 New-Item -ItemType Directory -Force $out | Out-Null
