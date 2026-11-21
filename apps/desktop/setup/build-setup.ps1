@@ -15,7 +15,7 @@ if ($Target -eq 'setup') {
   $out = Join-Path $here '..\dist-installer\nsis-web'
   $exe = Join-Path $out 'LeadsGhr-Setup.exe'
   $sources = @(Join-Path $here 'LeadsGhrSetup.cs')
-  $resourceFiles = @('logo-256.png') + $fonts
+  $resourceFiles = $fonts
 } else {
   $out = Join-Path $here 'out'
   $exe = Join-Path $out 'LeadsGhr-Uninstall.exe'

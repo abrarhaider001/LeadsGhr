@@ -1431,3 +1431,63 @@ a { color: var(--la-accent); }
 .la-export-foot button.primary { border-color: #5B12C9; background: #5B12C9; color: #FFFFFF; }
 .la-export-foot button.primary:disabled { border-color: #ECE8F2; background: #ECE8F2; color: var(--la-muted); cursor: default; }
 
+
+/* Sidebar: the page list scrolls on its own; the search box and profile stay in place. */
+.la-sidebar { overflow: hidden; }
+.la-sidebar > * { flex-shrink: 0; }
+.la-sidebar .la-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; align-content: start; scrollbar-width: thin; scrollbar-color: #D4D4D8 transparent; }
+.la-sidebar .la-sidebar-bottom { flex: none; }
+/* Preferences: a settings menu beside the main sidebar, like a two-level settings page. */
+.la-main:has(.la-pref-layout) .la-content { padding: 0; }
+.la-main:has(.la-pref-layout) .la-profile { max-width: none; }
+.la-pref-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; background: #FFFFFF; }
+.la-pref-nav { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; padding: 22px 12px; border-right: 1px solid var(--la-line); background: #FFFFFF; scrollbar-width: thin; scrollbar-color: #D4D4D8 transparent; }
+.la-pref-nav-title { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; padding: 0 10px; color: #8A8D93; font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.la-pref-nav button { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 36px; margin-bottom: 2px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: #3A3F47; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.la-pref-nav button:hover { background: #F6F5F9; }
+.la-pref-nav button[aria-current='page'] { background: #F4F1FB; color: #5B12C9; font-weight: 600; }
+.la-pref-nav button[aria-current='page']::before { content: ''; position: absolute; left: -12px; top: 6px; bottom: 6px; width: 3px; border-radius: 0 3px 3px 0; background: #5B12C9; }
+.la-pref-nav button svg { flex: none; color: #8A8D93; }
+.la-pref-nav button:focus-visible { outline: 2px solid #5B12C9; outline-offset: 1px; }
+.la-pref-main { min-width: 0; display: flex; flex-direction: column; }
+.la-pref-head { padding: 20px 32px 16px; border-bottom: 1px solid var(--la-line); }
+.la-pref-head h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -.01em; }
+.la-pref-head p { margin: 4px 0 0; color: var(--la-muted); font-size: 12.5px; }
+.la-pref-body { width: 100%; max-width: 1000px; padding: 24px 32px 40px; }
+@media (max-width: 900px) { .la-pref-layout { grid-template-columns: 1fr; } .la-pref-nav { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--la-line); } }
+
+/* Main sidebar: the open page looks like the open category in the Preferences settings menu —
+   light purple background, purple text and icon, a purple bar on the left edge, and a chevron. */
+.la-sidebar .la-nav { margin: 0 -10px; padding: 0 10px; }
+.la-sidebar .la-nav button { position: relative; }
+.la-sidebar .la-nav button:hover { background: #F6F5F9; color: var(--la-text); }
+.la-sidebar .la-nav button[aria-current='page'],
+.la-sidebar .la-nav .la-sidebar-settings-children button[aria-current='page'] { background: #F4F1FB; color: #5B12C9; font-weight: 600; }
+.la-sidebar .la-nav button[aria-current='page'] svg { color: #5B12C9; }
+.la-sidebar .la-nav button[aria-current='page']::before { content: ''; display: block; position: absolute; left: -10px; top: 7px; bottom: 7px; width: 3px; height: auto; margin: 0; border-radius: 0 3px 3px 0; background: #5B12C9; }
+.la-sidebar .la-nav .la-sidebar-settings-children button[aria-current='page']::before { left: -13.5px; top: 6px; bottom: 6px; border-radius: 3px; }
+.la-sidebar .la-nav button[aria-current='page']::after { content: ''; flex: none; width: 6px; height: 6px; margin: 0 4px 0 auto; border-top: 1.6px solid #8A8D93; border-right: 1.6px solid #8A8D93; transform: rotate(45deg); }
+.la-sidebar .la-nav .la-sidebar-settings-children button { display: flex; align-items: center; }
+.la-sidebar .la-sidebar-footer[aria-current='page'] { background: #F4F1FB; }
+.la-sidebar .la-sidebar-footer[aria-current='page'] strong { color: #5B12C9; }
+.la-sidebar .la-sidebar-footer[aria-current='page'] small { color: var(--la-muted); }
+@media (max-width: 900px) { .la-sidebar .la-nav button[aria-current='page']::after { display: none; } }
+
+/* Settings submenu in the sidebar slides open from the top and closes the same way; the caret turns up when open. */
+.la-sidebar .la-nav .la-nav-caret { flex: none; width: 14px; height: 14px; margin-left: auto; color: #8A8D93; transition: transform .28s ease; }
+.la-sidebar .la-nav button[aria-expanded='true'] .la-nav-caret { transform: rotate(180deg); }
+.la-sidebar-settings-collapse { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .3s ease, opacity .25s ease; }
+.la-sidebar-settings-collapse[data-open='true'] { grid-template-rows: 1fr; opacity: 1; }
+.la-sidebar-settings-clip { min-height: 0; overflow: hidden; }
+.la-sidebar-settings-collapse .la-sidebar-settings-children { transform: translateY(-6px); transition: transform .3s ease; }
+.la-sidebar-settings-collapse[data-open='true'] .la-sidebar-settings-children { transform: none; }
+@media (prefers-reduced-motion: reduce) { .la-sidebar-settings-collapse, .la-sidebar-settings-collapse .la-sidebar-settings-children, .la-sidebar .la-nav .la-nav-caret { transition: none; } }
+
+/* Splash (and license) background: brand-gradient dot grid with a soft glow behind the content. */
+.la-splash__background.la-splash__dots { opacity: 1; }
+.la-splash__dots::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle at 50% 46%, rgba(91, 18, 201, .10), transparent 40%); }
+.la-splash__dots::after { content: ''; position: absolute; inset: 0; opacity: .5; background: linear-gradient(90deg, #5B12C9, #8B5CF6 50%, #1FA9C9);
+  -webkit-mask-image: radial-gradient(#000 1.2px, transparent 1.4px), radial-gradient(ellipse at center, transparent 0, transparent 22%, #000 58%, transparent 92%);
+  -webkit-mask-size: 26px 26px, 100% 100%; -webkit-mask-composite: source-in;
+  mask-image: radial-gradient(#000 1.2px, transparent 1.4px), radial-gradient(ellipse at center, transparent 0, transparent 22%, #000 58%, transparent 92%);
+  mask-size: 26px 26px, 100% 100%; mask-composite: intersect; }
