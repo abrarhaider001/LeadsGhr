@@ -1511,3 +1511,10 @@ a { color: var(--ui-color-primary); }
 .la-topbar-account .la-topbar-account-mark svg { margin: 0; } /* the logo sits in the centre of its circle */
 .la-splash__logo.la-logo { width: auto; font-size: clamp(26px, 2.6vw, 36px); }
 .la-sidebar .la-brand { justify-content: center; } /* the LeadsGhr logo sits in the centre of the sidebar header */
+
+/* Every table sits in the same white card as the Leads table: surface background, one border, large radius.
+   (The Crawler URL queue used to be see-through, so the grey page showed through its rows.) */
+.la-table-scroll, .la-records-table-wrap, .la-crawler-table-wrap, .la-email-filter-table-wrap {
+  background: var(--ui-color-surface); border: var(--ui-border-width) solid var(--ui-color-border); border-radius: var(--ui-radius-2xl);
+}
+.la-crawler-table-wrap .la-empty-table, .la-email-filter-table-wrap .la-empty-table, .la-table-scroll .la-empty-table { background: var(--ui-color-surface); }
