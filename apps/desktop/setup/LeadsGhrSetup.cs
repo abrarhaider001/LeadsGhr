@@ -87,8 +87,11 @@ namespace LeadsGhr.Setup
         readonly string feed;
         readonly bool dryRun;
         readonly PrivateFontCollection fonts = new PrivateFontCollection();
+        // The bold file shares the regular family name, so it gets its own collection to stay a separate, real bold face.
+        readonly PrivateFontCollection boldFonts = new PrivateFontCollection();
         readonly List<IntPtr> fontMemory = new List<IntPtr>();
         FontFamily regular, semibold, bold;
+        FontStyle boldStyle = FontStyle.Regular; // Bold when the bold file shares the regular family name (Plus Jakarta Sans)
         readonly float scale;
         readonly System.Windows.Forms.Timer animation = new System.Windows.Forms.Timer();
         readonly Button retry = new Button();
@@ -149,7 +152,7 @@ namespace LeadsGhr.Setup
 
         void LoadFonts()
         {
-            foreach (string name in new[] { "InstrumentSans-Regular.ttf", "InstrumentSans-SemiBold.ttf", "InstrumentSans-Bold.ttf" })
+            foreach (string name in new[] { "PlusJakartaSans-Regular.ttf", "PlusJakartaSans-SemiBold.ttf", "PlusJakartaSans-Bold.ttf" })
             {
                 using (Stream s = Resource(name))
                 {
@@ -157,20 +160,22 @@ namespace LeadsGhr.Setup
                     s.Read(data, 0, data.Length);
                     IntPtr ptr = Marshal.AllocCoTaskMem(data.Length);
                     Marshal.Copy(data, 0, ptr, data.Length);
-                    fonts.AddMemoryFont(ptr, data.Length);
+                    (name.EndsWith("-Bold.ttf") ? boldFonts : fonts).AddMemoryFont(ptr, data.Length);
                     fontMemory.Add(ptr);
                 }
             }
             foreach (FontFamily f in fonts.Families)
             {
-                // Family names come from the font files; GDI+ may append the style ("Instrument Sans SemiBold SemiBo").
-                if (f.Name.StartsWith("Instrument Sans SemiBold")) semibold = f;
-                else if (f.Name.StartsWith("Instrument Sans Bold")) bold = f;
-                else if (f.Name == "Instrument Sans") regular = f;
+                // Family names come from the font files; GDI+ may append the style ("Plus Jakarta Sans SemiBold SemiBo").
+                if (f.Name.StartsWith("Plus Jakarta Sans SemiBold")) semibold = f;
+                else if (f.Name.StartsWith("Plus Jakarta Sans Bold")) bold = f;
+                else if (f.Name == "Plus Jakarta Sans") regular = f;
             }
             if (regular == null) regular = FontFamily.GenericSansSerif;
             if (semibold == null) semibold = regular;
+            if (boldFonts.Families.Length > 0) bold = boldFonts.Families[0];
             if (bold == null) bold = regular;
+            if (!bold.IsStyleAvailable(FontStyle.Regular) && bold.IsStyleAvailable(FontStyle.Bold)) boldStyle = FontStyle.Bold;
         }
 
         // Centre on the screen the mouse is on. FormStartPosition.CenterScreen uses the size from before the
@@ -199,7 +204,7 @@ namespace LeadsGhr.Setup
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { animation.Dispose(); fonts.Dispose(); }
+            if (disposing) { animation.Dispose(); fonts.Dispose(); boldFonts.Dispose(); }
             foreach (IntPtr p in fontMemory) Marshal.FreeCoTaskMem(p);
             fontMemory.Clear();
             base.Dispose(disposing);
@@ -352,8 +357,8 @@ namespace LeadsGhr.Setup
             using (var line1 = new GraphicsPath(FillMode.Winding))
             using (var line2 = new GraphicsPath(FillMode.Winding))
             {
-                line1.AddString("Your lead workspace is", bold, (int)FontStyle.Regular, em, new PointF(46, 40), fmt);
-                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)FontStyle.Regular, em, new PointF(46, 80), fmt);
+                line1.AddString("Your lead workspace is", bold, (int)boldStyle, em, new PointF(46, 40), fmt);
+                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)boldStyle, em, new PointF(46, 80), fmt);
                 using (var ink = new SolidBrush(Ink)) g.FillPath(ink, line1);
                 RectangleF b = line2.GetBounds();
                 using (var grad = new LinearGradientBrush(new PointF(b.Left - 1, 0), new PointF(b.Right + 1, 0), Purple, Teal)) g.FillPath(grad, line2);

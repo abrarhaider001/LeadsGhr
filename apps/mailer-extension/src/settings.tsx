@@ -5,7 +5,7 @@ import { EmailSendingPanel } from './email-sending/panel'
 import { DataFolderPanel } from './email-sending/data-folder-panel'
 import { SendingPreferencesPanel } from './email-sending/preferences'
 
-const style = `@font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans.ttf') format('truetype');font-weight:400 700;font-display:swap}
+const style = `
 body{font:var(--ui-text-base) var(--ui-font-sans);color:var(--ui-color-text);margin:0;background:var(--ui-color-surface)}main{max-width:900px;margin:var(--ui-space-10) auto;padding:0 var(--ui-space-6)}
 .brand{display:flex;align-items:center;gap:var(--ui-space-3)}.brand img{width:40px;height:40px}h1{margin:0;font-size:var(--ui-text-6xl)}h2{margin:0 0 var(--ui-space-2);font-size:var(--ui-text-3xl)}p{color:var(--ui-color-text-muted);line-height:1.5}
 section{border:1px solid var(--ui-color-border);border-radius:var(--ui-radius-xl);padding:var(--ui-space-5);margin:var(--ui-space-5) 0}label{display:block;font-weight: var(--ui-weight-semibold);margin:var(--ui-space-3) 0}

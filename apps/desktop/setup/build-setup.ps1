@@ -10,7 +10,7 @@ if (-not (Test-Path $csc)) { $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framewo
 if (-not (Test-Path $csc)) { throw 'The .NET Framework C# compiler (csc.exe) was not found.' }
 
 $assets = Join-Path $here 'assets'
-$fonts = @('InstrumentSans-Regular.ttf', 'InstrumentSans-SemiBold.ttf', 'InstrumentSans-Bold.ttf')
+$fonts = @('PlusJakartaSans-Regular.ttf', 'PlusJakartaSans-SemiBold.ttf', 'PlusJakartaSans-Bold.ttf')
 if ($Target -eq 'setup') {
   $out = Join-Path $here '..\dist-installer\nsis-web'
   $exe = Join-Path $out 'LeadsGhr-Setup.exe'

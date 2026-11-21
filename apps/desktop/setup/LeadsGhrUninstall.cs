@@ -302,9 +302,9 @@ namespace LeadsGhr.Uninstall
             using (var first = new GraphicsPath(FillMode.Winding))
             using (var second = new GraphicsPath(FillMode.Winding))
             {
-                first.AddString(plain, fonts.Bold, (int)FontStyle.Regular, 34, new PointF(46, 40), fmt);
+                first.AddString(plain, fonts.Bold, (int)fonts.BoldStyle, 34, new PointF(46, 40), fmt);
                 float x = first.GetBounds().Right + 11;
-                second.AddString(highlighted, fonts.Bold, (int)FontStyle.Regular, 34, new PointF(x, 40), fmt);
+                second.AddString(highlighted, fonts.Bold, (int)fonts.BoldStyle, 34, new PointF(x, 40), fmt);
                 using (var ink = new SolidBrush(Brand.Ink)) g.FillPath(ink, first);
                 RectangleF b = second.GetBounds();
                 using (var grad = new LinearGradientBrush(new PointF(b.Left - 1, 0), new PointF(b.Right + 1, 0), Brand.Purple, Brand.Teal)) g.FillPath(grad, second);

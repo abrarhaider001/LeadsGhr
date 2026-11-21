@@ -12,6 +12,15 @@
  * To re-theme: change the BRAND values (and the neutrals if needed). Tints such as soft purple backgrounds are
  * mixed from the brand colour, so they follow automatically. Never type a hex colour or px font size anywhere else.
  */
+/* -------------------------------------------------------------------- Fonts
+ * The font files live next to this file and are bundled into the app and the extensions (no internet needed).
+ * To change the font: put the new files in ./fonts, point these @font-face rules at them, and update
+ * --ui-font-sans / --ui-font-mono below. The setup and uninstall windows embed static copies (apps/desktop/setup/assets). */
+@font-face { font-family: 'Plus Jakarta Sans'; src: url('./fonts/PlusJakartaSans-Variable.ttf') format('truetype'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-SemiBold.ttf') format('truetype'); font-weight: 600 800; font-display: swap; }
+
 :root {
   color-scheme: light;
 
@@ -89,8 +98,8 @@
   --ui-gradient-brand: linear-gradient(90deg, var(--ui-brand-primary), var(--ui-brand-accent));
 
   /* ------------------------------------------------------------- Typography */
-  --ui-font-sans: 'Instrument Sans', Arial, sans-serif;
-  --ui-font-mono: 'Monaspace Neon', ui-monospace, monospace;
+  --ui-font-sans: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+  --ui-font-mono: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
   --ui-text-3xs: 9px;
   --ui-text-2xs: 10px;
   --ui-text-xs: 11px;

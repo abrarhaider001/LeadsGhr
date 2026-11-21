@@ -7,7 +7,6 @@ type TrackingRecord = { id: string; recipient: string; subject: string; sentAt: 
 const when = (value: string | number): string => new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 const styles = `
-  @font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans.ttf') format('truetype');font-weight:400 700;font-display:swap}
   *{box-sizing:border-box}
   html,body{margin:0}
   body{width:360px;background:var(--ui-color-surface);color:var(--ui-color-text);font:var(--ui-text-md)/1.4 var(--ui-font-sans)}

@@ -52,11 +52,11 @@ test('no colour is typed in directly; every colour comes from a token', () => {
 
 test('font sizes and corner radii in the stylesheets use the token scale', () => {
   const problems = []
-  for (const path of ['packages/ui/src/styles.css']) {
-    const css = read(path).replace(/@font-face[^}]*\}/g, '')
+  for (const path of ['packages/ui/src/styles.css', ...STYLED.filter((p) => p.startsWith('apps/'))]) {
+    const css = read(path).replace(/@font-face[^}]*\}/g, '').replace(/'Google Sans'[^;}]*/g, '')
     for (const m of css.matchAll(/font-size:\s*\d+(?:\.\d+)?px/g)) problems.push(`${path}: ${m[0]}`)
     for (const m of css.matchAll(/border-radius:\s*[^;}]*\d+px[^;}]*/g)) problems.push(`${path}: ${m[0]}`)
-    for (const m of css.matchAll(/font(?:-family)?:[^;}]*'(?:Instrument Sans|Monaspace Neon)'/g)) problems.push(`${path}: ${m[0]}`)
+    for (const m of css.matchAll(/font(?:-family)?:[^;}]*['"][A-Z][^'"]*['"]/g)) problems.push(`${path}: ${m[0]}`) // font names belong in tokens.css
   }
   assert.deepEqual(problems, [])
 })
