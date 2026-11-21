@@ -1507,5 +1507,7 @@ a { color: var(--ui-color-primary); }
 .la-logo-word em { font-style: normal; color: var(--ui-color-primary); }
 .la-brand .la-brand-wordmark.la-logo { width: auto; font-size: var(--ui-text-3xl); }
 .la-brand .la-brand-symbol { width: 32px; height: 32px; }
-.la-topbar-account-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: var(--ui-radius-full); background: var(--ui-color-primary-subtle); }
+.la-topbar-account .la-topbar-account-mark { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: var(--ui-radius-full); background: var(--ui-color-primary-subtle); }
+.la-topbar-account .la-topbar-account-mark svg { margin: 0; } /* the logo sits in the centre of its circle */
 .la-splash__logo.la-logo { width: auto; font-size: clamp(26px, 2.6vw, 36px); }
+.la-sidebar .la-brand { justify-content: center; } /* the LeadsGhr logo sits in the centre of the sidebar header */

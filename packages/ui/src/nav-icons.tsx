@@ -20,7 +20,7 @@ const ICONS = {
   emailValidation: { base: ['M3 6h14v11H3z', 'M3 7l7 5 7-5'], accent: ['M15 18.5l2.2 2.2 4.3-4.7'] },
   emailSpamCheck: { base: ['M8 3h8l5 5v8l-5 5H8l-5-5V8z'], accent: ['M12 8v5', 'M12 16.5h.01'] },
   emailSending: { base: ['M21 3 10.5 13.5 13.5 21z'], accent: ['M21 3 3 10.5l7.5 3z'] },
-  emailTracking: { base: ['M3 12.5l3.5 3.5 6.5-7.5'], accent: ['M10.5 15l1 1 6.5-7.5'] },
+  emailTracking: { base: ['M1.8 12.6l4.6 4.6L15.2 7'], accent: ['M11 16l1.2 1.2L22.2 7'] },
   leads: { base: ['M9 5a3 3 0 1 0 0 6a3 3 0 1 0 0-6z', 'M3.5 20a5.5 5.5 0 0 1 11 0'], accent: ['M16 5.5a2.8 2.8 0 0 1 0 5.4', 'M17.5 14a5 5 0 0 1 3 5.5'] },
   runs: { base: ['M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z'], accent: ['M12 7v5l3.5 2'] },
   profiles: { base: ['M6 3h9l4 4v14H6z', 'M15 3v4h4'], accent: ['M9 12h7', 'M9 16h5'] },
