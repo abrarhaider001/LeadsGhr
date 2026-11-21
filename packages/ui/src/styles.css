@@ -1517,33 +1517,22 @@ a { color: var(--ui-color-primary); }
 }
 .la-crawler-table-wrap .la-empty-table, .la-email-filter-table-wrap .la-empty-table, .la-table-scroll .la-empty-table { background: var(--ui-color-surface); }
 
-/* Settings → Preferences → Appearance → Display size (design D): size cards like the Theme cards, a Custom stepper, and the shortcuts. */
-.la-size-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ui-space-3); }
-.la-size-option { display: flex; flex-direction: column; overflow: hidden; border: var(--ui-border); border-radius: var(--ui-radius-xl); background: var(--ui-color-surface); cursor: pointer; transition: border-color .15s, box-shadow .15s; }
-.la-size-option:hover { border-color: var(--ui-color-border-strong); }
-.la-size-option.is-selected { border-color: var(--ui-color-primary); box-shadow: inset 0 0 0 var(--ui-border-width) var(--ui-color-primary); }
-.la-size-option:has(input:focus-visible) { outline: var(--ui-focus-ring); outline-offset: var(--ui-space-0-5); }
-.la-size-preview { display: grid; place-items: center; height: 84px; background: var(--ui-color-surface-muted); color: var(--ui-color-text); font-weight: var(--ui-weight-bold); letter-spacing: -.02em; transition: background .15s, color .15s; }
-.la-size-option.is-selected .la-size-preview { background: var(--ui-color-primary-soft); color: var(--ui-color-primary); }
-.la-size-preview--sm { font-size: var(--ui-text-4xl); }
-.la-size-preview--md { font-size: var(--ui-text-6xl); }
-.la-size-preview--lg { font-size: calc(var(--ui-text-6xl) * 1.15); }
-.la-size-preview--xl { font-size: calc(var(--ui-text-6xl) * 1.32); }
-.la-size-label { display: flex; align-items: center; gap: var(--ui-space-2-5); padding: var(--ui-space-3) var(--ui-space-3-5); }
-.la-size-label input { margin: 0; accent-color: var(--ui-color-primary); }
-.la-size-label strong { display: block; font-size: var(--ui-text-sm); color: var(--ui-color-text); }
-.la-size-label small { display: block; font-family: var(--ui-font-mono); font-size: var(--ui-text-xs); color: var(--ui-color-text-secondary); }
-.la-size-footer { display: flex; align-items: center; justify-content: space-between; gap: var(--ui-space-3); flex-wrap: wrap; margin-top: var(--ui-space-3); }
-.la-size-custom { display: inline-flex; align-items: stretch; overflow: hidden; border: var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-color-surface); }
-.la-size-custom-label { display: grid; place-items: center; padding: 0 var(--ui-space-3); border-right: var(--ui-border); font-size: var(--ui-text-xs); color: var(--ui-color-text-secondary); }
-.la-size-custom button { display: grid; place-items: center; width: var(--ui-control-height-md); height: var(--ui-control-height-md); padding: 0; border: 0; background: transparent; color: var(--ui-color-text); cursor: pointer; }
-.la-size-custom button:hover:not(:disabled) { background: var(--ui-color-surface-muted); }
-.la-size-custom button:disabled { color: var(--ui-color-text-disabled); cursor: not-allowed; }
-.la-size-custom button:focus-visible { outline: var(--ui-focus-ring); outline-offset: calc(var(--ui-space-0-5) * -1); }
-.la-size-custom output { display: grid; place-items: center; min-width: 64px; border-left: var(--ui-border); border-right: var(--ui-border); font-family: var(--ui-font-mono); font-size: var(--ui-text-sm); font-weight: var(--ui-weight-semibold); color: var(--ui-color-text); }
-.la-size-shortcuts { display: flex; flex-wrap: wrap; align-items: center; gap: var(--ui-space-4); margin: 0; padding: 0; list-style: none; }
+/* Settings → Preferences → Appearance → Display size, in the settings-row style: a Zoom row with a − 100% + stepper and Reset, and a Keyboard shortcuts row. */
+.la-profile-option.la-size-row { cursor: default; }
+.la-profile-option > .la-size-row-controls { display: flex; align-items: center; gap: var(--ui-space-3); flex: none; }
+.la-size-stepper { display: inline-flex; align-items: stretch; overflow: hidden; border: var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-color-surface); }
+.la-size-stepper button { display: grid; place-items: center; width: var(--ui-control-height-md); height: var(--ui-control-height-md); padding: 0; border: 0; background: transparent; color: var(--ui-color-text); cursor: pointer; }
+.la-size-stepper button:hover:not(:disabled) { background: var(--ui-color-surface-muted); }
+.la-size-stepper button:disabled { color: var(--ui-color-text-disabled); cursor: not-allowed; }
+.la-size-stepper button:focus-visible { outline: var(--ui-focus-ring); outline-offset: calc(var(--ui-space-0-5) * -1); }
+.la-size-stepper output { display: grid; place-items: center; min-width: 64px; border-left: var(--ui-border); border-right: var(--ui-border); font-family: var(--ui-font-mono); font-size: var(--ui-text-sm); font-weight: var(--ui-weight-semibold); color: var(--ui-color-text); }
+.la-size-reset { padding: 0 var(--ui-space-1); border: 0; background: none; color: var(--ui-color-primary); font: inherit; font-size: var(--ui-text-sm); font-weight: var(--ui-weight-semibold); cursor: pointer; }
+.la-size-reset:hover:not(:disabled) { text-decoration: underline; }
+.la-size-reset:disabled { color: var(--ui-color-text-disabled); cursor: default; }
+.la-size-reset:focus-visible { outline: var(--ui-focus-ring); outline-offset: var(--ui-space-0-5); border-radius: var(--ui-radius-xs); }
+.la-size-shortcuts { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--ui-space-4); margin: 0; padding: 0; list-style: none; }
 .la-size-shortcuts li { display: flex; align-items: center; gap: var(--ui-space-1-5); font-size: var(--ui-text-xs); color: var(--ui-color-text-secondary); }
 .la-kbd-group { display: inline-flex; align-items: center; flex: none; }
 .la-kbd-plus { margin: 0 var(--ui-space-1); color: var(--ui-color-text-muted); font-size: var(--ui-text-2xs); }
 .la-kbd { display: inline-grid; place-items: center; min-width: 24px; height: 22px; padding: 0 var(--ui-space-1-5); border: var(--ui-border); border-bottom-width: 2px; border-radius: var(--ui-radius-sm); background: var(--ui-color-surface); color: var(--ui-color-text); font-family: var(--ui-font-mono); font-size: var(--ui-text-2xs); font-weight: var(--ui-weight-semibold); }
-@media (max-width: 900px) { .la-size-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .la-profile-option.la-size-row { flex-wrap: wrap; } .la-size-shortcuts { justify-content: flex-start; } }
