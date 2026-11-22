@@ -69,10 +69,6 @@ function ChoiceTile({ label, selected, onClick, prefix }: { label: string; selec
   </button>
 }
 
-function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick(): void }) {
-  return <button type="button" aria-pressed={active} onClick={onClick} className={cn(pillClass, active ? 'border-foreground bg-foreground text-background' : 'border-border bg-transparent text-foreground hover:bg-muted')}>{label}</button>
-}
-
 function IconAction({ label, disabled, onClick, children }: { label: string; disabled?: boolean; onClick(): void; children: ReactNode }) {
   return <button type="button" aria-label={label} title={label} disabled={disabled} onClick={onClick} className="inline-flex size-(--ui-control-height-sm) shrink-0 items-center justify-center rounded-(--ui-radius-md) border border-border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer disabled:cursor-default disabled:opacity-45">{children}</button>
 }
@@ -99,7 +95,7 @@ function ChoiceCard({ title, available, description, query, onQuery, queryLabel,
       <div className="flex w-full flex-wrap items-center gap-(--ui-space-2) xl:w-auto xl:justify-end">
         <div className="relative w-full max-w-56">
           <span className="pointer-events-none absolute top-1/2 left-(--ui-space-3) -translate-y-1/2 text-muted-foreground"><Icon name="search" size={14} /></span>
-          <Input type="search" value={query} onChange={(event) => onQuery(event.target.value)} placeholder={placeholder} aria-label={queryLabel} className="h-(--ui-control-height-sm) min-h-(--ui-control-height-sm) pl-(--ui-space-8) text-(length:--ui-text-xs)" />
+          <Input type="search" value={query} onChange={(event) => onQuery(event.target.value)} placeholder={placeholder} aria-label={queryLabel} className="pl-(--ui-space-8)" />
         </div>
         {filters}
       </div>
@@ -252,13 +248,13 @@ export function SearchSetupPage({ onSearch, iconActions = false, pipelineMode = 
     {!pipelineMode && step === 'locations' && <button type="button" className="la-locations-back" onClick={() => setStep('niches')} aria-label="Back to niches and states" title="Back to niches and states"><Icon name="back" size={18} /></button>}
     {message && <p className="la-search-message" role="status">{message}</p>}
     {showNiches && <ChoiceCard title="Contractor & Business Niches" available={niches.length} description="Select niches to continue, or add your own." query={nicheQuery} onQuery={setNicheQuery} queryLabel="Find a niche" placeholder="Search niches..." filters={<>
-      {nicheFilters.map((filter) => <FilterPill key={filter.id} label={filter.id === 'all' ? `All (${niches.length})` : filter.label} active={nicheFilter === filter.id} onClick={() => setNicheFilter(filter.id)} />)}
+      <CustomSelect label="Filter niches" value={nicheFilter} onChange={(value) => setNicheFilter(value as NicheFilter)} options={nicheFilters.map((filter) => ({ value: filter.id, label: filter.id === 'all' ? `All (${niches.length})` : filter.label }))} />
       {nicheActions}
     </>} empty={visibleNiches.length ? undefined : nicheSearch ? 'No niches match this search.' : 'No niches in this category.'}>
       {visibleNiches.map((niche) => <ChoiceTile key={niche} label={niche} selected={criteria.selectedNiches.includes(niche)} onClick={() => setCriteria((current) => ({ ...current, selectedNiches: toggle(current.selectedNiches, niche) }))} />)}
     </ChoiceCard>}
     {showStates && <ChoiceCard title="U.S. States" available={locationData.states.length} description="Select one or more states to reveal locations." query={stateQuery} onQuery={setStateQuery} queryLabel="Find a state" placeholder="Search states..." filters={<>
-      {stateRegions.map((region) => <FilterPill key={region.id} label={region.label} active={stateRegion === region.id} onClick={() => setStateRegion(region.id)} />)}
+      <CustomSelect label="Filter states" value={stateRegion} onChange={(value) => setStateRegion(value as StateRegion)} options={stateRegions.map((region) => ({ value: region.id, label: region.label }))} />
       {stateActions}
     </>} empty={visibleStates.length ? undefined : 'No states match this search.'}>
       {visibleStates.map((state) => <ChoiceTile key={state.name} label={state.name} selected={criteria.selectedStates.includes(state.name)} onClick={() => toggleState(state.name)} />)}
