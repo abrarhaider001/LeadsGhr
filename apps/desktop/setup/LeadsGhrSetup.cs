@@ -76,19 +76,22 @@ namespace LeadsGhr.Setup
     {
         const int W = 760, H = 426; // design size of the window body, in 96-DPI pixels
 
-        static readonly Color Ink = Color.FromArgb(0x19, 0x0B, 0x2D);
-        static readonly Color Muted = Color.FromArgb(0x67, 0x5E, 0x76);
-        static readonly Color Purple = Color.FromArgb(0x5B, 0x12, 0xC9);
-        static readonly Color Cyan = Color.FromArgb(0x29, 0xCB, 0xEA);
-        static readonly Color Teal = Color.FromArgb(0x1F, 0xA9, 0xC9);
-        static readonly Color Track = Color.FromArgb(0xEC, 0xE9, 0xFA);
-        static readonly Color Danger = Color.FromArgb(0xB4, 0x23, 0x18);
+        static readonly Color Ink = LeadsGhr.Branding.Tokens.ColorText;
+        static readonly Color Muted = LeadsGhr.Branding.Tokens.ColorTextMuted;
+        static readonly Color Purple = LeadsGhr.Branding.Tokens.ColorPrimary;
+        static readonly Color Cyan = LeadsGhr.Branding.Tokens.ColorFocus;
+        static readonly Color Teal = LeadsGhr.Branding.Tokens.ColorAccent;
+        static readonly Color Track = LeadsGhr.Branding.Tokens.ColorPrimarySubtle;
+        static readonly Color Danger = LeadsGhr.Branding.Tokens.ColorDanger;
 
         readonly string feed;
         readonly bool dryRun;
         readonly PrivateFontCollection fonts = new PrivateFontCollection();
+        // The bold file shares the regular family name, so it gets its own collection to stay a separate, real bold face.
+        readonly PrivateFontCollection boldFonts = new PrivateFontCollection();
         readonly List<IntPtr> fontMemory = new List<IntPtr>();
         FontFamily regular, semibold, bold;
+        FontStyle boldStyle = FontStyle.Regular; // Bold when the bold file shares the regular family name (Plus Jakarta Sans)
         readonly float scale;
         readonly System.Windows.Forms.Timer animation = new System.Windows.Forms.Timer();
         readonly Button retry = new Button();
@@ -113,7 +116,7 @@ namespace LeadsGhr.Setup
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             StartPosition = FormStartPosition.Manual; // centred in OnLoad, once the window has its final size
-            BackColor = Color.White;
+            BackColor = LeadsGhr.Branding.Tokens.ColorSurface;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             using (var g = CreateGraphics()) scale = g.DpiX / 96f;
             ClientSize = new Size((int)Math.Round(W * scale), (int)Math.Round(H * scale));
@@ -122,7 +125,7 @@ namespace LeadsGhr.Setup
             retry.FlatStyle = FlatStyle.Flat;
             retry.FlatAppearance.BorderSize = 0;
             retry.BackColor = Purple;
-            retry.ForeColor = Color.White;
+            retry.ForeColor = LeadsGhr.Branding.Tokens.ColorOnPrimary;
             retry.Font = new Font(semibold, 13f * scale, FontStyle.Regular, GraphicsUnit.Pixel);
             retry.Cursor = Cursors.Hand;
             retry.Bounds = Scaled(new RectangleF(W - 48 - 112, H - 40 - 38, 112, 36));
@@ -149,7 +152,7 @@ namespace LeadsGhr.Setup
 
         void LoadFonts()
         {
-            foreach (string name in new[] { "InstrumentSans-Regular.ttf", "InstrumentSans-SemiBold.ttf", "InstrumentSans-Bold.ttf" })
+            foreach (string name in new[] { "PlusJakartaSans-Regular.ttf", "PlusJakartaSans-SemiBold.ttf", "PlusJakartaSans-Bold.ttf" })
             {
                 using (Stream s = Resource(name))
                 {
@@ -157,20 +160,22 @@ namespace LeadsGhr.Setup
                     s.Read(data, 0, data.Length);
                     IntPtr ptr = Marshal.AllocCoTaskMem(data.Length);
                     Marshal.Copy(data, 0, ptr, data.Length);
-                    fonts.AddMemoryFont(ptr, data.Length);
+                    (name.EndsWith("-Bold.ttf") ? boldFonts : fonts).AddMemoryFont(ptr, data.Length);
                     fontMemory.Add(ptr);
                 }
             }
             foreach (FontFamily f in fonts.Families)
             {
-                // Family names come from the font files; GDI+ may append the style ("Instrument Sans SemiBold SemiBo").
-                if (f.Name.StartsWith("Instrument Sans SemiBold")) semibold = f;
-                else if (f.Name.StartsWith("Instrument Sans Bold")) bold = f;
-                else if (f.Name == "Instrument Sans") regular = f;
+                // Family names come from the font files; GDI+ may append the style ("Plus Jakarta Sans SemiBold SemiBo").
+                if (f.Name.StartsWith("Plus Jakarta Sans SemiBold")) semibold = f;
+                else if (f.Name.StartsWith("Plus Jakarta Sans Bold")) bold = f;
+                else if (f.Name == "Plus Jakarta Sans") regular = f;
             }
             if (regular == null) regular = FontFamily.GenericSansSerif;
             if (semibold == null) semibold = regular;
+            if (boldFonts.Families.Length > 0) bold = boldFonts.Families[0];
             if (bold == null) bold = regular;
+            if (!bold.IsStyleAvailable(FontStyle.Regular) && bold.IsStyleAvailable(FontStyle.Bold)) boldStyle = FontStyle.Bold;
         }
 
         // Centre on the screen the mouse is on. FormStartPosition.CenterScreen uses the size from before the
@@ -199,7 +204,7 @@ namespace LeadsGhr.Setup
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { animation.Dispose(); fonts.Dispose(); }
+            if (disposing) { animation.Dispose(); fonts.Dispose(); boldFonts.Dispose(); }
             foreach (IntPtr p in fontMemory) Marshal.FreeCoTaskMem(p);
             fontMemory.Clear();
             base.Dispose(disposing);
@@ -333,7 +338,7 @@ namespace LeadsGhr.Setup
 
         void Draw(Graphics g)
         {
-            g.Clear(Color.White);
+            g.Clear(LeadsGhr.Branding.Tokens.ColorSurface);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
             g.InterpolationMode = InterpolationMode.HighQualityBicubic;
@@ -352,8 +357,8 @@ namespace LeadsGhr.Setup
             using (var line1 = new GraphicsPath(FillMode.Winding))
             using (var line2 = new GraphicsPath(FillMode.Winding))
             {
-                line1.AddString("Your lead workspace is", bold, (int)FontStyle.Regular, em, new PointF(46, 40), fmt);
-                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)FontStyle.Regular, em, new PointF(46, 80), fmt);
+                line1.AddString("Your lead workspace is", bold, (int)boldStyle, em, new PointF(46, 40), fmt);
+                line2.AddString(stage == Stage.Starting ? "ready." : "almost ready.", bold, (int)boldStyle, em, new PointF(46, 80), fmt);
                 using (var ink = new SolidBrush(Ink)) g.FillPath(ink, line1);
                 RectangleF b = line2.GetBounds();
                 using (var grad = new LinearGradientBrush(new PointF(b.Left - 1, 0), new PointF(b.Right + 1, 0), Purple, Teal)) g.FillPath(grad, line2);

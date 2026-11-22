@@ -1,3 +1,4 @@
+import '@leadsghr/ui/tokens.css' // design tokens: the colours, fonts and sizes used in the styles below
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { SENDING_ALARM, type SendingActionResponse } from './email-sending/messages'
@@ -12,75 +13,74 @@ const MAX_DELAY = 120
 type Option = { id: string; name: string }
 
 const styles = `
-  @font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans.ttf') format('truetype');font-weight:400 700;font-display:swap}
   *{box-sizing:border-box}
   html,body{margin:0}
-  body{width:360px;background:#fff;color:#190B2D;font:13px/1.4 'Instrument Sans',Arial,sans-serif}
+  body{width:360px;background:var(--ui-color-surface);color:var(--ui-color-text);font:var(--ui-text-md)/1.4 var(--ui-font-sans)}
   button,input{font:inherit;color:inherit}
   button{cursor:pointer}
-  :focus-visible{outline:2px solid #5B12C9;outline-offset:2px}
+  :focus-visible{outline:2px solid var(--ui-color-primary);outline-offset:2px}
   .app{display:flex;flex-direction:column;height:560px}
-  .top{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid #ECE8F2}
+  .top{display:flex;align-items:center;gap:var(--ui-space-2-5);padding:var(--ui-space-3) var(--ui-space-3-5);border-bottom:1px solid var(--ui-color-border-subtle)}
   .top img{width:22px;height:22px}
-  .top strong{font-size:14px;font-weight:600}
-  .icon-btn{display:grid;place-items:center;width:30px;height:30px;margin-left:auto;padding:0;border:0;border-radius:6px;background:none;color:#675E76}
-  .icon-btn:hover{background:#F4F1F8;color:#190B2D}
+  .top strong{font-size:var(--ui-text-base);font-weight: var(--ui-weight-semibold)}
+  .icon-btn{display:grid;place-items:center;width:30px;height:var(--ui-control-height-sm);margin-left:auto;padding:0;border:0;border-radius:var(--ui-button-radius);background:none;color:var(--ui-color-text-muted)}
+  .icon-btn:hover{background:var(--ui-color-primary-soft);color:var(--ui-color-text)}
   .icon-btn svg{width:17px;height:17px}
-  .body{flex:1;min-height:0;overflow-y:auto;padding:14px}
-  .field-group+.field-group{margin-top:16px}
-  .label{display:block;margin:0 0 6px;font-size:12px;font-weight:600;color:#3A2E4D}
+  .body{flex:1;min-height:0;overflow-y:auto;padding:var(--ui-space-3-5)}
+  .field-group+.field-group{margin-top:var(--ui-space-4)}
+  .label{display:block;margin:0 0 var(--ui-space-1-5);font-size:var(--ui-text-sm);font-weight: var(--ui-weight-semibold);color:var(--ui-color-text)}
   .locked .field-group{opacity:.55}
   .select{position:relative}
-  .select-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;height:36px;padding:0 10px;border:1px solid #DFD9EC;border-radius:6px;background:#fff;text-align:left}
-  .select-btn:hover:not(:disabled){border-color:#C6BCD8}
-  .select-btn[aria-expanded=true]{border-color:#5B12C9}
+  .select-btn{display:flex;align-items:center;justify-content:space-between;gap:var(--ui-space-2);width:100%;height:var(--ui-control-height-md);padding:0 var(--ui-space-2-5);border:1px solid var(--ui-color-border);border-radius:var(--ui-field-radius);background:var(--ui-color-surface);text-align:left}
+  .select-btn:hover:not(:disabled){border-color:var(--ui-color-border-strong)}
+  .select-btn[aria-expanded=true]{border-color:var(--ui-color-primary)}
   .select-btn .value{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .select-btn .placeholder{color:#8A8197}
-  .select-btn svg{flex:none;width:14px;height:14px;color:#675E76}
-  .menu{position:absolute;z-index:5;top:40px;left:0;right:0;max-height:240px;margin:0;padding:4px 0;overflow-y:auto;border:1px solid #DFD9EC;border-radius:6px;background:#fff;box-shadow:0 6px 16px rgba(25,11,45,.10);list-style:none}
-  .menu .option{padding:7px 10px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .menu .option[aria-selected=true]{color:#5B12C9;font-weight:600}
-  .menu .option.active{background:#F4F1F8}
-  .menu .note{padding:7px 10px;color:#675E76}
-  .menu .note .link{padding:0;border:0;background:none;color:#5B12C9;text-decoration:underline}
-  .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;height:96px;border:1.5px dashed #B9A6E0;border-radius:8px;background:#fff;cursor:pointer}
-  .drop:hover,.drop.dragging{border-color:#5B12C9;background:#FBF9FE}
+  .select-btn .placeholder{color:var(--ui-color-text-tertiary)}
+  .select-btn svg{flex:none;width:14px;height:14px;color:var(--ui-color-text-muted)}
+  .menu{position:absolute;z-index:5;top:40px;left:0;right:0;max-height:240px;margin:0;padding:var(--ui-space-1) 0;overflow-y:auto;border:1px solid var(--ui-color-border);border-radius:var(--ui-radius-sm);background:var(--ui-color-surface);box-shadow:0 6px 16px color-mix(in srgb, var(--ui-color-text) 10%, transparent);list-style:none}
+  .menu .option{padding:var(--ui-space-2) var(--ui-space-2-5);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .menu .option[aria-selected=true]{color:var(--ui-color-primary);font-weight: var(--ui-weight-semibold)}
+  .menu .option.active{background:var(--ui-color-primary-soft)}
+  .menu .note{padding:var(--ui-space-2) var(--ui-space-2-5);color:var(--ui-color-text-muted)}
+  .menu .note .link{padding:0;border:0;background:none;color:var(--ui-color-primary);text-decoration:underline}
+  .drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--ui-space-1);width:100%;height:96px;border:1.5px dashed var(--ui-color-primary-muted);border-radius:var(--ui-radius-md);background:var(--ui-color-surface);cursor:pointer}
+  .drop:hover,.drop.dragging{border-color:var(--ui-color-primary);background:var(--ui-color-primary-soft)}
   .drop[aria-disabled=true]{cursor:not-allowed}
   .drop svg{width:30px;height:22px}
-  .drop span{font-weight:600}
-  .drop small{color:#675E76;font-size:11px}
+  .drop span{font-weight: var(--ui-weight-semibold)}
+  .drop small{color:var(--ui-color-text-muted);font-size:var(--ui-text-xs)}
   .drop input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-  .filebar{display:flex;align-items:center;gap:6px;margin-top:8px;padding:6px 4px 6px 10px;border:1px solid #DFD9EC;border-radius:6px}
+  .filebar{display:flex;align-items:center;gap:var(--ui-space-1-5);margin-top:var(--ui-space-2);padding:var(--ui-space-1-5) var(--ui-space-1) var(--ui-space-1-5) var(--ui-space-2-5);border:1px solid var(--ui-color-border);border-radius:var(--ui-radius-sm)}
   .filebar .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .remove{display:grid;place-items:center;flex:none;width:24px;height:24px;padding:0;border:0;border-radius:4px;background:none;color:#675E76}
-  .remove:hover:not(:disabled){background:#F4F1F8;color:#190B2D}
-  .remove:disabled{color:#B8B0C4;cursor:not-allowed}
+  .remove{display:grid;place-items:center;flex:none;width:24px;height:24px;padding:0;border:0;border-radius:var(--ui-radius-xs);background:none;color:var(--ui-color-text-muted)}
+  .remove:hover:not(:disabled){background:var(--ui-color-primary-soft);color:var(--ui-color-text)}
+  .remove:disabled{color:var(--ui-color-border-strong);cursor:not-allowed}
   .remove svg{width:13px;height:13px}
-  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .grid label{display:block;font-size:12px;font-weight:600;color:#3A2E4D}
-  .grid input{display:block;width:100%;height:36px;margin-top:6px;padding:0 10px;border:1px solid #DFD9EC;border-radius:6px;background:#fff}
-  .grid input:focus{border-color:#5B12C9;outline:none}
-  .grid input:disabled{background:#F7F6F9;color:#8A8197}
-  .error{margin:8px 0 0;color:#B42318;font-size:12px}
-  .foot{padding:12px 14px;border-top:1px solid #ECE8F2}
-  .progress{display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px}
-  .progress span{color:#675E76}
-  .track{height:4px;margin-bottom:10px;overflow:hidden;border-radius:2px;background:#ECE8F2}
-  .track div{height:100%;background:#5B12C9}
-  .track.paused div{background:#8A8197}
-  .result{margin:0 0 10px;font-size:12px;color:#3A2E4D}
-  .result.warn{color:#B42318}
-  .actions{display:flex;gap:8px}
-  .primary{display:flex;flex:1;align-items:center;justify-content:center;gap:7px;height:36px;border:1px solid #5B12C9;border-radius:6px;background:#5B12C9;color:#fff;font-weight:600}
-  .primary:hover:not(:disabled){background:#4E0FB0}
-  .primary.outline{background:#fff;color:#5B12C9}
-  .primary:disabled{border-color:#ECE8F2;background:#ECE8F2;color:#8A8197;cursor:not-allowed}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--ui-space-2)}
+  .grid label{display:block;font-size:var(--ui-text-sm);font-weight: var(--ui-weight-semibold);color:var(--ui-color-text)}
+  .grid input{display:block;width:100%;height:var(--ui-control-height-md);margin-top:var(--ui-space-1-5);padding:0 var(--ui-space-2-5);border:1px solid var(--ui-color-border);border-radius:var(--ui-field-radius);background:var(--ui-color-surface)}
+  .grid input:focus{border-color:var(--ui-color-primary);outline:none}
+  .grid input:disabled{background:var(--ui-color-surface-muted);color:var(--ui-color-text-tertiary)}
+  .error{margin:var(--ui-space-2) 0 0;color:var(--ui-color-danger);font-size:var(--ui-text-sm)}
+  .foot{padding:var(--ui-space-3) var(--ui-space-3-5);border-top:1px solid var(--ui-color-border-subtle)}
+  .progress{display:flex;justify-content:space-between;margin-bottom:var(--ui-space-1-5);font-size:var(--ui-text-sm)}
+  .progress span{color:var(--ui-color-text-muted)}
+  .track{height:4px;margin-bottom:var(--ui-space-2-5);overflow:hidden;border-radius:var(--ui-radius-xs);background:var(--ui-color-primary-subtle)}
+  .track div{height:100%;background:var(--ui-color-primary)}
+  .track.paused div{background:var(--ui-color-text-tertiary)}
+  .result{margin:0 0 var(--ui-space-2-5);font-size:var(--ui-text-sm);color:var(--ui-color-text)}
+  .result.warn{color:var(--ui-color-danger)}
+  .actions{display:flex;gap:var(--ui-space-2)}
+  .primary{display:flex;flex:1;align-items:center;justify-content:center;gap:var(--ui-space-2);height:36px;border:1px solid var(--ui-color-primary);border-radius:var(--ui-radius-sm);background:var(--ui-color-primary);color:var(--ui-color-on-primary);font-weight: var(--ui-weight-semibold)}
+  .primary:hover:not(:disabled){background:var(--ui-color-primary-hover)}
+  .primary.outline{background:var(--ui-color-surface);color:var(--ui-color-primary)}
+  .primary:disabled{border-color:var(--ui-color-border-subtle);background:var(--ui-color-primary-subtle);color:var(--ui-color-text-tertiary);cursor:not-allowed}
   .primary svg{width:11px;height:11px}
-  .stop{display:grid;place-items:center;flex:none;width:36px;height:36px;padding:0;border:1px solid #DFD9EC;border-radius:6px;background:#fff}
-  .stop:before{content:'';width:10px;height:10px;border-radius:1px;background:#190B2D}
-  .stop:hover:not(:disabled){background:#F4F1F8}
+  .stop{display:grid;place-items:center;flex:none;width:36px;height:36px;padding:0;border:1px solid var(--ui-color-border);border-radius:var(--ui-radius-sm);background:var(--ui-color-surface)}
+  .stop:before{content:'';width:10px;height:10px;border-radius:var(--ui-radius-xs);background:var(--ui-color-surface-inverse)}
+  .stop:hover:not(:disabled){background:var(--ui-color-primary-soft)}
   .stop:disabled{cursor:not-allowed}
-  .stop:disabled:before{background:#D3CDDC}
+  .stop:disabled:before{background:var(--ui-color-border-strong)}
 `
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
@@ -310,7 +310,7 @@ function Popup() {
           onDragOver={(event) => { if (active) return; event.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={(event) => { event.preventDefault(); setDragging(false); const file = event.dataTransfer.files?.[0]; if (file && !active) void chooseFile(file) }}>
-          <svg viewBox="0 0 48 34" aria-hidden="true"><path fill="#5B12C9" d="M38 13.5A14 14 0 0 0 11.2 10 11.5 11.5 0 0 0 12 34h25a10.5 10.5 0 0 0 1-20.5z"/><path fill="#fff" d="M24 11l-7 7.5h4.6V27h4.8v-8.5H31z"/></svg>
+          <svg viewBox="0 0 48 34" aria-hidden="true"><path style={{ fill: 'var(--ui-color-primary)' }} d="M38 13.5A14 14 0 0 0 11.2 10 11.5 11.5 0 0 0 12 34h25a10.5 10.5 0 0 0 1-20.5z"/><path style={{ fill: 'var(--ui-color-surface)' }} d="M24 11l-7 7.5h4.6V27h4.8v-8.5H31z"/></svg>
           <span>Browse files to upload</span>
           <small>.csv or .xlsx</small>
           <input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={active} aria-label="Upload a CSV or Excel file of recipients"

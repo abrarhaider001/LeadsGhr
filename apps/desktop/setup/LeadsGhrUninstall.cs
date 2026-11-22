@@ -94,7 +94,7 @@ namespace LeadsGhr.Uninstall
             FormBorderStyle = FormBorderStyle.FixedSingle;
             MaximizeBox = false;
             StartPosition = FormStartPosition.Manual; // centred in OnLoad, once the window has its final size
-            BackColor = Color.White;
+            BackColor = Brand.Surface;
             KeyPreview = true;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             using (var g = CreateGraphics()) scale = g.DpiX / 96f;
@@ -245,7 +245,7 @@ namespace LeadsGhr.Uninstall
 
         void Draw(Graphics g)
         {
-            g.Clear(Color.White);
+            g.Clear(Brand.Surface);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
@@ -277,16 +277,16 @@ namespace LeadsGhr.Uninstall
 
         void DrawButton(Graphics g, RectangleF r, string text, bool primary, bool hot)
         {
-            Color fill = !primary ? (hot ? Color.FromArgb(0xF7, 0xF4, 0xFF) : Color.White)
-                : view == View.Ask && deleteData ? (hot ? Color.FromArgb(0x96, 0x1D, 0x14) : Brand.Danger)
-                : (hot ? Color.FromArgb(0x4E, 0x0F, 0xB0) : Brand.Purple);
+            Color fill = !primary ? (hot ? Brand.PrimarySoft : Brand.Surface)
+                : view == View.Ask && deleteData ? (hot ? Brand.DangerHover : Brand.Danger)
+                : (hot ? Brand.PrimaryHover : Brand.Purple);
             using (GraphicsPath path = Brand.RoundRect(r, 9))
             {
                 using (var b = new SolidBrush(fill)) g.FillPath(b, path);
                 if (!primary) using (var pen = new Pen(Brand.Line, 1)) g.DrawPath(pen, path);
             }
             using (var f = new Font(fonts.SemiBold, 13.5f, FontStyle.Regular, GraphicsUnit.Pixel))
-            using (var b = new SolidBrush(primary ? Color.White : Brand.Ink))
+            using (var b = new SolidBrush(primary ? Brand.OnPrimary : Brand.Ink))
             using (var fmt = new StringFormat(StringFormat.GenericTypographic))
             {
                 fmt.Alignment = StringAlignment.Center;
@@ -302,9 +302,9 @@ namespace LeadsGhr.Uninstall
             using (var first = new GraphicsPath(FillMode.Winding))
             using (var second = new GraphicsPath(FillMode.Winding))
             {
-                first.AddString(plain, fonts.Bold, (int)FontStyle.Regular, 34, new PointF(46, 40), fmt);
+                first.AddString(plain, fonts.Bold, (int)fonts.BoldStyle, 34, new PointF(46, 40), fmt);
                 float x = first.GetBounds().Right + 11;
-                second.AddString(highlighted, fonts.Bold, (int)FontStyle.Regular, 34, new PointF(x, 40), fmt);
+                second.AddString(highlighted, fonts.Bold, (int)fonts.BoldStyle, 34, new PointF(x, 40), fmt);
                 using (var ink = new SolidBrush(Brand.Ink)) g.FillPath(ink, first);
                 RectangleF b = second.GetBounds();
                 using (var grad = new LinearGradientBrush(new PointF(b.Left - 1, 0), new PointF(b.Right + 1, 0), Brand.Purple, Brand.Teal)) g.FillPath(grad, second);
@@ -320,13 +320,13 @@ namespace LeadsGhr.Uninstall
 
         void DrawCard(Graphics g)
         {
-            Color border = deleteData ? Brand.Danger : (hover == 1 ? Color.FromArgb(0xC9, 0xBF, 0xDD) : Brand.Line);
+            Color border = deleteData ? Brand.Danger : (hover == 1 ? Brand.PrimaryMuted : Brand.Line);
             if (deleteData)
                 using (GraphicsPath ring = Brand.RoundRect(RectangleF.Inflate(card, 3, 3), 15))
                 using (var b = new SolidBrush(Brand.DangerSoft)) g.FillPath(b, ring);
             using (GraphicsPath path = Brand.RoundRect(card, 12))
             {
-                using (var fill = new SolidBrush(deleteData ? Color.FromArgb(0xFF, 0xFB, 0xFA) : Color.White)) g.FillPath(fill, path);
+                using (var fill = new SolidBrush(deleteData ? Brand.DangerSoft : Brand.Surface)) g.FillPath(fill, path);
                 using (var pen = new Pen(border, 1)) g.DrawPath(pen, path);
             }
 
@@ -349,12 +349,12 @@ namespace LeadsGhr.Uninstall
                 if (deleteData)
                 {
                     using (var b = new SolidBrush(Brand.Danger)) g.FillPath(b, p);
-                    Brand.DrawIcon(g, new RectangleF(box.X + 4, box.Y + 4, 14, 14), Color.White, Brand.TickIcon);
+                    Brand.DrawIcon(g, new RectangleF(box.X + 4, box.Y + 4, 14, 14), Brand.OnPrimary, Brand.TickIcon);
                 }
                 else
                 {
-                    g.FillPath(Brushes.White, p);
-                    using (var pen = new Pen(Color.FromArgb(0xB9, 0xAF, 0xCD), 1.5f)) g.DrawPath(pen, p);
+                    using (var white = new SolidBrush(Brand.Surface)) g.FillPath(white, p);
+                    using (var pen = new Pen(Brand.PrimaryMuted, 1.5f)) g.DrawPath(pen, p);
                 }
             }
         }

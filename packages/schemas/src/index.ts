@@ -58,7 +58,17 @@ export const searchCriteriaSchema = z.object({
 })
 export type SearchCriteria = z.infer<typeof searchCriteriaSchema>
 
+/** Display size (zoom) limits, in percent. Ctrl + / Ctrl - step by DISPLAY_SIZE_STEP; Ctrl 0 resets to 100. */
+export const DISPLAY_SIZE_MIN = 70
+export const DISPLAY_SIZE_MAX = 200
+export const DISPLAY_SIZE_STEP = 10
+export const clampDisplaySize = (value: number) => Math.min(DISPLAY_SIZE_MAX, Math.max(DISPLAY_SIZE_MIN, Math.round(value / DISPLAY_SIZE_STEP) * DISPLAY_SIZE_STEP))
+
 export const desktopPreferencesSchema = z.object({
+  /** Light or dark look; `system` follows the Windows setting (Settings → Preferences → Appearance). */
+  theme: z.enum(['light', 'dark', 'system']).default('light'),
+  /** Display size in percent (the window zoom), also changed with Ctrl + / Ctrl - / Ctrl 0 (Settings → Preferences → Appearance). */
+  displaySize: z.number().int().min(70).max(200).default(100),
   showCrawlerPreview: z.boolean(),
   crawlerContactOnly: z.boolean().default(true),
   crawlerEmailSource: z.enum(['leadsghr', 'email-hunter']).default('leadsghr'),
@@ -83,6 +93,8 @@ export const desktopPreferencesSchema = z.object({
 })
 export type DesktopPreferences = z.infer<typeof desktopPreferencesSchema>
 export const defaultDesktopPreferences: DesktopPreferences = {
+  theme: 'light',
+  displaySize: 100,
   showCrawlerPreview: true,
   crawlerContactOnly: true,
   crawlerEmailSource: 'leadsghr',
