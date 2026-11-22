@@ -50,7 +50,7 @@ const descriptions: Record<string, string> = {
   'New Pipeline': 'Choose niches, states, and locations for a new pipeline.',
   'Pipeline Export': 'Your pipeline results have been saved as a CSV file.',
   Crawler: 'Discover public pages and emails from a homepage without saving results.',
-  'New Search': 'Choose contractor niches and U.S. locations for a local search draft.',
+  'New Search': 'Find and target leads across niches and locations.',
   'Niche Library': 'Browse and edit local business keyword packs for your searches.',
   'Email Filtering': 'Import Excel or CSV files, remove noisy addresses, and review a clean email list.',
   'Email Validation': 'Check mailbox acceptance with a local SMTP RCPT TO probe.',
