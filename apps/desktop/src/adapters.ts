@@ -41,7 +41,9 @@ async function getPublic(url: string, options: { maxBytes?: number; timeoutMs?: 
     })
     if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
       await response.body.dump()
-      return getPublic(new URL(String(response.headers.location), target).toString(), options, redirects + 1)
+      // `return await` so a failed redirect (such as "Too many redirects") is caught by the caller before the
+      // `finally` below closes this connection; a bare `return` left it briefly unhandled and Node warned.
+      return await getPublic(new URL(String(response.headers.location), target).toString(), options, redirects + 1)
     }
     const chunks: Buffer[] = []
     let size = 0
