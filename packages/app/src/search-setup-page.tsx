@@ -51,8 +51,10 @@ const stateMatchesRegion = (name: string, region: StateRegion) => {
   return group && 'states' in group ? (group.states as readonly string[]).includes(name) : false
 }
 
-const choiceGrid = 'flex flex-wrap gap-(--ui-space-2)'
-const tileClass = 'inline-flex min-h-(--ui-control-height-md) max-w-full shrink-0 items-center gap-(--ui-space-2) rounded-(--ui-radius-lg) border px-(--ui-space-2-5) text-left text-(length:--ui-text-sm) leading-tight transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer'
+const byLabel = (a: string, b: string) => a.localeCompare(b, undefined, { sensitivity: 'base' })
+const choiceLabel = (value: string) => value.replace(/[A-Za-z]+/g, (word) => word === word.toUpperCase() && word.length > 1 ? word : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+const choiceGrid = 'grid grid-cols-2 items-stretch gap-(--ui-space-2) sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6'
+const tileClass = 'inline-flex min-h-(--ui-control-height-md) max-w-full items-center gap-(--ui-space-2) rounded-(--ui-radius-lg) border px-(--ui-space-2-5) py-(--ui-space-1-5) text-left text-(length:--ui-text-sm) leading-snug transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer'
 const pillClass = 'inline-flex min-h-(--ui-control-height-sm) shrink-0 items-center rounded-(--ui-radius-full) border px-(--ui-space-3) text-(length:--ui-text-xs) font-(--ui-weight-medium) transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer'
 
 function ChoiceMark({ selected }: { selected: boolean }) {
@@ -61,8 +63,8 @@ function ChoiceMark({ selected }: { selected: boolean }) {
   </span>
 }
 
-function ChoiceTile({ label, selected, onClick, prefix }: { label: string; selected: boolean; onClick(): void; prefix?: string }) {
-  return <button type="button" aria-pressed={selected} title={label} onClick={onClick} className={cn(tileClass, selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-foreground hover:border-primary hover:bg-muted')}>
+function ChoiceTile({ label, selected, onClick, prefix, fill = false }: { label: string; selected: boolean; onClick(): void; prefix?: string; fill?: boolean }) {
+  return <button type="button" aria-pressed={selected} title={label} onClick={onClick} className={cn(tileClass, fill && 'h-full w-full', selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-foreground hover:border-primary hover:bg-muted')}>
     <ChoiceMark selected={selected} />
     {prefix && <span className={cn('shrink-0 font-(--ui-weight-medium)', selected ? 'text-primary-foreground' : 'text-muted-foreground')}>{prefix}</span>}
     <span>{label}</span>
@@ -127,11 +129,19 @@ export function SearchSetupPage({ onSearch, iconActions = false, pipelineMode = 
   const [numberTo, setNumberTo] = useState('100')
   const [rangeMessage, setRangeMessage] = useState('')
   const [message, setMessage] = useState('')
-  const niches = useMemo(() => [...nicheData.niches, ...criteria.customNiches], [criteria.customNiches])
+  const niches = useMemo(() => [...nicheData.niches, ...criteria.customNiches].sort(byLabel), [criteria.customNiches])
   const nicheSearch = nicheQuery.trim().toLowerCase()
   const visibleNiches = niches.filter((niche) => nicheMatchesFilter(niche, nicheFilter) && niche.toLowerCase().includes(nicheSearch))
+  const nicheFilterOptions = useMemo(() => [
+    { value: 'all', label: `All (${niches.length})` },
+    ...nicheFilters.filter((filter) => filter.id !== 'all').map((filter) => ({ value: filter.id, label: `${filter.label} (${niches.filter((name) => nicheMatchesFilter(name, filter.id)).length})` })).sort((a, b) => byLabel(a.label, b.label)),
+  ], [niches])
+  const stateFilterOptions = useMemo(() => [
+    { value: 'all', label: `All states (${locationData.states.length})` },
+    ...stateRegions.filter((region) => region.id !== 'all').map((region) => ({ value: region.id, label: `${region.label} (${region.states.length})` })).sort((a, b) => byLabel(a.label, b.label)),
+  ], [])
   const stateSearch = stateQuery.trim().toLowerCase()
-  const visibleStates = locationData.states.filter((state) => stateMatchesRegion(state.name, stateRegion) && state.name.toLowerCase().includes(stateSearch))
+  const visibleStates = locationData.states.filter((state) => stateMatchesRegion(state.name, stateRegion) && state.name.toLowerCase().includes(stateSearch)).sort((a, b) => byLabel(a.name, b.name))
   const selectedStates = useMemo(() => locationData.states.filter((state) => criteria.selectedStates.includes(state.name)), [criteria.selectedStates])
   const locationMatches = useMemo(() => selectedStates.flatMap((state) => state.locations).filter((location) => location.toLowerCase().includes(locationQuery.trim().toLowerCase())), [selectedStates, locationQuery])
   const locationPageCount = Math.ceil(locationMatches.length / locationsPerPage)
@@ -248,16 +258,16 @@ export function SearchSetupPage({ onSearch, iconActions = false, pipelineMode = 
     {!pipelineMode && step === 'locations' && <button type="button" className="la-locations-back" onClick={() => setStep('niches')} aria-label="Back to niches and states" title="Back to niches and states"><Icon name="back" size={18} /></button>}
     {message && <p className="la-search-message" role="status">{message}</p>}
     {showNiches && <ChoiceCard title="Contractor & Business Niches" available={niches.length} description="Select niches to continue, or add your own." query={nicheQuery} onQuery={setNicheQuery} queryLabel="Find a niche" placeholder="Search niches..." filters={<>
-      <CustomSelect label="Filter niches" value={nicheFilter} onChange={(value) => setNicheFilter(value as NicheFilter)} options={nicheFilters.map((filter) => ({ value: filter.id, label: filter.id === 'all' ? `All (${niches.length})` : filter.label }))} />
+      <CustomSelect label="Filter niches" value={nicheFilter} onChange={(value) => setNicheFilter(value as NicheFilter)} options={nicheFilterOptions} />
       {nicheActions}
     </>} empty={visibleNiches.length ? undefined : nicheSearch ? 'No niches match this search.' : 'No niches in this category.'}>
-      {visibleNiches.map((niche) => <ChoiceTile key={niche} label={niche} selected={criteria.selectedNiches.includes(niche)} onClick={() => setCriteria((current) => ({ ...current, selectedNiches: toggle(current.selectedNiches, niche) }))} />)}
+      {visibleNiches.map((niche) => <ChoiceTile key={niche} fill label={choiceLabel(niche)} selected={criteria.selectedNiches.includes(niche)} onClick={() => setCriteria((current) => ({ ...current, selectedNiches: toggle(current.selectedNiches, niche) }))} />)}
     </ChoiceCard>}
     {showStates && <ChoiceCard title="U.S. States" available={locationData.states.length} description="Select one or more states to reveal locations." query={stateQuery} onQuery={setStateQuery} queryLabel="Find a state" placeholder="Search states..." filters={<>
-      <CustomSelect label="Filter states" value={stateRegion} onChange={(value) => setStateRegion(value as StateRegion)} options={stateRegions.map((region) => ({ value: region.id, label: region.label }))} />
+      <CustomSelect label="Filter states" value={stateRegion} onChange={(value) => setStateRegion(value as StateRegion)} options={stateFilterOptions} />
       {stateActions}
     </>} empty={visibleStates.length ? undefined : 'No states match this search.'}>
-      {visibleStates.map((state) => <ChoiceTile key={state.name} label={state.name} selected={criteria.selectedStates.includes(state.name)} onClick={() => toggleState(state.name)} />)}
+      {visibleStates.map((state) => <ChoiceTile key={state.name} fill label={state.name} selected={criteria.selectedStates.includes(state.name)} onClick={() => toggleState(state.name)} />)}
     </ChoiceCard>}
     {step === 'locations' && criteria.selectedNiches.length > 0 && selectedStates.length > 0 && <section className="la-choice-section">
       <div className="la-choice-heading la-location-heading"><div className="la-choice-heading-copy"><h2>Locations</h2><p>Choose locations from the selected states.</p><span>{locationMatches.length} available</span></div><div className="la-location-selection-controls"><div className="la-location-method"><span>Selection method</span><CustomSelect label="Location selection method" value={selectionMethod} onChange={(value) => { setSelectionMethod(value as 'search' | 'pages' | 'numbers'); setRangeMessage(''); if (value !== 'search') { setLocationQuery(''); setLocationPage(1) } }} options={[{ value: 'search', label: 'Search' }, { value: 'pages', label: 'By page' }, { value: 'numbers', label: 'By number' }]} /></div>
@@ -265,7 +275,7 @@ export function SearchSetupPage({ onSearch, iconActions = false, pipelineMode = 
       {selectionMethod === 'pages' && locationMatches.length > 0 && <div className="la-location-ranges"><div className="la-location-range"><strong>Select page range</strong><label>From page <input type="number" min={1} max={locationPageCount} value={pageFrom} onChange={(event) => setPageFrom(event.target.value)} /></label><label>To page <input type="number" min={1} max={locationPageCount} value={pageTo} onChange={(event) => setPageTo(event.target.value)} /></label><button type="button" className="la-location-range-icon" aria-label="Select pages in range" title="Select pages in range" disabled={!validRange(pageFrom, pageTo, locationPageCount)} onClick={() => selectLocationRange('pages')}><Icon name="selectAll" size={18} /></button></div></div>}
       {selectionMethod === 'numbers' && locationMatches.length > 0 && <div className="la-location-ranges"><div className="la-location-range"><strong>Select location numbers</strong><label>From <input type="number" min={1} max={locationMatches.length} value={numberFrom} onChange={(event) => setNumberFrom(event.target.value)} /></label><label>To <input type="number" min={1} max={locationMatches.length} value={numberTo} onChange={(event) => setNumberTo(event.target.value)} /></label><button type="button" className="la-location-range-icon" aria-label="Select locations in number range" title="Select locations in number range" disabled={!validRange(numberFrom, numberTo, locationMatches.length)} onClick={() => selectLocationRange('numbers')}><Icon name="selectAll" size={18} /></button></div></div>}
       {selectionMethod !== 'search' && <button type="button" className="la-location-clear la-choice-icon-action" aria-label="Clear locations" title="Clear locations" onClick={() => setCriteria((current) => ({ ...current, selectedLocations: [] }))} disabled={!criteria.selectedLocations.length}><Icon name="clear" size={18} /></button>}</div></div>
-      <div className={choiceGrid} aria-label="Location choices">{visibleLocations.map((location, index) => <ChoiceTile key={location} label={location} prefix={`${(currentLocationPage - 1) * locationsPerPage + index + 1}.`} selected={selectedLocationSet.has(location)} onClick={() => setCriteria((current) => ({ ...current, selectedLocations: toggle(current.selectedLocations, location) }))} />)}</div>
+      <div className="flex flex-wrap gap-(--ui-space-2)" aria-label="Location choices">{visibleLocations.map((location, index) => <ChoiceTile key={location} label={location} prefix={`${(currentLocationPage - 1) * locationsPerPage + index + 1}.`} selected={selectedLocationSet.has(location)} onClick={() => setCriteria((current) => ({ ...current, selectedLocations: toggle(current.selectedLocations, location) }))} />)}</div>
       {!locationMatches.length && <p className="la-choice-empty">No locations match this search.</p>}
       {rangeMessage && <p className="la-choice-hint" role="status">{rangeMessage}</p>}
     </section>}
