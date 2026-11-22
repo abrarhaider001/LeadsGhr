@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Avatar, { genConfig } from 'react-nice-avatar'
-import { PREFERENCE_SECTIONS, type DesktopPreferences } from '@leadsghr/schemas'
+import { PREFERENCE_SECTIONS, DISPLAY_SIZE_MAX, DISPLAY_SIZE_MIN, DISPLAY_SIZE_STEP, clampDisplaySize, type DesktopPreferences } from '@leadsghr/schemas'
 import { saveLocalAccount, type LocalAccount } from './account-data'
 import { UpdatesPanel, type UpdateState } from './updates'
 
@@ -37,6 +37,8 @@ function describeValue(key: PreferenceKeyName, value: DesktopPreferences[Prefere
   if (key === 'crawlerEmailSource') return value === 'email-hunter' ? 'Email Hunter-style' : 'Our behavior'
   if (key === 'crawlerFetchMethod') return value === 'http' ? 'Lightweight HTTP' : 'Browser rendering'
   if (key === 'emailVerifyPaceMs') return `${value} ms`
+  if (key === 'theme') return value === 'dark' ? 'Dark' : value === 'system' ? 'Match Windows' : 'Light'
+  if (key === 'displaySize') return `${value}%`
   return String(value)
 }
 
@@ -165,7 +167,7 @@ function SettingsTransfer({ preferences, onImported }: { preferences: DesktopPre
   </div>
 }
 
-type PreferenceKey = Exclude<keyof DesktopPreferences, 'crawlerEmailSource' | 'crawlerFetchMethod' | 'crawlerConcurrentPages' | 'emailVerifyMailFrom' | 'emailVerifyEhlo' | 'emailVerifyPerSession' | 'emailVerifyPaceMs'>
+type PreferenceKey = Exclude<keyof DesktopPreferences, 'crawlerEmailSource' | 'crawlerFetchMethod' | 'crawlerConcurrentPages' | 'emailVerifyMailFrom' | 'emailVerifyEhlo' | 'emailVerifyPerSession' | 'emailVerifyPaceMs' | 'theme' | 'displaySize'>
 const groups: { title: string; description: string; options: { key: PreferenceKey; title: string; detail: string }[] }[] = [
   { title: 'Crawler', description: 'Control the public webpage test view.', options: [
     { key: 'showCrawlerPreview', title: 'Show webpage in Crawler', detail: 'Display the live page while the crawler scrolls and extracts emails.' },
@@ -195,11 +197,61 @@ const groups: { title: string; description: string; options: { key: PreferenceKe
   ] },
 ]
 
-type PreferenceCategory = 'Crawler' | 'Search' | 'Email Validation' | 'Updates'
+const THEME_OPTIONS: { value: DesktopPreferences['theme']; label: string; hint: string }[] = [
+  { value: 'light', label: 'Light', hint: 'White cards on a soft grey canvas.' },
+  { value: 'dark', label: 'Dark', hint: 'Charcoal surfaces, easier on the eyes at night.' },
+  { value: 'system', label: 'Match Windows', hint: 'Follows the Windows light or dark setting.' },
+]
+/** A small picture of the app in one theme, drawn with that theme's tokens (data-theme on the element). */
+function ThemePreview({ theme }: { theme: 'light' | 'dark' }) {
+  return <span className="la-theme-mini" data-theme={theme} aria-hidden="true">
+    <span className="la-theme-mini-side"><i /><i className="is-on" /><i /><i /></span>
+    <span className="la-theme-mini-main"><i className="la-theme-mini-title" /><span className="la-theme-mini-cards"><i /><i /><i /></span><span className="la-theme-mini-panel"><i className="la-theme-mini-line" /><i className="la-theme-mini-button" /></span></span>
+  </span>
+}
+const ZOOM_SHORTCUTS: { keys: string[]; label: string }[] = [
+  { keys: ['Ctrl', '+'], label: 'Larger' },
+  { keys: ['Ctrl', '−'], label: 'Smaller' },
+  { keys: ['Ctrl', '0'], label: 'Reset to 100%' },
+]
+const minusIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+const plusIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
+/** Appearance → Display size, in the settings-row style (owner-chosen 2026-11-22): the window zoom in percent, the same setting Ctrl + / Ctrl - / Ctrl 0 change. */
+function DisplaySizeSetting({ value, onChange }: { value: number; onChange(next: number): void }) {
+  const set = (next: number) => { const size = clampDisplaySize(next); if (size !== value) onChange(size) }
+  return <section className="la-profile-preference-group"><div><h2>Display size</h2><p>Make text and controls larger or smaller.</p></div>
+    <div className="la-profile-option-list">
+      <div className="la-profile-option la-size-row">
+        <span><strong>Zoom</strong><small>Default is 100%. Range {DISPLAY_SIZE_MIN}–{DISPLAY_SIZE_MAX}%.</small></span>
+        <span className="la-size-row-controls">
+          <span className="la-size-stepper" role="group" aria-label="Display size">
+            <button type="button" onClick={() => set(value - DISPLAY_SIZE_STEP)} disabled={value <= DISPLAY_SIZE_MIN} aria-label="Smaller">{minusIcon}</button>
+            <output aria-live="polite">{value}%</output>
+            <button type="button" onClick={() => set(value + DISPLAY_SIZE_STEP)} disabled={value >= DISPLAY_SIZE_MAX} aria-label="Larger">{plusIcon}</button>
+          </span>
+          <button type="button" className="la-size-reset" onClick={() => set(100)} disabled={value === 100}>Reset</button>
+        </span>
+      </div>
+      <div className="la-profile-option la-size-row">
+        <span><strong>Keyboard shortcuts</strong><small>Work anywhere in LeadsGhr and change this same setting.</small></span>
+        <ul className="la-size-shortcuts" aria-label="Keyboard shortcuts">{ZOOM_SHORTCUTS.map((shortcut) => <li key={shortcut.label} title={shortcut.label}><span className="la-kbd-group">{shortcut.keys.map((key, index) => <span key={key}>{index > 0 && <span className="la-kbd-plus">+</span>}<kbd className="la-kbd">{key}</kbd></span>)}</span><span className="la-size-shortcut-label">{shortcut.label}</span></li>)}</ul>
+      </div>
+    </div></section>
+}
+type PreferenceCategory = 'Appearance' | 'Crawler' | 'Search' | 'Email Validation' | 'Updates'
+const PREFERENCE_CATEGORIES: { name: PreferenceCategory; description: string }[] = [
+  { name: 'Appearance', description: 'How LeadsGhr looks on this computer.' },
+  { name: 'Crawler', description: 'How Crawler and Pipeline read public websites.' },
+  { name: 'Search', description: 'What searches and pipelines collect.' },
+  { name: 'Email Validation', description: 'How LeadsGhr checks email addresses.' },
+  { name: 'Updates', description: 'How LeadsGhr finds and installs new versions.' },
+]
+const gearIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+const chevronIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
 const groupCategory = (title: string): PreferenceCategory => title === 'Crawler' ? 'Crawler' : title === 'Automatic updates' ? 'Updates' : 'Search'
 
 export function ProfilePage({ section, updateState, preferences, onPreferencesChange, onPreferencesImported, saveMessage, account, onAccountChange, avatarSeed, onRegenerateAvatar }: { section: 'account' | 'preferences'; updateState: UpdateState; preferences: DesktopPreferences; onPreferencesChange(next: DesktopPreferences): void; onPreferencesImported(next: DesktopPreferences): void; saveMessage: string; account: LocalAccount; onAccountChange(next: LocalAccount): void; avatarSeed: string; onRegenerateAvatar(): void }) {
-  const [preferenceCategory, setPreferenceCategory] = useState<PreferenceCategory>('Crawler')
+  const [preferenceCategory, setPreferenceCategory] = useState<PreferenceCategory>('Appearance')
   const [draft, setDraft] = useState(account)
   const [accountMessage, setAccountMessage] = useState('')
   function saveAccount(event: React.FormEvent) {
@@ -215,12 +267,18 @@ export function ProfilePage({ section, updateState, preferences, onPreferencesCh
       <form className="la-account-form" onSubmit={saveAccount}><div className="la-account-fields"><label>First Name<input type="text" value={draft.firstName} maxLength={80} onChange={(event) => setDraft({ ...draft, firstName: event.target.value })} required /></label><label>Last Name<input type="text" value={draft.lastName} maxLength={80} onChange={(event) => setDraft({ ...draft, lastName: event.target.value })} required /></label><label className="la-account-email">Email<input type="email" value={draft.email} maxLength={254} onChange={(event) => setDraft({ ...draft, email: event.target.value })} required /></label></div><div className="la-account-actions"><span role="status">{accountMessage}</span><button type="submit">Save profile</button></div></form>
       <p className="la-profile-note">These details are stored on this computer. Supabase authentication is not connected yet.</p></section>
       <section className="la-profile-account la-password-section"><div><h2>Reset Password</h2><p>Account password changes will be available when Supabase sign-in is connected.</p></div><div className="la-account-fields"><label>Current password<input type="password" autoComplete="current-password" disabled placeholder="Authentication required" /></label><label>New password<input type="password" autoComplete="new-password" disabled placeholder="Authentication required" /></label><label>Confirm new password<input type="password" autoComplete="new-password" disabled placeholder="Authentication required" /></label></div><button type="button" disabled>Reset password</button></section>
-    </div> : <div className="la-profile-preferences" aria-label="Preferences">
+    </div> : <div className="la-pref-layout">
+      <nav className="la-pref-nav" aria-label="Preference categories">
+        <p className="la-pref-nav-title">{gearIcon}Settings</p>
+        {PREFERENCE_CATEGORIES.map(({ name }) => <button type="button" key={name} aria-current={preferenceCategory === name ? 'page' : undefined} onClick={() => setPreferenceCategory(name)}><span>{name}</span>{preferenceCategory === name && chevronIcon}</button>)}
+      </nav>
+      <div className="la-pref-main">
+        <header className="la-pref-head"><h1>{preferenceCategory}</h1><p>{PREFERENCE_CATEGORIES.find(({ name }) => name === preferenceCategory)?.description}</p></header>
+        <div className="la-pref-body la-profile-preferences" aria-label="Preferences">
       <SettingsTransfer preferences={preferences} onImported={onPreferencesImported} />
-      <div className="la-profile-tabs" role="tablist" aria-label="Preference categories">
-        {(['Crawler', 'Search', 'Email Validation', 'Updates'] as const).map((category) => <button type="button" role="tab" id={`la-preference-tab-${category.toLowerCase().replace(/\s+/g, '-')}`} aria-controls="la-preference-panel" key={category} aria-selected={preferenceCategory === category} onClick={() => setPreferenceCategory(category)}>{category}</button>)}
-      </div>
-      <div className="la-preference-content" role="tabpanel" id="la-preference-panel" aria-labelledby={`la-preference-tab-${preferenceCategory.toLowerCase().replace(/\s+/g, '-')}`}>
+      <div className="la-preference-content" id="la-preference-panel" aria-label={`${preferenceCategory} preferences`}>
+        {preferenceCategory === 'Appearance' && <section className="la-profile-preference-group"><div><h2>Theme</h2><p>Choose a light or dark look, or match the Windows setting.</p></div><div className="la-theme-options" role="radiogroup" aria-label="Theme">{THEME_OPTIONS.map((option) => <label key={option.value} className={`la-theme-option${preferences.theme === option.value ? ' is-selected' : ''}`}><span className="la-theme-preview">{option.value === 'system' ? <><ThemePreview theme="light" /><ThemePreview theme="dark" /></> : <ThemePreview theme={option.value} />}</span><span className="la-theme-label"><input type="radio" name="theme" checked={preferences.theme === option.value} onChange={() => onPreferencesChange({ ...preferences, theme: option.value })} /><span><strong>{option.label}</strong><small>{option.hint}</small></span></span></label>)}</div></section>}
+        {preferenceCategory === 'Appearance' && <DisplaySizeSetting value={preferences.displaySize} onChange={(displaySize) => onPreferencesChange({ ...preferences, displaySize })} />}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Crawler email source</h2><p>Choose how the Crawler test finds addresses on public pages.</p></div><div className="la-profile-option-list"><label className="la-profile-option"><span><strong>Our behavior</strong><small>Use the existing LeadsGhr page extraction and URL queue.</small></span><input type="radio" name="crawler-email-source" checked={preferences.crawlerEmailSource === 'leadsghr'} onChange={() => onPreferencesChange({ ...preferences, crawlerEmailSource: 'leadsghr' })} /></label><label className="la-profile-option"><span><strong>Email Hunter-style</strong><small>Scan the complete rendered HTML, including scripts and attributes. This can include placeholders and false matches; it does not access the installed Chrome extension or its saved results.</small></span><input type="radio" name="crawler-email-source" checked={preferences.crawlerEmailSource === 'email-hunter'} onChange={() => onPreferencesChange({ ...preferences, crawlerEmailSource: 'email-hunter' })} /></label></div></section>}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Page fetch method</h2><p>Choose how Crawler and Pipeline inspect public websites. Search listings still use their existing browser flow.</p></div><div className="la-profile-option-list"><label className="la-profile-option"><span><strong>Browser rendering</strong><small>Open each page in an isolated Electron browser and scroll it. Slower, but can find content added by JavaScript.</small></span><input type="radio" name="crawler-fetch-method" checked={preferences.crawlerFetchMethod === 'browser'} onChange={() => onPreferencesChange({ ...preferences, crawlerFetchMethod: 'browser' })} /></label><label className="la-profile-option"><span><strong>Direct HTTP</strong><small>Inspect the public HTML response without loading a browser. Faster, but JavaScript-added content will be missed.</small></span><input type="radio" name="crawler-fetch-method" checked={preferences.crawlerFetchMethod === 'http'} onChange={() => onPreferencesChange({ ...preferences, crawlerFetchMethod: 'http' })} /></label></div></section>}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Concurrent pages</h2><p>Maximum pages inspected at once in Crawler and Pipeline. Same-site requests still respect robots.txt and crawl delays.</p></div><div className="la-profile-option-list"><label className="la-profile-option la-profile-concurrency-option"><span><strong>Workers</strong><small>Choose 1 to 8 pages to process at once.</small></span><input type="number" min="1" max="8" step="1" value={preferences.crawlerConcurrentPages} onChange={(event) => { const value = Number(event.currentTarget.value); if (Number.isInteger(value) && value >= 1 && value <= 8) onPreferencesChange({ ...preferences, crawlerConcurrentPages: value }) }} aria-label="Concurrent pages" /></label></div></section>}
@@ -229,6 +287,8 @@ export function ProfilePage({ section, updateState, preferences, onPreferencesCh
         {preferenceCategory === 'Updates' && <UpdatesPanel state={updateState} />}
         {groups.filter((group) => groupCategory(group.title) === preferenceCategory).map((group) => <section className="la-profile-preference-group" key={group.title}><div><h2>{group.title}</h2><p>{group.description}</p></div><div className="la-profile-option-list">{group.options.map((option) => <label className="la-profile-option" key={option.key}><span><strong>{option.title}</strong><small>{option.detail}</small></span><input type="checkbox" checked={preferences[option.key]} onChange={(event) => onPreferencesChange({ ...preferences, [option.key]: event.target.checked })} aria-label={option.title} /></label>)}</div></section>)}
         <p className="la-profile-note">Preference settings are saved on this computer.</p><p className="la-profile-save-status" role="status">{saveMessage}</p>
+      </div>
+        </div>
       </div>
     </div>}
   </div>

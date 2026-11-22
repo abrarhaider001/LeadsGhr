@@ -23,6 +23,7 @@ shortcuts, team members and roles, notification preferences and data export.
 1. Settings are saved per user and organisation in the database.
 2. Changes apply live where possible.
 3. The same light-only tokens apply across web, desktop and extension; no theme switch is shown.
+   *Current desktop behaviour (2026-11-22): the desktop app has Light, Dark, and Match Windows themes in Settings → Preferences → Appearance; the extensions stay light. Appearance also has **Display size** (70–200% zoom, the same setting as Ctrl + / Ctrl − / Ctrl 0).*
 4. Owners invite teammates by email and assign roles (Owner, Member, Viewer); users can export or
 delete their data.
 

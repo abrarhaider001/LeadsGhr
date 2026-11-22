@@ -87,31 +87,34 @@ export async function isLicenseActive(): Promise<boolean> {
   return (await chrome.storage.local.get([LICENSE_ACTIVE_FLAG]))[LICENSE_ACTIVE_FLAG] === true
 }
 
+/* Styles from the design tokens (packages/ui/src/tokens.css, loaded by every extension page): the extensions use the light theme.
+   The header is an inverse (charcoal) panel with a green tint, like the desktop Settings → License card. */
 const styles = `
-  @font-face{font-family:'Instrument Sans';src:url('/fonts/InstrumentSans.ttf') format('truetype');font-weight:400 700;font-display:swap}
   html,body{margin:0}
-  .lg-lic{box-sizing:border-box;display:flex;flex-direction:column;width:360px;max-width:100%;margin:0 auto;height:100%;min-height:560px;font:13px/1.4 'Instrument Sans',Arial,sans-serif;color:#190B2D;background:#FFF}
-  .lg-lic-head{position:relative;overflow:hidden;padding:26px 20px 22px;text-align:center;color:#FFF;background:linear-gradient(150deg,#5B12C9,#2A0D5E)}
-  .lg-lic-head::after{content:'';position:absolute;right:-60px;top:-60px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(41,203,234,.4),transparent 65%)}
-  .lg-lic-head img{width:58px;height:58px;padding:7px;border-radius:16px;background:#FFF;box-shadow:0 10px 30px rgba(10,0,40,.35)}
-  .lg-lic-head h1{margin:12px 0 0;font-size:19px;letter-spacing:-.01em}
-  .lg-lic-head p{margin:3px 0 0;font-size:12.5px;color:#DCD0F5}
-  .lg-lic-body{flex:1;display:flex;flex-direction:column;padding:18px}
-  .lg-lic-body label{font-size:12px;font-weight:600;color:#3A2E4D}
-  .lg-lic-field{display:flex;align-items:center;gap:10px;margin-top:7px;padding:11px 12px;border:1.5px solid #D9CCF5;border-radius:12px;background:#FFF;box-shadow:0 0 0 4px #F3EEFF}
-  .lg-lic-field.bad{border-color:#E7B4AF;box-shadow:0 0 0 4px #FDF0EF}
-  .lg-lic-field svg{flex:none;color:#5B12C9}
-  .lg-lic-field textarea{flex:1;min-width:0;height:20px;padding:0;border:0;outline:0;resize:none;overflow:hidden;white-space:nowrap;background:none;font:500 12.5px/20px ui-monospace,Consolas,monospace;color:#190B2D}
-  .lg-lic-field textarea::placeholder{color:#B3A9C6;font-family:'Instrument Sans',Arial,sans-serif;font-size:13px}
-  .lg-lic-btn{height:42px;margin-top:12px;border:0;border-radius:11px;background:#5B12C9;color:#FFF;font:600 14px 'Instrument Sans',Arial,sans-serif;box-shadow:0 10px 24px rgba(91,18,201,.25);cursor:pointer}
-  .lg-lic-btn:disabled{opacity:.65;cursor:default}
-  .lg-lic-err{display:flex;gap:9px;margin-top:10px;padding:10px 12px;border:1px solid #F3C4C0;border-radius:10px;background:#FDF0EF;color:#8A1C12;font-size:12.5px;line-height:1.45}
-  .lg-lic-slots{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}
-  .lg-lic-slot{display:flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid #E4DCF6;border-radius:999px;background:#FBF9FF;font-size:12.5px;color:#3A2E4D}
-  .lg-lic-slot svg{color:#5B12C9}
-  .lg-lic-note{margin:8px 0 0;color:#675E76;font-size:11.5px}
+  .lg-lic{box-sizing:border-box;display:flex;flex-direction:column;width:360px;max-width:100%;margin:0 auto;height:100%;min-height:560px;font-family:var(--ui-font-sans);font-size:var(--ui-text-md);line-height:1.4;color:var(--ui-color-text);background:var(--ui-color-surface)}
   .lg-lic *{box-sizing:border-box}
-  .lg-lic-wait{display:grid;place-items:center;width:360px;max-width:100%;margin:0 auto;height:560px;color:#675E76;font:13px 'Instrument Sans',Arial,sans-serif}
+  .lg-lic-head{position:relative;overflow:hidden;padding:var(--ui-space-6) var(--ui-space-5) var(--ui-space-5);text-align:center;color:var(--ui-color-surface);background:linear-gradient(150deg,color-mix(in srgb,var(--ui-color-primary) 24%,var(--ui-color-surface-inverse)),var(--ui-color-surface-inverse) 70%)}
+  .lg-lic-head::after{content:'';position:absolute;right:-60px;top:-60px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ui-color-accent) 40%,transparent),transparent 65%)}
+  .lg-lic-head img{position:relative;z-index:1;width:58px;height:58px;padding:var(--ui-space-1-5);border-radius:var(--ui-radius-xl);background:var(--ui-color-surface);box-shadow:var(--ui-shadow-lg)}
+  .lg-lic-head h1{position:relative;z-index:1;margin:var(--ui-space-3) 0 0;font-size:var(--ui-text-2xl);letter-spacing:-.01em}
+  .lg-lic-head p{position:relative;z-index:1;margin:var(--ui-space-1) 0 0;font-size:var(--ui-text-sm);color:color-mix(in srgb,var(--ui-color-surface) 75%,transparent)}
+  .lg-lic-body{flex:1;display:flex;flex-direction:column;padding:var(--ui-space-4-5)}
+  .lg-lic-body label{font-size:var(--ui-text-sm);font-weight:var(--ui-weight-semibold);color:var(--ui-color-text-secondary)}
+  .lg-lic-field{display:flex;align-items:center;gap:var(--ui-space-2-5);margin-top:var(--ui-space-2);padding:var(--ui-space-3);border:1.5px solid var(--ui-color-primary-muted);border-radius:var(--ui-field-radius);background:var(--ui-color-surface);box-shadow:0 0 0 4px var(--ui-color-primary-soft)}
+  .lg-lic-field:focus-within{border-color:var(--ui-color-primary)}
+  .lg-lic-field.bad{border-color:var(--ui-color-danger-border);box-shadow:0 0 0 4px var(--ui-color-danger-soft)}
+  .lg-lic-field svg{flex:none;color:var(--ui-color-primary)}
+  .lg-lic-field textarea{flex:1;min-width:0;height:20px;padding:0;border:0;outline:0;resize:none;overflow:hidden;white-space:nowrap;background:none;font-family:var(--ui-font-mono);font-size:var(--ui-text-sm);font-weight:var(--ui-weight-medium);line-height:20px;color:var(--ui-color-text)}
+  .lg-lic-field textarea::placeholder{color:var(--ui-color-text-muted);font-family:var(--ui-font-sans);font-size:var(--ui-text-md)}
+  .lg-lic-btn{height:var(--ui-control-height-lg);margin-top:var(--ui-space-3);border:0;border-radius:var(--ui-button-radius-lg);background:var(--ui-color-primary);color:var(--ui-color-on-primary);font-family:var(--ui-font-sans);font-size:var(--ui-text-base);font-weight:var(--ui-weight-semibold);box-shadow:0 10px 24px color-mix(in srgb,var(--ui-color-primary) 25%,transparent);cursor:pointer}
+  .lg-lic-btn:hover:not(:disabled){background:var(--ui-color-primary-hover)}
+  .lg-lic-btn:disabled{opacity:.65;cursor:default}
+  .lg-lic-err{display:flex;gap:var(--ui-space-2);margin-top:var(--ui-space-2-5);padding:var(--ui-space-2-5) var(--ui-space-3);border:var(--ui-border-width) solid var(--ui-color-danger-border);border-radius:var(--ui-radius-md);background:var(--ui-color-danger-soft);color:var(--ui-color-danger);font-size:var(--ui-text-sm);line-height:1.45}
+  .lg-lic-slots{display:flex;flex-wrap:wrap;gap:var(--ui-space-2);margin-top:auto}
+  .lg-lic-slot{display:flex;align-items:center;gap:var(--ui-space-1-5);padding:var(--ui-space-1-5) var(--ui-space-3);border:var(--ui-border);border-radius:var(--ui-radius-full);background:var(--ui-color-surface);font-size:var(--ui-text-sm);color:var(--ui-color-text-secondary)}
+  .lg-lic-slot svg{color:var(--ui-color-primary)}
+  .lg-lic-note{margin:var(--ui-space-2) 0 0;color:var(--ui-color-text-secondary);font-size:var(--ui-text-xs)}
+  .lg-lic-wait{display:grid;place-items:center;width:360px;max-width:100%;margin:0 auto;height:560px;color:var(--ui-color-text-secondary);font-family:var(--ui-font-sans);font-size:var(--ui-text-md)}
 `
 const keyIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7M17 6l3 3M14.5 8.5l2 2"/></svg>
 const slotIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>

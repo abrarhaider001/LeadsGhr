@@ -154,6 +154,9 @@ importers:
       '@leadsghr/license':
         specifier: workspace:*
         version: link:../../packages/license
+      '@leadsghr/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       react:
         specifier: ^19.2.0
         version: 19.3.1

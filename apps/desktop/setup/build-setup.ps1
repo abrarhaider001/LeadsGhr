@@ -10,16 +10,16 @@ if (-not (Test-Path $csc)) { $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framewo
 if (-not (Test-Path $csc)) { throw 'The .NET Framework C# compiler (csc.exe) was not found.' }
 
 $assets = Join-Path $here 'assets'
-$fonts = @('InstrumentSans-Regular.ttf', 'InstrumentSans-SemiBold.ttf', 'InstrumentSans-Bold.ttf')
+$fonts = @('PlusJakartaSans-Regular.ttf', 'PlusJakartaSans-SemiBold.ttf', 'PlusJakartaSans-Bold.ttf')
 if ($Target -eq 'setup') {
   $out = Join-Path $here '..\dist-installer\nsis-web'
   $exe = Join-Path $out 'LeadsGhr-Setup.exe'
-  $sources = @(Join-Path $here 'LeadsGhrSetup.cs')
-  $resourceFiles = @('logo-256.png') + $fonts
+  $sources = @((Join-Path $here 'Tokens.g.cs'), (Join-Path $here 'LeadsGhrSetup.cs'))
+  $resourceFiles = $fonts
 } else {
   $out = Join-Path $here 'out'
   $exe = Join-Path $out 'LeadsGhr-Uninstall.exe'
-  $sources = @((Join-Path $here 'Brand.cs'), (Join-Path $here 'LeadsGhrUninstall.cs'))
+  $sources = @((Join-Path $here 'Tokens.g.cs'), (Join-Path $here 'Brand.cs'), (Join-Path $here 'LeadsGhrUninstall.cs'))
   $resourceFiles = $fonts
 }
 New-Item -ItemType Directory -Force $out | Out-Null

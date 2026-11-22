@@ -17,7 +17,7 @@ apps/mailer-extension/  LeadsGhr Mailer: MV3 Gmail sending extension (popup, set
   src/email-sending/ Campaign CSV/Excel, saved templates, range, queue, and compose helpers
 packages/
   app/              Desktop pages, splash, niche and location JSON data
-  ui/               shadcn components, Tailwind globals, tokens and light-only styles
+  ui/               design tokens (tokens.css), shadcn components, Tailwind globals and the light and dark styles
   schemas/          Zod contracts
   core/ extract/ crawler/ quality/ export/  Reusable product logic
   platform/         Adapter interfaces

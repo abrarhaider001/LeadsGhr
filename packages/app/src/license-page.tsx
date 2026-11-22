@@ -1,14 +1,9 @@
 import { useEffect, useState } from 'react'
 import { LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, maskLicenseKey, type LicenseProduct, type LicenseView } from '@leadsghr/license'
 import { useMaskedKey } from '@leadsghr/license/masked-key'
+import { BrandLogo, LicenseKeyArt, MailerMark, TrackerMark } from '@leadsghr/ui'
 import { SplashBackground } from './splash-screen'
 
-const logoUrl = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
-const keyArtUrl = new URL('../../../public/leadsghr-license-key.svg', import.meta.url).href
-const productLogos: Partial<Record<LicenseProduct, string>> = {
-  mailer: new URL('../../../public/leadsghr-mailer-icon.svg', import.meta.url).href,
-  tracker: new URL('../../../public/leadsghr-tracker-icon.svg', import.meta.url).href,
-}
 
 type LicenseBridge = { getLicenseStatus(force?: boolean): Promise<LicenseView>; activateLicense(key: string): Promise<LicenseView>; copyLicenseKey(): Promise<boolean> }
 export const licenseBridge = () => (window as Window & { leadsGhrDesktop?: Partial<LicenseBridge> }).leadsGhrDesktop
@@ -25,7 +20,8 @@ const keyIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stro
 const copyIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
 const copiedIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
 const checkIcon = <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
-const productIcon = (product: LicenseProduct, size = 18) => productLogos[product] ? <img src={productLogos[product]} alt="" width={size} height={size} /> : desktopIcon(size)
+/** Product marks drawn from the tokens (the same Mailer and Tracker marks as the sidebar), so they follow the theme. */
+const productIcon = (product: LicenseProduct, size = 18) => product === 'mailer' ? <MailerMark size={size} /> : product === 'tracker' ? <TrackerMark size={size} /> : desktopIcon(size)
 
 const formatDate = (value: string) => new Date(value).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 const daysLeft = (value: string) => Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 86400000))
@@ -51,9 +47,9 @@ export function LicenseScreen({ view, onActivated }: { view: Extract<LicenseView
   const onKey = (event: React.KeyboardEvent<HTMLTextAreaElement>) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }
   return <main className="la-license" aria-labelledby="la-license-title">
     <SplashBackground />
-    <img className="la-license-corner-logo" src={logoUrl} alt="LeadsGhr" />
+    <BrandLogo className="la-license-corner-logo" />
     <form className="la-license-form" onSubmit={(event) => void submit(event)}>
-      <img className="la-license-key-art" src={keyArtUrl} alt="" />
+      <LicenseKeyArt className="la-license-key-art" />
       <h1 id="la-license-title">Unlock your <span>lead workspace</span></h1>
       <p className="la-license-lead">Enter the license key you received from your admin.</p>
       <label className="la-license-label" htmlFor="la-license-key">License key</label>
