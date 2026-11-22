@@ -118,6 +118,9 @@ function getRecipient(compose: Element): string {
 }
 
 let defaultTrackingEnabled = true
+/** Tracking works only while LeadsGhr Tracker has an active license (set by its popup and start-up check). */
+let licensed = false
+let trackingSetting = true
 const BANNER_TEXT = 'LeadsGhr tracking enabled'
 
 /** Tracking follows the popup's "Tracking by default" switch; when it is off the line is hidden and mail is sent untracked. */
@@ -709,9 +712,11 @@ observer.observe(document.documentElement, { childList: true, subtree: true })
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return
   if (changes.records) void loadRecords()
-  if (changes.enabled) { defaultTrackingEnabled = changes.enabled.newValue !== false; updateComposeDefault(); decorateSentRows() }
+  if (changes.enabled) trackingSetting = changes.enabled.newValue !== false
+  if (changes['leadsghr.licenseActive']) licensed = changes['leadsghr.licenseActive'].newValue === true
+  if (changes.enabled || changes['leadsghr.licenseActive']) { defaultTrackingEnabled = trackingSetting && licensed; updateComposeDefault(); decorateSentRows() }
 })
-void chrome.storage.local.get('enabled').then(data => { defaultTrackingEnabled = data.enabled !== false; updateComposeDefault(); decorateSentRows() })
+void chrome.storage.local.get(['enabled', 'leadsghr.licenseActive']).then(data => { trackingSetting = data.enabled !== false; licensed = data['leadsghr.licenseActive'] === true; defaultTrackingEnabled = trackingSetting && licensed; updateComposeDefault(); decorateSentRows() })
 void loadRecords()
 void chrome.runtime.sendMessage({ kind: 'tracking:refresh' }).catch(() => undefined)
 

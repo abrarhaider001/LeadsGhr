@@ -1,6 +1,7 @@
 import '@leadsghr/ui/tokens.css' // design tokens: the colours, fonts and sizes used in the styles below
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { LicenseGate } from '@leadsghr/license/extension'
 
 
 const style = `
@@ -42,4 +43,4 @@ function Options() {
     <section><h2>Tracking settings</h2><label>Public HTTPS endpoint<input type="text" value={endpoint} onChange={event => setEndpoint(event.target.value)} placeholder="https://YOUR_PROJECT.supabase.co/functions/v1/mail-tracking" /></label><label>Registration key<input type="password" value={registrationKey} onChange={event => setRegistrationKey(event.target.value)} placeholder="Server registration key" /></label><label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Enable tracking by default</label><button onClick={() => void save()}>Save settings</button><p className="muted">Only opaque pixel tokens are stored online. Recipient and subject stay in this Chrome profile. An image load can come from a mail proxy or preview and does not prove a person read the email. Gmail fetches the image through its proxy and may reuse a cached copy, so repeat opens can go unobserved; counts are observed image loads, not exact opens.</p></section>
     {message && <p role="status">{message}</p>}</main>
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><Options /></React.StrictMode>)
+createRoot(document.getElementById('root')!).render(<React.StrictMode><LicenseGate product="tracker" logo="/icon.svg"><Options /></LicenseGate></React.StrictMode>)

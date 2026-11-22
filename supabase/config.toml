@@ -1,2 +1,5 @@
 [functions.mail-tracking]
 verify_jwt = false
+
+[functions.license]
+verify_jwt = false

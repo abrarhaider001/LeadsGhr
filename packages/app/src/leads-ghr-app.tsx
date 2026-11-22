@@ -24,6 +24,8 @@ import Avatar, { genConfig } from 'react-nice-avatar'
 import { loadAvatarSeed, loadLocalAccount, saveAvatarSeed, syncProfileFromDisk } from './account-data'
 import { EmailSendingPage } from './email-sending-page'
 import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
+import { LicenseScreen, LicenseSettingsPage, loadLicense } from './license-page'
+import type { LicenseView } from '@leadsghr/license'
 
 /** Sidebar tabs. Each icon is a NavIcon in the duotone line style (packages/ui/src/nav-icons.tsx; AGENTS.md, "Sidebar icons"). */
 const navigation: { label: string; icon: NavIconName }[] = [
@@ -65,6 +67,7 @@ const descriptions: Record<string, string> = {
   Compliance: 'Review public data collection and source safeguards.',
   Profile: 'Account details and local workspace profile.',
   Preferences: 'Configure crawler and search behavior.',
+  License: 'Your LeadsGhr license on this computer.',
 }
 type LocalLead = { name: string; emails: string[]; phones: string[]; sourceUrl: string }
 type LocalRun = { id: string; url: string; status: string; startedAt?: string; finishedAt?: string; error?: string }
@@ -100,6 +103,9 @@ export function LeadsGhrApp() {
   const updateState = useUpdateState()
   const [avatarSeed, setAvatarSeed] = useState(loadAvatarSeed)
   // The profile file in the data folder wins over the start-up copy (for example after a reinstall).
+  // License check starts during the splash screen; the app opens only with an active key.
+  const [license, setLicense] = useState<LicenseView | null>(null)
+  useEffect(() => { let active = true; void loadLicense().then((view) => { if (active) setLicense(view) }); return () => { active = false } }, [])
   useEffect(() => { let active = true; void syncProfileFromDisk().then((stored) => { if (active && stored) { setAccount(stored.account); setAvatarSeed(stored.avatarSeed) } }); return () => { active = false } }, [])
   function regenerateAvatar() { const next = crypto.randomUUID(); saveAvatarSeed(next); setAvatarSeed(next) }
 
@@ -190,12 +196,14 @@ export function LeadsGhrApp() {
   const visibleRuns = runs.filter((run) => (filter === 'all' || run.status === filter) && [run.url, run.status, run.error ?? ''].some((part) => part.toLowerCase().includes(query.toLowerCase())))
 
   if (!splashComplete) return <SplashScreen onComplete={() => setSplashComplete(true)} />
+  if (!license) return <div className="la-license-checking" role="status">Checking your license...</div>
+  if (license.state !== 'active') return <LicenseScreen view={license} onActivated={setLicense} />
   return <div className="la-shell">
     <aside className="la-sidebar">
       <div className="la-brand"><BrandLogo className="la-brand-wordmark" /><BrandMark className="la-brand-symbol" size={32} /></div>
       <label className="la-sidebar-search"><Icon name="search" size={15}/><input ref={navSearchRef} type="search" value={navQuery} onChange={(event) => setNavQuery(event.target.value)} placeholder="Search..." aria-label="Find a page" /><kbd>Ctrl K</kbd></label>
       <nav className="la-nav" aria-label="Main navigation">
-        {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase()) || (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase()))).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={label !== 'Settings' && (page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin)) ? 'page' : undefined} aria-expanded={label === 'Settings' ? settingsExpanded : undefined} aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined} onClick={() => label === 'Settings' ? setSettingsExpanded((current) => !current) : void showPage(label)} title={label}><NavIcon name={icon} size={18} /><span>{label}</span>{label === 'Settings' && <svg className="la-nav-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>}</button>{label === 'Settings' && <div className="la-sidebar-settings-collapse" data-open={Boolean(settingsExpanded || navQuery.trim())} inert={!(settingsExpanded || navQuery.trim())}><div className="la-sidebar-settings-clip"><div className="la-sidebar-settings-children" id="la-settings-submenu"><button type="button" aria-current={page === 'Preferences' ? 'page' : undefined} onClick={() => void showPage('Preferences')}>Preferences</button></div></div></div>}</div>)}
+        {navigation.filter(({ label }) => label.toLowerCase().includes(navQuery.trim().toLowerCase()) || (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase()))).map(({ label, icon }) => <div key={label} className="la-nav-item">{!navQuery && (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && <span className="la-nav-group">{label === 'Dashboard' ? 'MAIN' : label === 'Crawler' ? 'DISCOVERY TOOLS' : 'WORKSPACE'}</span>}<button type="button" aria-current={label !== 'Settings' && (page === label || ((page === 'Crawl Results' || page === 'New Pipeline' || page === 'Pipeline Export') && label === searchOrigin)) ? 'page' : undefined} aria-expanded={label === 'Settings' ? settingsExpanded : undefined} aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined} onClick={() => label === 'Settings' ? setSettingsExpanded((current) => !current) : void showPage(label)} title={label}><NavIcon name={icon} size={18} /><span>{label}</span>{label === 'Settings' && <svg className="la-nav-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>}</button>{label === 'Settings' && <div className="la-sidebar-settings-collapse" data-open={Boolean(settingsExpanded || navQuery.trim())} inert={!(settingsExpanded || navQuery.trim())}><div className="la-sidebar-settings-clip"><div className="la-sidebar-settings-children" id="la-settings-submenu"><button type="button" aria-current={page === 'Preferences' ? 'page' : undefined} onClick={() => void showPage('Preferences')}>Preferences</button><button type="button" aria-current={page === 'License' ? 'page' : undefined} onClick={() => void showPage('License')}>License</button></div></div></div>}</div>)}
       </nav>
       <div className="la-sidebar-bottom"><button className="la-sidebar-footer" type="button" aria-label="Open profile" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace{appVersion ? ` · v${appVersion}` : ''}</small></span></button></div>
     </aside>
@@ -220,6 +228,7 @@ export function LeadsGhrApp() {
           : page === 'Crawl Results' && searchCriteria ? <SearchResultsPage key={runDetail?.id ?? 'new'} criteria={runDetail?.criteria ?? searchCriteria} preferences={runDetail?.preferences ?? preferences} initialRun={runDetail} pipelineMode={searchOrigin === 'Pipeline'} pipelineName={pipelineDetails?.name} provider={pipelineDetails?.provider ?? 'google-maps'} onBack={() => void showPage(searchOrigin === 'Pipeline' ? 'New Pipeline' : 'New Search')} onSaved={() => void refreshCrawlHistory()} onFinished={(item) => { setFinishedExport(item); setPage('Pipeline Export'); void refreshCrawlHistory() }} />
           : page === 'Pipeline Export' && finishedExport ? <><PipelineTimeline current={5}/><PipelineExportPage item={finishedExport} onPipeline={() => void showPage('Pipeline')} onExports={() => void showPage('Exports')} /></>
           : page === 'Runs' || page === 'Exports' ? <ExportsPage runs={crawlRuns} exports={crawlExports} showExportHistory={page === 'Exports'} onRefresh={refreshCrawlHistory} onResume={(id) => void resumeCrawl(id)} />
+          : page === 'License' ? <LicenseSettingsPage view={license} onChange={setLicense} />
           : page === 'Profile' || page === 'Preferences' ? <ProfilePage section={page === 'Profile' ? 'account' : 'preferences'} updateState={updateState} preferences={preferences} onPreferencesChange={updatePreferences} onPreferencesImported={(next) => { setPreferences(next); setPreferencesMessage('') }} saveMessage={preferencesMessage} account={account} onAccountChange={setAccount} avatarSeed={avatarSeed} onRegenerateAvatar={regenerateAvatar} />
           : page === 'Leads' ? <section className="la-records">
             <div className="la-records-toolbar">

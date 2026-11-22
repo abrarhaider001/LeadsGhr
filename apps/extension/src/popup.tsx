@@ -1,6 +1,7 @@
 import '@leadsghr/ui/tokens.css' // design tokens: the colours, fonts and sizes used in the styles below
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
+import { LicenseGate } from '@leadsghr/license/extension'
 
 type TrackingRecord = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
 
@@ -155,4 +156,5 @@ function Popup() {
   </div>
 }
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><Popup /></React.StrictMode>)
+// The license screen is the entry point: the popup opens only with an active license key.
+createRoot(document.getElementById('root')!).render(<React.StrictMode><LicenseGate product="tracker" logo="/icon.svg"><Popup /></LicenseGate></React.StrictMode>)

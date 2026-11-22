@@ -1,3 +1,4 @@
+import { checkExtensionLicense } from '@leadsghr/license/extension'
 type TrackingRecord = {
   id: string; recipient: string; subject: string; sentAt: number; sent?: boolean
   /** Gmail account that sent the email; used to recognise the sender's own views. */
@@ -39,7 +40,7 @@ async function ensureRefreshAlarm(): Promise<void> {
   if (existing?.periodInMinutes !== REFRESH_PERIOD_MINUTES) await chrome.alarms.create(REFRESH_ALARM, { periodInMinutes: REFRESH_PERIOD_MINUTES })
 }
 chrome.runtime.onInstalled.addListener(() => { void ensureRefreshAlarm(); void connectRealtime() })
-chrome.runtime.onStartup.addListener(() => { void ensureRefreshAlarm(); void connectRealtime() })
+chrome.runtime.onStartup.addListener(() => { void ensureRefreshAlarm(); void connectRealtime(); void checkExtensionLicense('tracker', { force: true }).catch(() => undefined) })
 void ensureRefreshAlarm()
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== REFRESH_ALARM) return
