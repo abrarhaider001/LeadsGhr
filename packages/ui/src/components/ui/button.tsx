@@ -4,20 +4,20 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '../../lib/utils'
 
 const buttonVariants = cva(
-  'la-button inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-[#29CBEA] focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-65 cursor-pointer border min-h-10 px-4',
+  'la-button inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-(--ui-button-radius-lg) text-(length:--ui-button-font-size) font-(--ui-button-font-weight) transition-colors focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-65 cursor-pointer border min-h-(--ui-control-height-lg) px-(--ui-button-padding-x)',
   {
     variants: {
       variant: {
-        default: 'border-[#5B12C9] bg-[#5B12C9] text-white hover:bg-[#450A9C] hover:border-[#450A9C]',
-        secondary: 'secondary border-[#DFD9EC] bg-white text-[#190B2D] hover:bg-[#ECE9FA]',
-        ghost: 'border-transparent bg-transparent text-[#190B2D] hover:bg-[#ECE9FA]',
-        outline: 'border-[#DFD9EC] bg-white text-[#190B2D] hover:bg-[#ECE9FA]',
+        default: 'border-primary bg-primary text-primary-foreground hover:bg-primary-hover hover:border-primary-hover',
+        secondary: 'secondary border-border bg-card text-foreground hover:bg-muted',
+        ghost: 'border-transparent bg-transparent text-foreground hover:bg-muted',
+        outline: 'border-border bg-card text-foreground hover:bg-muted',
       },
       size: {
-        default: 'min-h-10 px-4',
-        sm: 'min-h-8 px-3 text-[11px]',
-        lg: 'min-h-11 px-5',
-        icon: 'h-10 w-10 px-0',
+        default: 'min-h-(--ui-control-height-lg) px-(--ui-button-padding-x)',
+        sm: 'min-h-(--ui-control-height-sm) px-(--ui-space-3) text-(length:--ui-text-xs)',
+        lg: 'min-h-(--ui-control-height-xl) px-(--ui-space-5)',
+        icon: 'h-(--ui-control-height-lg) w-(--ui-control-height-lg) px-0',
       },
     },
     defaultVariants: {

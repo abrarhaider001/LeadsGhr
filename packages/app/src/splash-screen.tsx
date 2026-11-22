@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
+import { BrandLogo } from '@leadsghr/ui'
 import { useAppVersion } from './updates'
 
-const logoUrl = new URL('../../../public/leadsghr-logo-v1.svg', import.meta.url).href
 
 function SplashBackground() {
   // A dot grid coloured from brand purple to teal, fading out behind the content and at the edges, with a soft purple glow.
@@ -22,13 +22,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     let finishTimer = 0
     let stopped = false
 
-    const logo = new Image()
-    const logoReady = new Promise<void>((resolve) => {
-      logo.onload = () => resolve()
-      logo.onerror = () => resolve()
-      logo.src = logoUrl
-    })
-    void Promise.allSettled([document.fonts.ready, logoReady]).then(() => { if (!stopped) ready = true })
+    // The logo is drawn from the design tokens, so only the fonts need to be ready.
+    void Promise.allSettled([document.fonts.ready]).then(() => { if (!stopped) ready = true })
     const fallbackTimer = window.setTimeout(() => { ready = true }, 5000)
 
     const tick = (now: number) => {
@@ -56,7 +51,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     <div className={`la-splash${leaving ? ' la-splash--leaving' : ''}`} aria-label="Opening LeadsGhr">
       <SplashBackground />
       <div className="la-splash__content">
-        <img className="la-splash__logo" src={logoUrl} alt="LeadsGhr" />
+        <BrandLogo className="la-splash__logo" />
         <h1 className="la-splash__headline">Discover businesses. Build leads.</h1>
         <p className="la-splash__description">Discover public business information and build a useful local lead list.</p>
         <div className="la-splash__track" role="progressbar" aria-label="Loading LeadsGhr" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>

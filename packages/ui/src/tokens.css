@@ -1,0 +1,258 @@
+/*
+ * LeadsGhr design tokens: the ONE file to edit to change the look of the whole product.
+ *
+ * Every colour, font, text size, weight, space, corner, border, shadow, and control size used by the
+ * desktop app, both Chrome extensions, and the setup/uninstall windows comes from here.
+ *   - Desktop app and extension pages read these CSS variables directly.
+ *   - Gmail content scripts and the C# setup windows read generated copies (packages/ui/src/tokens.generated.ts,
+ *     apps/desktop/setup/Tokens.g.cs), rebuilt from this file by `pnpm.cmd tokens` (run automatically before
+ *     dev and every build). `pnpm.cmd --filter @leadsghr/ui test` fails if a copy is out of date or if a colour,
+ *     font size, or radius is typed directly into a stylesheet or component instead of using a token.
+ *
+ * Two themes, light and dark (Settings → Preferences → Appearance sets data-theme on the page):
+ *   - LIGHT base values: the `:root, [data-theme='light']` block.
+ *   - DARK base values:  the `[data-theme='dark']` block (only the values that differ).
+ *   - Everything else (colours by role, type, spacing, corners, controls) is defined once from those base
+ *     values in the `:root, [data-theme]` block, so both themes stay in step.
+ * To re-theme: change the BRAND values in each theme block. Tints (selected rows, hover, chips, tinted borders)
+ * are mixed from the brand colour, so they follow automatically. Never type a hex colour or px font size anywhere else.
+ */
+/* -------------------------------------------------------------------- Fonts
+ * The font files live next to this file and are bundled into the app and the extensions (no internet needed).
+ * To change the font: put the new files in ./fonts, point these @font-face rules at them, and update
+ * --ui-font-sans / --ui-font-mono below. The setup and uninstall windows embed static copies (apps/desktop/setup/assets). */
+@font-face { font-family: 'Plus Jakarta Sans'; src: url('./fonts/PlusJakartaSans-Variable.ttf') format('truetype'); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-Regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-Medium.ttf') format('truetype'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('./fonts/IBMPlexMono-SemiBold.ttf') format('truetype'); font-weight: 600 800; font-display: swap; }
+
+:root, [data-theme='light'] {
+  color-scheme: light;
+
+  /* ------------------------------------------------------------------ Brand */
+  --ui-brand-primary: #16A34A;        /* buttons, active items, links, highlights */
+  --ui-brand-primary-hover: #15803D;  /* hover/pressed primary */
+  --ui-brand-ink: #1F2328;            /* main text and dark surfaces (charcoal) */
+  --ui-brand-accent: #4ADE80;         /* second brand colour (gradients, progress) */
+  --ui-brand-highlight: #22C55E;      /* focus rings and bright accents */
+  --ui-brand-tint: #86EFAC;           /* light brand colour used in gradients */
+  --ui-on-primary: #FFFFFF;           /* text and icons on primary buttons */
+
+  /* --------------------------------------------------------------- Neutrals */
+  --ui-canvas: #FAFAFA;               /* app background behind cards */
+  --ui-neutral-0: #FFFFFF;            /* cards, panels, inputs */
+  --ui-neutral-25: #FAFAFB;
+  --ui-neutral-50: #F5F6F7;
+  --ui-neutral-100: #EEF0F2;
+  --ui-neutral-200: #E8EAED;
+  --ui-neutral-300: #D3D6DB;
+  --ui-neutral-400: #A3A9B1;
+  --ui-neutral-500: #8A9099;
+  --ui-neutral-600: #7D848E;
+  --ui-neutral-700: #6B7078;
+  --ui-line: #E6E8EB;                 /* default divider colour */
+  --ui-line-subtle: #EEF0F2;
+  --ui-shadow-color: #1F2328;
+  --ui-logo-soft: #D3D6DB;           /* the short bar of the logo */
+  --ui-logo-accent: var(--ui-brand-accent); /* the "opened" tick of the Tracker mark */
+  --ui-tint-soft: 8%;                 /* how much brand colour the soft/subtle/muted tints mix in */
+  --ui-tint-subtle: 14%;
+  --ui-tint-muted: 30%;
+
+  /* ----------------------------------------------------------------- Status */
+  --ui-success: #087647;
+  --ui-success-soft: #ECFDF3;
+  --ui-success-border: #BFE3CB;
+  --ui-warning: #926000;
+  --ui-warning-soft: #FFF6DD;
+  --ui-warning-border: #EBD6B1;
+  --ui-danger: #B42318;
+  --ui-danger-hover: #961D14;
+  --ui-danger-soft: #FDF0EF;
+  --ui-danger-border: #F3C4C0;
+  --ui-info: #1D4ED8;
+  --ui-info-soft: #EEF3FF;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --ui-brand-primary: #4ADE80;
+  --ui-brand-primary-hover: #22C55E;
+  --ui-brand-ink: #E8EAED;            /* light text on dark surfaces */
+  --ui-brand-accent: #86EFAC;
+  --ui-brand-highlight: #4ADE80;
+  --ui-brand-tint: #BBF7D0;
+  --ui-on-primary: #0E1A12;           /* dark text on the bright green */
+
+  --ui-canvas: #15181C;
+  --ui-neutral-0: #1F2328;
+  --ui-neutral-25: #23282E;
+  --ui-neutral-50: #262B32;
+  --ui-neutral-100: #2E343C;
+  --ui-neutral-200: #2A2F36;
+  --ui-neutral-300: #3A4049;
+  --ui-neutral-400: #5C636D;
+  --ui-neutral-500: #7D848E;
+  --ui-neutral-600: #9AA1AB;
+  --ui-neutral-700: #9AA1AB;
+  --ui-line: #2E343C;
+  --ui-line-subtle: #262B32;
+  --ui-shadow-color: #000000;
+  --ui-logo-soft: #8A9099;
+  --ui-logo-accent: #16A34A;          /* darker green, readable on the light tile of the dark theme */
+  --ui-tint-soft: 12%;
+  --ui-tint-subtle: 18%;
+  --ui-tint-muted: 34%;
+
+  --ui-success: #4ADE80;
+  --ui-success-soft: #1C3325;
+  --ui-success-border: #2F5A3D;
+  --ui-warning: #FBBF24;
+  --ui-warning-soft: #3A2F14;
+  --ui-warning-border: #5C4A1E;
+  --ui-danger: #F87171;
+  --ui-danger-hover: #EF4444;
+  --ui-danger-soft: #3A2222;
+  --ui-danger-border: #5C2B2B;
+  --ui-info: #7DB3FF;
+  --ui-info-soft: #1E2A44;
+}
+
+/* Everything below is built from the theme values above, for both themes. */
+:root, [data-theme] {
+  /* ------------------------------------------------- Colours by role (use these) */
+  --ui-color-bg: var(--ui-canvas);                    /* app canvas */
+  --ui-color-surface: var(--ui-neutral-0);            /* cards, panels, inputs */
+  --ui-color-surface-subtle: var(--ui-neutral-25);    /* faint panel backgrounds */
+  --ui-color-surface-muted: var(--ui-neutral-50);     /* table heads, hover rows */
+  --ui-color-surface-hover: var(--ui-neutral-100);    /* neutral hover/pressed */
+  --ui-color-surface-inverse: var(--ui-brand-ink);    /* panels in the opposite tone */
+  --ui-color-text: var(--ui-brand-ink);
+  --ui-color-text-muted: var(--ui-neutral-700);       /* secondary text */
+  --ui-color-text-secondary: var(--ui-neutral-600);   /* grey labels */
+  --ui-color-text-tertiary: var(--ui-neutral-500);    /* hints, captions */
+  --ui-color-text-disabled: var(--ui-neutral-400);    /* placeholders, disabled */
+  --ui-color-on-primary: var(--ui-on-primary);        /* text on primary and inverse panels */
+  --ui-color-border: color-mix(in srgb, var(--ui-brand-primary) 4%, var(--ui-line)); /* default lines */
+  --ui-color-border-subtle: color-mix(in srgb, var(--ui-brand-primary) 3%, var(--ui-line-subtle)); /* faint dividers */
+  --ui-color-border-neutral: var(--ui-neutral-200);
+  --ui-color-border-strong: var(--ui-neutral-300);
+  --ui-color-primary: var(--ui-brand-primary);
+  --ui-color-primary-hover: var(--ui-brand-primary-hover);
+  --ui-color-primary-soft: color-mix(in srgb, var(--ui-brand-primary) var(--ui-tint-soft), var(--ui-neutral-0));     /* selected rows, active nav */
+  --ui-color-primary-subtle: color-mix(in srgb, var(--ui-brand-primary) var(--ui-tint-subtle), var(--ui-neutral-0)); /* hover, chips */
+  --ui-color-primary-muted: color-mix(in srgb, var(--ui-brand-primary) var(--ui-tint-muted), var(--ui-neutral-0));   /* tinted borders */
+  --ui-color-primary-light: var(--ui-brand-tint);
+  --ui-color-accent: var(--ui-brand-accent);
+  --ui-color-focus: var(--ui-brand-highlight);
+  --ui-color-success: var(--ui-success);
+  --ui-color-success-soft: var(--ui-success-soft);
+  --ui-color-success-border: var(--ui-success-border);
+  --ui-color-warning: var(--ui-warning);
+  --ui-color-warning-soft: var(--ui-warning-soft);
+  --ui-color-warning-border: var(--ui-warning-border);
+  --ui-color-danger: var(--ui-danger);
+  --ui-color-danger-hover: var(--ui-danger-hover);
+  --ui-color-danger-soft: var(--ui-danger-soft);
+  --ui-color-danger-border: var(--ui-danger-border);
+  --ui-color-info: var(--ui-info);
+  --ui-color-info-soft: var(--ui-info-soft);
+  --ui-color-shadow: var(--ui-shadow-color);
+  --ui-logo-bar: var(--ui-color-text);                /* logo bars and "Leads" */
+  --ui-logo-bar-soft: var(--ui-logo-soft);
+  --ui-gradient-brand: linear-gradient(90deg, var(--ui-brand-primary), var(--ui-brand-accent));
+
+  /* ------------------------------------------------------------- Typography */
+  --ui-font-sans: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+  --ui-font-mono: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
+  --ui-text-3xs: 9px;
+  --ui-text-2xs: 10px;
+  --ui-text-xs: 11px;
+  --ui-text-sm: 12px;
+  --ui-text-md: 13px;   /* body */
+  --ui-text-base: 14px;
+  --ui-text-lg: 15px;
+  --ui-text-xl: 16px;
+  --ui-text-2xl: 18px;
+  --ui-text-3xl: 20px;
+  --ui-text-4xl: 22px;
+  --ui-text-5xl: 24px;
+  --ui-text-6xl: 28px;
+  --ui-text-display-sm: 38px;
+  --ui-text-display-md: 46px;
+  --ui-text-display-lg: 54px;
+  --ui-weight-light: 200;
+  --ui-weight-regular: 400;
+  --ui-weight-medium: 500;
+  --ui-weight-semibold: 600;
+  --ui-weight-strong: 650;
+  --ui-weight-bold: 700;
+
+  /* ---------------------------------------------------------------- Spacing */
+  --ui-space-0-5: 2px;
+  --ui-space-1: 4px;
+  --ui-space-1-5: 6px;
+  --ui-space-2: 8px;
+  --ui-space-2-5: 10px;
+  --ui-space-3: 12px;
+  --ui-space-3-5: 14px;
+  --ui-space-4: 16px;
+  --ui-space-4-5: 18px;
+  --ui-space-5: 20px;
+  --ui-space-5-5: 22px;
+  --ui-space-6: 24px;
+  --ui-space-7: 28px;
+  --ui-space-8: 32px;
+  --ui-space-9: 36px;
+  --ui-space-10: 40px;
+  --ui-space-12: 48px;
+  --ui-space-14: 56px;
+  --ui-space-16: 64px;
+  --ui-space-20: 80px;
+
+  /* ------------------------------------------------------ Corners and borders */
+  --ui-radius-xs: 4px;
+  --ui-radius-sm: 6px;
+  --ui-radius-md: 8px;
+  --ui-radius-lg: 10px;
+  --ui-radius-xl: 12px;
+  --ui-radius-2xl: 14px;
+  --ui-radius-3xl: 16px;
+  --ui-radius-4xl: 18px;
+  --ui-radius-5xl: 20px;
+  --ui-radius-6xl: 24px;
+  --ui-radius-full: 999px;
+  --ui-border-width: 1px;
+  --ui-border: var(--ui-border-width) solid var(--ui-color-border);
+
+  /* ---------------------------------------------------------------- Shadows */
+  --ui-shadow-xs: 0 1px 2px color-mix(in srgb, var(--ui-color-shadow) 10%, transparent);
+  --ui-shadow-sm: 0 2px 8px color-mix(in srgb, var(--ui-color-shadow) 4%, transparent);
+  --ui-shadow-md: 0 12px 28px color-mix(in srgb, var(--ui-color-primary) 22%, transparent);
+  --ui-shadow-lg: 0 20px 50px color-mix(in srgb, var(--ui-color-shadow) 22%, transparent);
+  --ui-focus-ring: 2px solid var(--ui-color-focus);
+
+  /* ----------------------------------------------------------------- Motion */
+  --ui-duration-fast: 150ms;
+  --ui-duration-base: 300ms;
+  --ui-ease: ease;
+
+  /* ---------------------------------------------------- Controls (buttons, fields) */
+  --ui-control-height-sm: 32px;
+  --ui-control-height-md: 36px;
+  --ui-control-height-lg: 40px;
+  --ui-control-height-xl: 44px;
+  --ui-button-radius: var(--ui-radius-md);                 /* compact buttons */
+  --ui-button-radius-lg: calc(var(--ui-button-radius) + 4px); /* large buttons (Button component) */
+  --ui-button-padding-x: var(--ui-space-4);
+  --ui-button-font-size: var(--ui-text-sm);
+  --ui-button-font-weight: var(--ui-weight-semibold);
+  --ui-field-radius: var(--ui-radius-md);
+  --ui-field-radius-lg: calc(var(--ui-field-radius) + 4px);
+  --ui-field-height: 41px;
+  --ui-field-padding-x: var(--ui-space-3-5);
+  --ui-field-font-size: var(--ui-text-md);
+  --ui-card-radius: var(--ui-radius-3xl);
+  --ui-card-padding: var(--ui-space-5);
+}
