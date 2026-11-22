@@ -7,6 +7,7 @@ import { EmailSpamEnginePage } from './email-spam-engine-page'
 import { EmailTrackingPage } from './email-tracking-page'
 import { DashboardPage } from './dashboard-page'
 import { NicheLibraryPage } from './niche-library-page'
+import { PageHeader } from './page-header'
 import { SearchSetupPage } from './search-setup-page'
 import { SearchResultsPage } from './search-results-page'
 import { ProfilePage } from './profile-page'
@@ -200,10 +201,9 @@ export function LeadsGhrApp() {
       <div className="la-sidebar-bottom"><button className="la-sidebar-footer" type="button" aria-label="Open profile" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace{appVersion ? ` · v${appVersion}` : ''}</small></span></button></div>
     </aside>
     <main className="la-main">
-      {page === 'Dashboard' && <header className="la-topbar">
-        <div className="la-topbar-heading"><h1>{page}</h1><p>{descriptions[page]}</p></div>
-        <div className="la-topbar-tools"><span className="la-topbar-account"><span className="la-topbar-account-mark"><BrandMark size={22} /></span><span><strong>LeadsGhr</strong><small>Local workspace</small></span></span></div>
-      </header>}
+      <PageHeader title={page} subtitle={descriptions[page]}>
+        {page === 'Dashboard' && <span className="la-topbar-account"><span className="la-topbar-account-mark"><BrandMark size={22} /></span><span><strong>LeadsGhr</strong><small>Local workspace</small></span></span>}
+      </PageHeader>
       <div className="la-content">
         <UpdateBanner state={updateState} />
         {historyMessage && <p className="la-search-message" role="alert">{historyMessage}</p>}

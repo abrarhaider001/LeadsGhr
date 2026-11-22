@@ -92,8 +92,8 @@ function ChoiceCard({ title, available, description, query, onQuery, queryLabel,
       <h2 className="m-0 text-(length:--ui-text-lg) font-(--ui-weight-semibold) tracking-tight text-foreground">{title}</h2>
       <span className="shrink-0 rounded-(--ui-radius-full) bg-muted px-(--ui-space-2-5) py-(--ui-space-1) text-(length:--ui-text-2xs) font-(--ui-weight-medium) text-muted-foreground">{available} available</span>
     </div>
-    <div className="mt-(--ui-space-3) flex flex-wrap items-center justify-between gap-(--ui-space-3)">
-      <p className="m-0 text-(length:--ui-text-sm) text-muted-foreground">{description}</p>
+    <div className="mt-(--ui-space-1-5) flex flex-wrap items-start justify-between gap-(--ui-space-3)">
+      <p className="m-0 self-start text-(length:--ui-text-sm) text-muted-foreground">{description}</p>
       <div className="flex w-full flex-wrap items-center gap-(--ui-space-2) xl:w-auto xl:justify-end">
         <div className="relative w-full max-w-56">
           <span className="pointer-events-none absolute top-1/2 left-(--ui-space-3) -translate-y-1/2 text-muted-foreground"><Icon name="search" size={14} /></span>
@@ -240,13 +240,7 @@ export function SearchSetupPage({ onSearch, iconActions = false, pipelineMode = 
   </>
 
   return <div className="la-search-setup">
-    {!pipelineMode && <header className="flex flex-wrap items-start justify-between gap-(--ui-space-4)">
-      <div>
-        <h1 className="m-0 text-(length:--ui-text-5xl) font-(--ui-weight-bold) tracking-tight text-foreground">New Search</h1>
-        <p className="mt-(--ui-space-1-5) mb-0 text-(length:--ui-text-base) text-muted-foreground">Find and target leads across niches and locations.</p>
-      </div>
-      <p className="m-0 text-(length:--ui-text-sm) font-(--ui-weight-medium) text-muted-foreground">{step === 'locations' ? 'Step 2 of 2: Choose locations' : 'Step 1 of 2: Define targets'}</p>
-    </header>}
+    {!pipelineMode && <p className="m-0 text-right text-(length:--ui-text-sm) font-(--ui-weight-medium) text-muted-foreground">{step === 'locations' ? 'Step 2 of 2: Choose locations' : 'Step 1 of 2: Define targets'}</p>}
     {pipelineMode && <PipelineTimeline current={{ details: 0, niches: 1, states: 2, locations: 3 }[step]} completed={[pipelineName.trim() && provider === 'google-maps' ? 0 : -1, criteria.selectedNiches.length ? 1 : -1, criteria.selectedStates.length ? 2 : -1, criteria.selectedLocations.length ? 3 : -1]} />}
     {pipelineMode && step === 'details' && <section className="la-pipeline-details"><div className="la-section-heading"><div><h2>Name your pipeline</h2><p>Give this crawl a name and choose where business discovery starts.</p></div></div><label className="la-pipeline-name">Pipeline name<input type="text" maxLength={100} value={pipelineName} onChange={(event) => setPipelineName(event.target.value)} placeholder="e.g. Texas HVAC contractors" autoFocus /></label><div className="la-pipeline-provider-heading"><h3>Search platform</h3><p>Choose one provider to continue.</p></div><div className="la-pipeline-provider-grid" role="group" aria-label="Search platform">{([
       { id: 'google-maps' as const, name: 'Google Maps', detail: 'Public business listings', available: true },
