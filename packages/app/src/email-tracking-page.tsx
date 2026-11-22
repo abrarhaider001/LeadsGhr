@@ -72,8 +72,6 @@ export function EmailTrackingPage() {
     <div className="la-extension-hero">
       <div className="la-extension-hero-copy">
         <span className="la-extension-eyebrow">LEADSGHR MAIL TRACKING · CHROME EXTENSION</span>
-        <h2>Track email opens in Gmail</h2>
-        <p>Install the LeadsGhr Tracker Chrome extension to add a tracking image to emails you send from Gmail, see when each one is opened, and get a notification when it happens.</p>
         <small>Saves to C:\LeadsGhr\extensions · Works in Google Chrome</small>
         {message && <p className="la-extension-status" role="status">{message}</p>}
       </div>

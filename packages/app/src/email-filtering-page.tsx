@@ -67,7 +67,7 @@ export function EmailFilteringPage() {
   const totalPages = result ? Math.max(1, Math.ceil(result.kept.length / PAGE_SIZE)) : 1
   const visible = result?.kept.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) ?? []
   return <div className="la-email-filter-page">
-    <div className="la-email-filter-intro"><div><h2>Email Filtering</h2><p>Import or paste addresses, then review a clean list.</p></div><span className="la-spam-local-badge"><span aria-hidden="true" /> Private on this computer</span></div>
+    <div className="la-email-filter-intro"><span className="la-spam-local-badge"><span aria-hidden="true" /> Private on this computer</span></div>
     <div className="la-email-filter-layout">
       <section className="la-email-filter-panel" aria-label="Email input">
         <div className="la-email-filter-panel-heading la-spam-panel-title"><span className="la-spam-panel-icon"><Icon name="mail" size={18}/></span><div><h3>Input emails</h3><p>Paste addresses or import an Excel or CSV file.</p></div><Button className="la-email-filter-import" type="button" onClick={() => fileRef.current?.click()} disabled={loading} aria-label="Import from Excel or CSV"><Icon name="exports" size={17} />{loading ? 'Reading...' : 'Import'}</Button></div>

@@ -231,7 +231,7 @@ export function LeadsGhrApp() {
               {visibleLeads.map((lead) => <tr key={lead.sourceUrl}><td><strong>{lead.name}</strong></td><td>{lead.emails.join(', ') || 'No email'}</td><td>{lead.phones.join(', ') || '—'}</td><td>{lead.sourceUrl}</td></tr>)}
             </tbody></table>{visibleLeads.length === 0 && <EmptyTable title={leads.length === 0 ? 'No saved leads yet' : 'No matching leads'} description={leads.length === 0 ? 'Saved businesses will appear here after a crawl.' : 'Try another email filter or search term.'} />}</div>
           </section>
-          : <Card className="la-local-page"><h2>{page}</h2><p>This desktop feature is planned. Use the Crawler tab to test public pages from a homepage without saving data.</p></Card>}
+          : <Card className="la-local-page"><p>This desktop feature is planned. Use the Crawler tab to test public pages from a homepage without saving data.</p></Card>}
       </div>
     </main>
   </div>
