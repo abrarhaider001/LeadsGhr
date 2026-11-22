@@ -45,6 +45,9 @@ importers:
       '@leadsghr/extract':
         specifier: workspace:*
         version: link:../../packages/extract
+      '@leadsghr/license':
+        specifier: workspace:*
+        version: link:../../packages/license
       '@leadsghr/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -111,6 +114,9 @@ importers:
       '@leadsghr/extract':
         specifier: workspace:*
         version: link:../../packages/extract
+      '@leadsghr/license':
+        specifier: workspace:*
+        version: link:../../packages/license
       '@leadsghr/platform':
         specifier: workspace:*
         version: link:../../packages/platform
@@ -145,6 +151,9 @@ importers:
 
   apps/mailer-extension:
     dependencies:
+      '@leadsghr/license':
+        specifier: workspace:*
+        version: link:../../packages/license
       '@leadsghr/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -179,6 +188,9 @@ importers:
       '@leadsghr/extract':
         specifier: workspace:*
         version: link:../extract
+      '@leadsghr/license':
+        specifier: workspace:*
+        version: link:../license
       '@leadsghr/quality':
         specifier: workspace:*
         version: link:../quality
@@ -240,6 +252,16 @@ importers:
       libphonenumber-js:
         specifier: ^1.12.0
         version: 1.13.15
+
+  packages/license:
+    dependencies:
+      react:
+        specifier: ^19.0.0
+        version: 19.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.2
+        version: 19.3.0
 
   packages/platform:
     dependencies:

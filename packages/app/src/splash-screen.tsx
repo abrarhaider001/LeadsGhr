@@ -3,8 +3,9 @@ import { BrandLogo } from '@leadsghr/ui'
 import { useAppVersion } from './updates'
 
 
-function SplashBackground() {
-  // A dot grid coloured from brand purple to teal, fading out behind the content and at the edges, with a soft purple glow.
+/** The splash background (also shown behind the license screen): a dot grid in the brand colours,
+ *  fading out behind the content and at the edges, with a soft glow. */
+export function SplashBackground() {
   return <div className="la-splash__background la-splash__dots" aria-hidden="true" />
 }
 

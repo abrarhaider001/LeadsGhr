@@ -1536,3 +1536,68 @@ a { color: var(--ui-color-primary); }
 .la-kbd-plus { margin: 0 var(--ui-space-1); color: var(--ui-color-text-muted); font-size: var(--ui-text-2xs); }
 .la-kbd { display: inline-grid; place-items: center; min-width: 24px; height: 22px; padding: 0 var(--ui-space-1-5); border: var(--ui-border); border-bottom-width: 2px; border-radius: var(--ui-radius-sm); background: var(--ui-color-surface); color: var(--ui-color-text); font-family: var(--ui-font-mono); font-size: var(--ui-text-2xs); font-weight: var(--ui-weight-semibold); }
 @media (max-width: 900px) { .la-profile-option.la-size-row { flex-wrap: wrap; } .la-size-shortcuts { justify-content: flex-start; } }
+
+/* License screen after the splash and Settings → License (brand-header card), drawn only from the design tokens so both themes work.
+   The header card is an inverse panel (charcoal in light mode, light in dark mode) with a green tint. */
+.la-license { position: relative; isolation: isolate; overflow: hidden; display: grid; place-items: center; min-height: 100vh; padding: var(--ui-space-6) var(--ui-space-4); background: var(--ui-color-bg); color: var(--ui-color-text); }
+.la-license .la-splash__background { opacity: .38; }
+.la-license-form { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; width: min(100%, 460px); text-align: center; animation: la-splash-enter 650ms ease-out both; }
+.la-license-corner-logo { position: absolute; top: var(--ui-space-7); left: var(--ui-space-8); z-index: 1; font-size: var(--ui-text-3xl); }
+.la-license-key-art { display: block; width: clamp(140px, 12vw, 190px); height: auto; margin-bottom: var(--ui-space-1-5); filter: drop-shadow(0 18px 24px color-mix(in srgb, var(--ui-color-primary) 18%, transparent)); }
+.la-license-form h1 { margin: 0; white-space: nowrap; font-size: clamp(28px, 3.5vw, 44px); font-weight: var(--ui-weight-bold); line-height: 1.08; letter-spacing: -.045em; }
+.la-license-form h1 span, .la-license-settings h1 span { background: linear-gradient(90deg, var(--ui-color-primary), var(--ui-color-accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.la-license-form > p.la-license-lead { margin: var(--ui-space-4) 0 0; color: var(--ui-color-text-secondary); font-size: clamp(14px, 1.3vw, 17px); line-height: 1.5; }
+.la-license-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.la-license-field { display: flex; align-items: center; gap: var(--ui-space-2-5); width: 100%; margin-top: var(--ui-space-7); padding: var(--ui-space-3) var(--ui-space-3-5); border: var(--ui-border-width) solid var(--ui-color-primary-muted); border-radius: var(--ui-field-radius); background: var(--ui-color-surface); box-shadow: 0 0 0 4px var(--ui-color-primary-soft); color: var(--ui-color-primary); text-align: left; }
+.la-license-field svg { flex: none; width: 16px; height: 16px; }
+.la-license-field:focus-within { border-color: var(--ui-color-primary); }
+.la-license-field.is-error { border-color: var(--ui-color-danger-border); box-shadow: 0 0 0 4px var(--ui-color-danger-soft); }
+.la-license-field textarea { flex: 1; min-width: 0; height: 22px; padding: 0; border: 0; outline: 0; resize: none; overflow: hidden; white-space: nowrap; background: none; color: var(--ui-color-text); font-family: var(--ui-font-mono); font-size: var(--ui-text-md); font-weight: var(--ui-weight-medium); line-height: 22px; }
+.la-license-field textarea::placeholder { color: var(--ui-color-text-muted); font-family: var(--ui-font-sans); font-size: var(--ui-text-base); }
+.la-license-form > p.la-license-error { width: 100%; margin: var(--ui-space-2-5) 0 0; padding: var(--ui-space-2) var(--ui-space-3); border: var(--ui-border-width) solid var(--ui-color-danger-border); border-radius: var(--ui-radius-md); background: var(--ui-color-danger-soft); color: var(--ui-color-danger); font-size: var(--ui-text-sm); line-height: 1.45; text-align: left; }
+.la-license-submit { width: 100%; height: var(--ui-control-height-lg); margin-top: var(--ui-space-3); border: 0; border-radius: var(--ui-button-radius-lg); background: var(--ui-color-primary); color: var(--ui-color-on-primary); font: inherit; font-size: var(--ui-text-base); font-weight: var(--ui-weight-semibold); box-shadow: 0 8px 20px color-mix(in srgb, var(--ui-color-primary) 22%, transparent); cursor: pointer; }
+.la-license-submit:hover:not(:disabled) { background: var(--ui-color-primary-hover); }
+.la-license-submit:disabled { opacity: .65; cursor: default; }
+.la-license-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--ui-space-2); margin-top: var(--ui-space-6); }
+.la-license-chips span { display: inline-flex; align-items: center; gap: var(--ui-space-1-5); padding: var(--ui-space-1-5) var(--ui-space-3); border: var(--ui-border); border-radius: var(--ui-radius-full); background: var(--ui-color-surface); color: var(--ui-color-text-secondary); font-size: var(--ui-text-sm); }
+.la-license-chips svg { color: var(--ui-color-primary); }
+.la-license-form > p.la-license-foot { margin: var(--ui-space-3) 0 0; color: var(--ui-color-text-secondary); font-size: var(--ui-text-sm); }
+.la-license-settings { display: grid; gap: var(--ui-space-5); max-width: 860px; }
+/* Card colours: an inverse panel in light mode; in dark mode a dark, green-tinted panel with light text. */
+.la-license-card { --la-card-base: var(--ui-color-surface-inverse); --la-card-fg: var(--ui-color-surface); }
+[data-theme='dark'] .la-license-card { --la-card-base: var(--ui-color-surface); --la-card-fg: var(--ui-color-text); border: var(--ui-border); }
+[data-theme='dark'] .la-license-badge { background: var(--ui-color-success-soft); }
+.la-license-card { position: relative; overflow: hidden; padding: var(--ui-space-7) var(--ui-space-8) var(--ui-space-6); border-radius: var(--ui-radius-2xl); background: linear-gradient(150deg, color-mix(in srgb, var(--ui-color-primary) 24%, var(--la-card-base)), var(--la-card-base) 70%); color: var(--la-card-fg); }
+.la-license-card::after { content: ''; position: absolute; right: -70px; top: -70px; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--ui-color-accent) 40%, transparent), transparent 65%); }
+.la-license-card-top { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: var(--ui-space-3); color: color-mix(in srgb, var(--la-card-fg) 75%, transparent); font-size: var(--ui-text-md); }
+.la-license-badge { display: inline-flex; align-items: center; gap: var(--ui-space-1-5); padding: var(--ui-space-1) var(--ui-space-3); border-radius: var(--ui-radius-full); background: var(--la-card-fg); color: var(--ui-color-success); font-size: var(--ui-text-sm); font-weight: var(--ui-weight-semibold); }
+.la-license-card-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: var(--ui-space-4-5); margin-top: var(--ui-space-5); }
+.la-license-card-grid small { display: block; color: color-mix(in srgb, var(--la-card-fg) 75%, transparent); font-size: var(--ui-text-sm); }
+.la-license-card-grid strong { display: block; margin-top: var(--ui-space-1); font-size: var(--ui-text-2xl); }
+.la-license-card-grid em { font-style: normal; font-weight: var(--ui-weight-regular); font-size: var(--ui-text-md); color: color-mix(in srgb, var(--la-card-fg) 75%, transparent); }
+.la-license-mono { font-family: var(--ui-font-mono); letter-spacing: .1em; }
+.la-license-used-head { display: flex; align-items: center; justify-content: space-between; }
+.la-license-used-head h3 { margin: 0; font-size: var(--ui-text-lg); }
+.la-license-used-head button { min-height: var(--ui-control-height-sm); padding: 0 var(--ui-space-3); border: var(--ui-border); border-radius: var(--ui-radius-md); background: var(--ui-color-surface); color: var(--ui-color-text); font: inherit; font-size: var(--ui-text-sm); font-weight: var(--ui-weight-semibold); cursor: pointer; }
+.la-license-used-head button:hover:not(:disabled) { background: var(--ui-color-surface-muted); }
+.la-license-used ul { display: grid; gap: var(--ui-space-2); margin: var(--ui-space-3) 0 0; padding: 0; list-style: none; }
+.la-license-used li { display: flex; align-items: center; gap: var(--ui-space-3); padding: var(--ui-space-3) var(--ui-space-4); border: var(--ui-border); border-radius: var(--ui-radius-xl); background: var(--ui-color-surface); color: var(--ui-color-primary); }
+.la-license-used li strong { color: var(--ui-color-text); font-size: var(--ui-text-base); }
+.la-license-used li span { margin-left: auto; color: var(--ui-color-text-secondary); font-size: var(--ui-text-sm); }
+.la-license-used li span.is-used { color: var(--ui-color-success); }
+.la-license-settings-note { margin: var(--ui-space-3) 0 0; color: var(--ui-color-text-secondary); font-size: var(--ui-text-sm); line-height: 1.5; }
+.la-license-expiry { position: relative; z-index: 1; margin-top: var(--ui-space-6); padding-top: var(--ui-space-5); border-top: var(--ui-border-width) solid color-mix(in srgb, var(--la-card-fg) 16%, transparent); }
+.la-license-expiry-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--ui-space-3); }
+.la-license-expiry-head strong { font-size: var(--ui-text-xl); }
+.la-license-expiry-head span { color: color-mix(in srgb, var(--la-card-fg) 75%, transparent); font-size: var(--ui-text-md); }
+.la-license-expiry-track { height: 8px; margin-top: var(--ui-space-3); overflow: hidden; border-radius: var(--ui-radius-full); background: color-mix(in srgb, var(--la-card-fg) 18%, transparent); }
+.la-license-expiry-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--ui-color-primary), var(--ui-color-accent)); }
+.la-license-expiry p { margin: var(--ui-space-3) 0 0; color: color-mix(in srgb, var(--la-card-fg) 75%, transparent); font-size: var(--ui-text-sm); line-height: 1.5; }
+@media (max-width: 860px) { .la-license-card-grid { grid-template-columns: 1fr; } }
+.la-license-checking { display: grid; place-items: center; min-height: 100vh; background: var(--ui-color-bg); color: var(--ui-color-text-secondary); font-size: var(--ui-text-base); }
+.la-license-key-row { display: flex; align-items: center; gap: var(--ui-space-2-5); margin-top: var(--ui-space-1); }
+.la-license-key-row strong { margin-top: 0; letter-spacing: .04em; white-space: nowrap; }
+.la-license-copy { display: inline-grid; place-items: center; width: var(--ui-control-height-sm); height: var(--ui-control-height-sm); border: var(--ui-border-width) solid color-mix(in srgb, var(--la-card-fg) 28%, transparent); border-radius: var(--ui-radius-md); background: color-mix(in srgb, var(--la-card-fg) 12%, transparent); color: var(--la-card-fg); cursor: pointer; transition: background .15s ease; }
+.la-license-copy:hover { background: color-mix(in srgb, var(--la-card-fg) 22%, transparent); }
+.la-license-copy:focus-visible { outline: 2px solid var(--la-card-fg); outline-offset: 2px; }
+.la-license-copy.is-copied { border-color: color-mix(in srgb, var(--ui-color-accent) 60%, transparent); background: color-mix(in srgb, var(--ui-color-accent) 25%, transparent); color: var(--ui-color-accent); }

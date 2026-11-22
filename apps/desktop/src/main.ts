@@ -9,6 +9,7 @@ import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
 import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory, leadsGhrSettingsDirectory } from './paths'
 import { leadsGhrDataFile, prepareDataFolder } from './data-folder'
+import { registerLicenseIpc } from './license'
 import { z } from 'zod'
 import { registerCrawlerTest } from './crawler-test'
 import { autoUpdater } from 'electron-updater'
@@ -282,6 +283,8 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
     if (!path.toLowerCase().startsWith(directory.toLowerCase() + '\\') && !path.toLowerCase().startsWith(directory.toLowerCase() + '/')) throw new Error('Not a settings export.')
     shell.showItemInFolder(path)
   })
+  // License key (shown after the splash screen and in Settings → License).
+  registerLicenseIpc()
   // Version and updates (Settings → Preferences → Updates, the update banner, and the splash screen).
   ipcMain.handle('leadsghr:app:version', () => app.getVersion())
   ipcMain.handle('leadsghr:update:status', () => updateState)
