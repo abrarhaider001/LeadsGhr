@@ -92,6 +92,8 @@ export function createEmailVerifyCache(db: Database.Database): ResultCache {
     set(result) {
       if (result.status !== 'valid' && result.status !== 'invalid') return
       if (!checksComplete(result.checks)) return
+      // Only cache mailbox-proven Valid rows; soft Valid (provider hide / block / temp) must re-check.
+      if (result.status === 'valid' && result.checks.smtp !== 'accepted') return
       if (result.status === 'valid' && result.confidence < 85) return
       upsert.run({
         email: result.email,

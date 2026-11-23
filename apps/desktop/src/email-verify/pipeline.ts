@@ -5,7 +5,9 @@ import {
   classifyMailFrom,
   classifyRcpt,
   finalizeResult,
+  looseVerifyEmail,
   normalizeVerifyEmail,
+  type EmailVerifyEnabledChecks,
   type EmailVerifyResult,
   type SmtpClassified,
 } from '@leadsghr/quality'
@@ -19,6 +21,25 @@ type Opts = {
   perSession: number
   paceMs: number
   workers: number
+  checkSyntax: boolean
+  checkDomain: boolean
+  checkMx: boolean
+  checkSmtp: boolean
+  checkDisposable: boolean
+  checkRoleBased: boolean
+  checkCatchAll: boolean
+}
+
+function enabledChecks(opts: Opts): EmailVerifyEnabledChecks {
+  return {
+    syntax: opts.checkSyntax,
+    domain: opts.checkDomain,
+    mx: opts.checkMx,
+    smtp: opts.checkSmtp,
+    disposable: opts.checkDisposable,
+    roleBased: opts.checkRoleBased,
+    catchAll: opts.checkCatchAll,
+  }
 }
 
 type Item = { index: number; email: string; disposable: boolean; roleBased: boolean }
@@ -89,7 +110,13 @@ function mapSmtp(signal: SmtpClassified['signal']): EmailVerifyResult['checks'][
   return 'unverifiable'
 }
 
-function emitAll(domains: Map<string, DomainGroup>, host: string, patch: Partial<Parameters<typeof finalizeResult>[0]> & Pick<Parameters<typeof finalizeResult>[0], 'smtp' | 'code' | 'reason'>, emit: Emit) {
+function emitAll(
+  domains: Map<string, DomainGroup>,
+  host: string,
+  patch: Partial<Parameters<typeof finalizeResult>[0]> & Pick<Parameters<typeof finalizeResult>[0], 'smtp' | 'code' | 'reason'>,
+  emit: Emit,
+  enabled: EmailVerifyEnabledChecks,
+) {
   for (const group of domains.values()) {
     for (const item of group.items) {
       emit(finalizeResult({
@@ -101,6 +128,7 @@ function emitAll(domains: Map<string, DomainGroup>, host: string, patch: Partial
         roleBased: item.roleBased,
         catchAll: false,
         mxHost: host,
+        enabled,
         ...patch,
       }), item.index)
     }
@@ -108,13 +136,14 @@ function emitAll(domains: Map<string, DomainGroup>, host: string, patch: Partial
 }
 
 async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Opts, signal: AbortSignal, emit: Emit) {
+  const enabled = enabledChecks(opts)
   const provider = detectProvider(host)
   if (NO_PROBE.has(provider)) {
     emitAll(domains, host, {
       smtp: 'unverifiable',
       code: 'provider_unverifiable',
       reason: 'Provider hides mailboxes',
-    }, emit)
+    }, emit, enabled)
     return
   }
 
@@ -179,8 +208,8 @@ async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Op
       const probeItems = group.items.filter((item) => !item.disposable)
       let catchAll = false
 
-      if (probeItems.length) {
-        const probeEmail = provider === 'google'
+      if (probeItems.length && (opts.checkCatchAll || provider === 'google')) {
+        const probeEmail = provider === 'google' || !opts.checkCatchAll
           ? probeItems[0].email
           : `zz${randomBytes(6).toString('hex')}@${domain}`
         const sample = await safe(group.hosts, probeEmail)
@@ -190,10 +219,10 @@ async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Op
             code: 'sender_blocked',
             reason: 'MAIL FROM rejected — set a routable address in Preferences',
             smtpCode: sample.smtpCode,
-          }, emit)
+          }, emit, enabled)
           return
         }
-        if (provider !== 'google') catchAll = sample.signal === 'accepted'
+        if (opts.checkCatchAll && provider !== 'google') catchAll = sample.signal === 'accepted'
       }
 
       for (const item of group.items) {
@@ -211,6 +240,7 @@ async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Op
             code: 'disposable',
             reason: 'Disposable domain',
             mxHost: host,
+            enabled,
           }), item.index)
           continue
         }
@@ -225,7 +255,7 @@ async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Op
             code: 'sender_blocked',
             reason: 'MAIL FROM rejected — set a routable address in Preferences',
             smtpCode: smtp.smtpCode,
-          }, emit)
+          }, emit, enabled)
           return
         }
 
@@ -242,6 +272,7 @@ async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Op
           reason: catchAll ? 'Catch-all domain' : smtp.reason,
           mxHost: host,
           smtpCode: smtp.smtpCode,
+          enabled,
         }), item.index)
       }
     }
@@ -257,6 +288,8 @@ export async function verifyPipeline(
   emit: Emit,
   cache?: ResultCache,
 ) {
+  const enabled = enabledChecks(opts)
+  const needsDns = opts.checkDomain || opts.checkMx || opts.checkSmtp
   const out: Emit = (result, index) => {
     if (cache && (result.status === 'valid' || result.status === 'invalid')) cache.set(result)
     emit(result, index)
@@ -265,7 +298,8 @@ export async function verifyPipeline(
   const byDomain = new Map<string, Item[]>()
 
   raw.forEach((value, index) => {
-    const email = normalizeVerifyEmail(value)
+    const strict = normalizeVerifyEmail(value)
+    const email = strict ?? (opts.checkSyntax ? null : looseVerifyEmail(value))
     if (!email) {
       out(finalizeResult({
         email: value.trim() || value,
@@ -277,7 +311,8 @@ export async function verifyPipeline(
         catchAll: false,
         smtp: 'skipped',
         code: 'bad_syntax',
-        reason: 'Bad syntax',
+        reason: opts.checkSyntax ? 'Bad syntax' : 'Could not parse address',
+        enabled,
       }), index)
       return
     }
@@ -287,15 +322,30 @@ export async function verifyPipeline(
       return
     }
     const domain = email.split('@')[1]
+    const disposable = opts.checkDisposable ? checkDisposable(domain) : false
+    const roleBased = opts.checkRoleBased ? checkRoleBased(email) : false
+    if (!needsDns) {
+      out(finalizeResult({
+        email,
+        syntax: true,
+        domain: true,
+        mx: true,
+        disposable,
+        roleBased,
+        catchAll: false,
+        smtp: 'skipped',
+        code: disposable ? 'disposable' : 'checks_limited',
+        reason: disposable ? 'Disposable domain' : 'Domain, MX, and SMTP checks off',
+        enabled,
+      }), index)
+      return
+    }
     const list = byDomain.get(domain) ?? []
-    list.push({
-      index,
-      email,
-      disposable: checkDisposable(domain),
-      roleBased: checkRoleBased(email),
-    })
+    list.push({ index, email, disposable, roleBased })
     byDomain.set(domain, list)
   })
+
+  if (!byDomain.size) return
 
   const resolved = new Map<string, DomainGroup>()
   await pool([...byDomain.keys()], 10, async (domain) => {
@@ -311,19 +361,79 @@ export async function verifyPipeline(
   const smtpUnits = new Map<string, Map<string, DomainGroup>>()
 
   for (const [domain, group] of resolved) {
-    if (!group.exists || group.nullMx || !group.hosts.length) {
+    const hasMx = !group.nullMx && group.hosts.length > 0
+    if (!group.exists) {
       for (const item of group.items) {
         out(finalizeResult({
           email: item.email,
           syntax: true,
-          domain: group.exists,
+          domain: false,
           mx: false,
           disposable: item.disposable,
           roleBased: item.roleBased,
           catchAll: false,
           smtp: 'skipped',
-          code: group.nullMx || group.exists ? 'no_mx' : 'domain_not_found',
-          reason: group.nullMx || group.exists ? 'No MX' : 'Domain not found',
+          code: 'domain_not_found',
+          reason: 'Domain not found',
+          enabled,
+        }), item.index)
+      }
+      continue
+    }
+
+    if (opts.checkMx && !hasMx) {
+      for (const item of group.items) {
+        out(finalizeResult({
+          email: item.email,
+          syntax: true,
+          domain: true,
+          mx: false,
+          disposable: item.disposable,
+          roleBased: item.roleBased,
+          catchAll: false,
+          smtp: 'skipped',
+          code: 'no_mx',
+          reason: 'No MX',
+          enabled,
+        }), item.index)
+      }
+      continue
+    }
+
+    if (!opts.checkSmtp) {
+      for (const item of group.items) {
+        out(finalizeResult({
+          email: item.email,
+          syntax: true,
+          domain: true,
+          mx: hasMx || !opts.checkMx,
+          disposable: item.disposable,
+          roleBased: item.roleBased,
+          catchAll: false,
+          smtp: 'skipped',
+          code: item.disposable ? 'disposable' : 'smtp_disabled',
+          reason: item.disposable ? 'Disposable domain' : 'SMTP check off',
+          mxHost: group.hosts[0],
+          enabled,
+        }), item.index)
+      }
+      continue
+    }
+
+    if (!hasMx) {
+      for (const item of group.items) {
+        out(finalizeResult({
+          email: item.email,
+          syntax: true,
+          domain: true,
+          mx: false,
+          disposable: item.disposable,
+          roleBased: item.roleBased,
+          catchAll: false,
+          smtp: 'skipped',
+          code: 'no_mx',
+          reason: 'No MX',
+          enabled,
         }), item.index)
       }
       continue
@@ -343,6 +453,7 @@ export async function verifyPipeline(
           code: 'disposable',
           reason: 'Disposable domain',
           mxHost: group.hosts[0],
+          enabled,
         }), item.index)
       }
       continue
@@ -353,6 +464,8 @@ export async function verifyPipeline(
     unit.set(domain, group)
     smtpUnits.set(key, unit)
   }
+
+  if (!smtpUnits.size) return
 
   const size = (unit: Map<string, DomainGroup>) => [...unit.values()].reduce((count, group) => count + group.items.length, 0)
   const ordered = [...smtpUnits.entries()].sort((a, b) => size(b[1]) - size(a[1]))

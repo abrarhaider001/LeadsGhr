@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import readXlsxFile from 'read-excel-file/browser'
 import { Button, EmptyTable, Icon, Textarea } from '@leadsghr/ui'
 import type { DesktopPreferences, EmailVerifyResult } from '@leadsghr/schemas'
-import { defaultDesktopPreferences } from '@leadsghr/schemas'
+import { defaultDesktopPreferences, emailVerifyChecksFromPreferences } from '@leadsghr/schemas'
 import {
   EMAIL_VERIFY_CONCURRENCY_DEFAULT,
   EMAIL_VERIFY_CONCURRENCY_MAX,
@@ -25,6 +25,13 @@ type VerifyBridge = {
   startEmailVerify(input: {
     emails: string[]
     concurrency: number
+    checkSyntax: boolean
+    checkDomain: boolean
+    checkMx: boolean
+    checkSmtp: boolean
+    checkDisposable: boolean
+    checkRoleBased: boolean
+    checkCatchAll: boolean
     mailFrom: string
     ehlo: string
     perSession: number
@@ -160,9 +167,11 @@ export function EmailValidationPage({ preferences = defaultDesktopPreferences }:
     setRunning(true)
     setMessage(`Checking ${emails.length}...`)
     try {
+      const checks = emailVerifyChecksFromPreferences(preferences)
       const id = await api.startEmailVerify({
         emails,
         concurrency,
+        ...checks,
         mailFrom: preferences.emailVerifyMailFrom,
         ehlo: preferences.emailVerifyEhlo,
         perSession: preferences.emailVerifyPerSession,
@@ -181,10 +190,10 @@ export function EmailValidationPage({ preferences = defaultDesktopPreferences }:
     await runEmails([...new Set(inputs.map((item) => item.value.trim()).filter(Boolean))])
   }
 
-  async function retryUnknown() {
+  async function retrySoft() {
     const emails = filled.filter(isRetryable).map((item) => item.email)
     if (!emails.length) {
-      setMessage('No retryable Unknown results.')
+      setMessage('No soft failures to retry.')
       return
     }
     await runEmails([...new Set(emails)])
@@ -250,7 +259,7 @@ export function EmailValidationPage({ preferences = defaultDesktopPreferences }:
   const counts = filled.reduce((acc, item) => {
     acc[item.status] = (acc[item.status] ?? 0) + 1
     return acc
-  }, { valid: 0, risky: 0, invalid: 0, unknown: 0 } as Record<EmailVerifyResult['status'], number>)
+  }, { valid: 0, risky: 0, invalid: 0 } as Record<EmailVerifyResult['status'], number>)
   const retryCount = filled.filter(isRetryable).length
   const activeResult = active ? filled.find((item) => item.email === active.email) ?? active : null
   const closeDetail = useEffectEvent(() => setActive(null))
@@ -314,12 +323,11 @@ export function EmailValidationPage({ preferences = defaultDesktopPreferences }:
             <button type="button" className={statusFilter === 'valid' ? 'is-active' : undefined} onClick={() => { setStatusFilter('valid'); setPage(1) }}><strong>{counts.valid}</strong><span>Valid</span></button>
             <button type="button" className={statusFilter === 'risky' ? 'is-active' : undefined} onClick={() => { setStatusFilter('risky'); setPage(1) }}><strong>{counts.risky}</strong><span>Risky</span></button>
             <button type="button" className={statusFilter === 'invalid' ? 'is-active' : undefined} onClick={() => { setStatusFilter('invalid'); setPage(1) }}><strong>{counts.invalid}</strong><span>Invalid</span></button>
-            <button type="button" className={statusFilter === 'unknown' ? 'is-active' : undefined} onClick={() => { setStatusFilter('unknown'); setPage(1) }}><strong>{counts.unknown}</strong><span>Unknown</span></button>
           </div>
           <div className="la-email-filter-actions">
             <Button type="button" variant="outline" onClick={() => void copyEmails()} disabled={!filtered.length}>Copy</Button>
             <Button type="button" variant="outline" onClick={downloadCsv} disabled={!filtered.length}><Icon name="exports" size={15}/> CSV</Button>
-            <Button type="button" variant="outline" onClick={() => void retryUnknown()} disabled={running || !retryCount}>Retry Unknown</Button>
+            <Button type="button" variant="outline" onClick={() => void retrySoft()} disabled={running || !retryCount}>Retry soft</Button>
           </div>
           <div className="la-email-filter-table-wrap">
             <table className="la-table la-email-verify-table">

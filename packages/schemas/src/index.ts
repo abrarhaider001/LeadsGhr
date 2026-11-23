@@ -84,6 +84,13 @@ export const desktopPreferencesSchema = z.object({
   includePhone: z.boolean(),
   includeAddress: z.boolean(),
   includeLocation: z.boolean(),
+  emailVerifyCheckSyntax: z.boolean().default(true),
+  emailVerifyCheckDomain: z.boolean().default(true),
+  emailVerifyCheckMx: z.boolean().default(true),
+  emailVerifyCheckSmtp: z.boolean().default(true),
+  emailVerifyCheckDisposable: z.boolean().default(true),
+  emailVerifyCheckRoleBased: z.boolean().default(true),
+  emailVerifyCheckCatchAll: z.boolean().default(true),
   emailVerifyMailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
   emailVerifyEhlo: z.string().trim().min(1).max(255).default('verify.example.com'),
   emailVerifyPerSession: z.number().int().min(1).max(40).default(8),
@@ -110,11 +117,94 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   includePhone: true,
   includeAddress: true,
   includeLocation: true,
+  emailVerifyCheckSyntax: true,
+  emailVerifyCheckDomain: true,
+  emailVerifyCheckMx: true,
+  emailVerifyCheckSmtp: true,
+  emailVerifyCheckDisposable: true,
+  emailVerifyCheckRoleBased: true,
+  emailVerifyCheckCatchAll: true,
   emailVerifyMailFrom: 'verify@example.com',
   emailVerifyEhlo: 'verify.example.com',
   emailVerifyPerSession: 8,
   emailVerifyPaceMs: 400,
   autoUpdate: true,
+}
+
+export const emailVerifyCheckFlagsSchema = z.object({
+  checkSyntax: z.boolean().default(true),
+  checkDomain: z.boolean().default(true),
+  checkMx: z.boolean().default(true),
+  checkSmtp: z.boolean().default(true),
+  checkDisposable: z.boolean().default(true),
+  checkRoleBased: z.boolean().default(true),
+  checkCatchAll: z.boolean().default(true),
+})
+export type EmailVerifyCheckFlags = z.infer<typeof emailVerifyCheckFlagsSchema>
+
+/** Catch-all needs SMTP; SMTP needs MX; MX needs Domain. */
+export function normalizeEmailVerifyChecks<T extends EmailVerifyCheckFlags>(flags: T): T {
+  const next = { ...flags }
+  if (next.checkCatchAll) next.checkSmtp = true
+  if (next.checkSmtp) next.checkMx = true
+  if (next.checkMx) next.checkDomain = true
+  if (!next.checkDomain) {
+    next.checkMx = false
+    next.checkSmtp = false
+    next.checkCatchAll = false
+  } else if (!next.checkMx) {
+    next.checkSmtp = false
+    next.checkCatchAll = false
+  } else if (!next.checkSmtp) {
+    next.checkCatchAll = false
+  }
+  return next
+}
+
+export function emailVerifyChecksFromPreferences(preferences: DesktopPreferences): EmailVerifyCheckFlags {
+  return normalizeEmailVerifyChecks({
+    checkSyntax: preferences.emailVerifyCheckSyntax,
+    checkDomain: preferences.emailVerifyCheckDomain,
+    checkMx: preferences.emailVerifyCheckMx,
+    checkSmtp: preferences.emailVerifyCheckSmtp,
+    checkDisposable: preferences.emailVerifyCheckDisposable,
+    checkRoleBased: preferences.emailVerifyCheckRoleBased,
+    checkCatchAll: preferences.emailVerifyCheckCatchAll,
+  })
+}
+
+export function applyEmailVerifyChecksToPreferences(
+  preferences: DesktopPreferences,
+  patch: Partial<Pick<DesktopPreferences,
+    | 'emailVerifyCheckSyntax'
+    | 'emailVerifyCheckDomain'
+    | 'emailVerifyCheckMx'
+    | 'emailVerifyCheckSmtp'
+    | 'emailVerifyCheckDisposable'
+    | 'emailVerifyCheckRoleBased'
+    | 'emailVerifyCheckCatchAll'
+  >>,
+): DesktopPreferences {
+  const merged = { ...preferences, ...patch }
+  const checks = normalizeEmailVerifyChecks({
+    checkSyntax: merged.emailVerifyCheckSyntax,
+    checkDomain: merged.emailVerifyCheckDomain,
+    checkMx: merged.emailVerifyCheckMx,
+    checkSmtp: merged.emailVerifyCheckSmtp,
+    checkDisposable: merged.emailVerifyCheckDisposable,
+    checkRoleBased: merged.emailVerifyCheckRoleBased,
+    checkCatchAll: merged.emailVerifyCheckCatchAll,
+  })
+  return {
+    ...merged,
+    emailVerifyCheckSyntax: checks.checkSyntax,
+    emailVerifyCheckDomain: checks.checkDomain,
+    emailVerifyCheckMx: checks.checkMx,
+    emailVerifyCheckSmtp: checks.checkSmtp,
+    emailVerifyCheckDisposable: checks.checkDisposable,
+    emailVerifyCheckRoleBased: checks.checkRoleBased,
+    emailVerifyCheckCatchAll: checks.checkCatchAll,
+  }
 }
 
 export const mapsQuerySchema = z.string().trim().min(2).max(260)
@@ -136,18 +226,36 @@ export type CrawlRunSummary = { id: string; name: string; provider: PipelineProv
 export type CrawlExport = { id: string; runId: string; fileName: string; filePath: string; fileSize: number; entryCount: number; exportedAt: string }
 export type CrawlRunDetail = CrawlRunSummary & { criteria: SearchCriteria; preferences: DesktopPreferences; searches: PreparedCrawlSearch[]; rows: CrawlRow[] }
 
-export const emailVerifyStatusSchema = z.enum(['valid', 'risky', 'invalid', 'unknown'])
+export const emailVerifyStatusSchema = z.enum(['valid', 'risky', 'invalid'])
 export type EmailVerifyStatus = z.infer<typeof emailVerifyStatusSchema>
 export const EMAIL_VERIFY_CONCURRENCY_MIN = 1
 export const EMAIL_VERIFY_CONCURRENCY_MAX = 20
 export const EMAIL_VERIFY_CONCURRENCY_DEFAULT = 5
 export const emailVerifyRequestSchema = z.object({
-  emails: z.array(z.string().trim().min(1).max(320)).min(1).max(5000),
+  emails: z.array(z.string().trim().min(1).max(300)).min(1).max(50000),
   concurrency: z.number().int().min(EMAIL_VERIFY_CONCURRENCY_MIN).max(EMAIL_VERIFY_CONCURRENCY_MAX).default(EMAIL_VERIFY_CONCURRENCY_DEFAULT),
+  checkSyntax: z.boolean().default(true),
+  checkDomain: z.boolean().default(true),
+  checkMx: z.boolean().default(true),
+  checkSmtp: z.boolean().default(true),
+  checkDisposable: z.boolean().default(true),
+  checkRoleBased: z.boolean().default(true),
+  checkCatchAll: z.boolean().default(true),
   mailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
   ehlo: z.string().trim().min(1).max(255).default('verify.example.com'),
   perSession: z.number().int().min(1).max(40).default(8),
   paceMs: z.number().int().min(0).max(5000).default(400),
+}).transform((value) => {
+  const checks = normalizeEmailVerifyChecks({
+    checkSyntax: value.checkSyntax,
+    checkDomain: value.checkDomain,
+    checkMx: value.checkMx,
+    checkSmtp: value.checkSmtp,
+    checkDisposable: value.checkDisposable,
+    checkRoleBased: value.checkRoleBased,
+    checkCatchAll: value.checkCatchAll,
+  })
+  return { ...value, ...checks }
 })
 export type EmailVerifyRequest = z.infer<typeof emailVerifyRequestSchema>
 export const emailVerifyChecksSchema = z.object({

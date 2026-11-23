@@ -58,7 +58,7 @@ Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TR
 | [G4: Outreach Segments and Templates](G4-Outreach%20Segments%20and%20Templates/FEATURES-G4-README.md) | Partial | Desktop segment builder remains unimplemented. The LeadsGhr Mailer extension supports saved templates, CSV or Excel recipients, inclusive ranges, and paced Gmail sends with Start/Pause/Resume/Stop; see [Email Sending](../EMAIL_SENDING_README.md). |
 | [G5: Compliance Center](G5-Compliance%20Center/FEATURES-G5-README.md) | Not implemented | No compliance center or suppression controls. |
 | [G6: Accounts, Billing and Plans](G6-Accounts%2C%20Billing%20and%20Plans/FEATURES-G6-README.md) | Replaced | License keys instead of accounts (no sign-up): admin-generated Supabase keys, one activation per product (desktop, Mailer, Tracker), license screen at every entry point, encrypted local storage, check at every start with 7 offline days. Billing and plans are not part of the product. |
-| [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist for Crawler, Search, and Email Validation; team, roles and broader organisation settings are missing. |
+| [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist for Crawler, Search, and Email Validation, including every confidence check; team, roles and broader organisation settings are missing. |
 
 ## Separate future Chrome extension
 

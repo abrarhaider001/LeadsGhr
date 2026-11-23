@@ -47,6 +47,13 @@ export const PREFERENCE_SECTIONS: readonly { id: 'appearance' | 'crawler' | 'sea
     { key: 'includeLocation', label: 'Result field: Searched location' },
   ] },
   { id: 'email-validation', title: 'Email Validation', settings: [
+    { key: 'emailVerifyCheckSyntax', label: 'Syntax check' },
+    { key: 'emailVerifyCheckDomain', label: 'Domain check' },
+    { key: 'emailVerifyCheckMx', label: 'MX check' },
+    { key: 'emailVerifyCheckSmtp', label: 'SMTP check' },
+    { key: 'emailVerifyCheckDisposable', label: 'Disposable address check' },
+    { key: 'emailVerifyCheckRoleBased', label: 'Role-based address check' },
+    { key: 'emailVerifyCheckCatchAll', label: 'Catch-all check' },
     { key: 'emailVerifyMailFrom', label: 'SMTP mail-from address' },
     { key: 'emailVerifyEhlo', label: 'SMTP EHLO name' },
     { key: 'emailVerifyPerSession', label: 'Recipients per SMTP session' },

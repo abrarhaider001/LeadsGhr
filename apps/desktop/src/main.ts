@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { readFile, writeFile, copyFile, mkdir, stat } from 'node:fs/promises'
 import Database from 'better-sqlite3'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, buildPreferencesFile, applyPreferencesFile, type DesktopPreferences, clampDisplaySize, DISPLAY_SIZE_STEP } from '@leadsghr/schemas'
+import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, defaultDesktopPreferences, buildPreferencesFile, applyPreferencesFile, applyEmailVerifyChecksToPreferences, type DesktopPreferences, clampDisplaySize, DISPLAY_SIZE_STEP } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
 import { leadsGhrExportsDirectory, leadsGhrExtensionsDirectory, leadsGhrSettingsDirectory } from './paths'
@@ -29,7 +29,7 @@ async function readPreferences(): Promise<DesktopPreferences> {
   await preferencesWrite.catch(() => undefined)
   try {
     const raw = JSON.parse(await readFile(leadsGhrDataFile('preferences.json'), 'utf8')) as Record<string, unknown>
-    const preferences = desktopPreferencesSchema.parse({ ...defaultDesktopPreferences, ...raw })
+    const preferences = applyEmailVerifyChecksToPreferences(desktopPreferencesSchema.parse({ ...defaultDesktopPreferences, ...raw }), {})
     if (/@(?:localhost|.+\.invalid)$/i.test(preferences.emailVerifyMailFrom)) preferences.emailVerifyMailFrom = defaultDesktopPreferences.emailVerifyMailFrom
     if (/^(?:localhost|.*\.invalid)$/i.test(preferences.emailVerifyEhlo)) preferences.emailVerifyEhlo = defaultDesktopPreferences.emailVerifyEhlo
     return { ...preferences, scanPublicWebsites: false }
@@ -229,7 +229,7 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
   })
   ipcMain.handle('leadsghr:preferences:save', async (event, input: unknown) => {
     if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
-    const preferences = { ...desktopPreferencesSchema.parse(input), scanPublicWebsites: false }
+    const preferences = { ...applyEmailVerifyChecksToPreferences(desktopPreferencesSchema.parse(input), {}), scanPublicWebsites: false }
     preferencesWrite = preferencesWrite.catch(() => undefined).then(() => writeFile(leadsGhrDataFile('preferences.json'), JSON.stringify(preferences, null, 2) + '\n', 'utf8'))
     await preferencesWrite
     applyAutoUpdatePreference(preferences.autoUpdate)

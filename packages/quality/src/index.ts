@@ -3,6 +3,7 @@ export { filterEmails } from './email-filter.ts'
 export type { FilterResult, FilteredEmail, RejectedEmail } from './email-filter.ts'
 export {
   normalizeVerifyEmail,
+  looseVerifyEmail,
   checkDisposable,
   checkRoleBased,
   classifyRcpt,
@@ -14,6 +15,7 @@ export {
 } from './email-verify/index.ts'
 export type {
   EmailVerifyResult,
+  EmailVerifyEnabledChecks,
   SmtpClassified,
 } from './email-verify/index.ts'
 export { DISPOSABLE_DOMAINS, isDisposableDomain } from './disposable-domains.ts'

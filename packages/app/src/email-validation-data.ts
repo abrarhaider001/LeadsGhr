@@ -8,14 +8,14 @@ export {
 } from '@leadsghr/schemas'
 export { isRetryable } from '@leadsghr/quality'
 
-export const EMAIL_VERIFY_MAX = 5000
+export const EMAIL_VERIFY_MAX = 50000
 
 export function statusLabel(status: string): string {
   switch (status) {
     case 'valid': return 'Valid'
     case 'risky': return 'Risky'
     case 'invalid': return 'Invalid'
-    default: return 'Unknown'
+    default: return 'Valid'
   }
 }
 
@@ -24,7 +24,7 @@ export function statusClass(status: string): string {
     case 'valid': return 'la-email-verify-valid'
     case 'risky': return 'la-email-verify-risky'
     case 'invalid': return 'la-email-verify-invalid'
-    default: return 'la-email-verify-unknown'
+    default: return 'la-email-verify-valid'
   }
 }
 
