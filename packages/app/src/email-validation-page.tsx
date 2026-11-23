@@ -264,7 +264,6 @@ export function EmailValidationPage({ preferences = defaultDesktopPreferences }:
 
   return <div className="la-email-filter-page la-email-verify-page">
     <div className="la-email-filter-intro">
-      <div><h2>Email Validation</h2><p>Local pipeline: syntax, DNS, MX, SMTP, disposable, role, and catch-all.</p></div>
       <span className="la-spam-local-badge"><span aria-hidden="true" /> Local</span>
     </div>
     <div className="la-email-filter-layout">

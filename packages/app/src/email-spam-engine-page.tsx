@@ -44,7 +44,7 @@ export function EmailSpamEnginePage() {
   }
   const hasDraft = Boolean(subject.trim() || body.trim())
   return <div className="la-spam-page">
-    <div className="la-spam-intro"><div><h2>Email Spam Check</h2><p>Check your draft for risky wording and review a clearer version.</p></div><span className="la-spam-local-badge"><span aria-hidden="true" /> Private on this computer</span></div>
+    <div className="la-spam-intro"><span className="la-spam-local-badge"><span aria-hidden="true" /> Private on this computer</span></div>
     <div className="la-spam-layout">
       <section className="la-spam-panel" aria-label="Email draft">
         <div className="la-spam-panel-title"><span className="la-spam-panel-icon"><Icon name="mail" size={18}/></span><div><h3>Email draft</h3><p>Write or paste the message you want to check.</p></div></div>

@@ -350,7 +350,6 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
   const visibleUrlRows = crawlQueueWindow(urlRows, (row) => row.status.toLowerCase() as Lowercase<UrlRow['status']>)
   const webview = preview ? createElement('webview', { key: preview.partition, ref: (node: HTMLElement | null) => { viewRef.current = node as GuestView | null }, partition: preview.partition, className: 'la-crawler-webview', 'aria-label': 'Crawled webpage preview' }) : null
   return <div className="la-crawler">
-    <div className="la-crawler-heading"><h2>Crawl public pages</h2></div>
     <section className="la-crawler-form-section">
       <form className="la-crawler-form" onSubmit={(event) => void start(event)}>
         <Label htmlFor="crawler-url">Homepage URL</Label>

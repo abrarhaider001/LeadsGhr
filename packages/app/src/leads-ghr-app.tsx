@@ -7,6 +7,7 @@ import { EmailSpamEnginePage } from './email-spam-engine-page'
 import { EmailTrackingPage } from './email-tracking-page'
 import { DashboardPage } from './dashboard-page'
 import { NicheLibraryPage } from './niche-library-page'
+import { PageHeader } from './page-header'
 import { SearchSetupPage } from './search-setup-page'
 import { SearchResultsPage } from './search-results-page'
 import { ProfilePage } from './profile-page'
@@ -52,7 +53,7 @@ const descriptions: Record<string, string> = {
   'New Pipeline': 'Choose niches, states, and locations for a new pipeline.',
   'Pipeline Export': 'Your pipeline results have been saved as a CSV file.',
   Crawler: 'Discover public pages and emails from a homepage without saving results.',
-  'New Search': 'Choose contractor niches and U.S. locations for a local search draft.',
+  'New Search': 'Find and target leads across niches and locations.',
   'Niche Library': 'Browse and edit local business keyword packs for your searches.',
   'Email Filtering': 'Import Excel or CSV files, remove noisy addresses, and review a clean email list.',
   'Email Validation': 'Check mailbox acceptance with a local SMTP RCPT TO probe.',
@@ -208,10 +209,9 @@ export function LeadsGhrApp() {
       <div className="la-sidebar-bottom"><button className="la-sidebar-footer" type="button" aria-label="Open profile" aria-current={page === 'Profile' ? 'page' : undefined} onClick={() => void showPage('Profile')}><div className="la-sidebar-avatar"><Avatar style={{ width: 28, height: 28 }} {...genConfig(avatarSeed)} /></div><span><strong>Hi, {account.firstName}</strong><small>Local workspace{appVersion ? ` · v${appVersion}` : ''}</small></span></button></div>
     </aside>
     <main className="la-main">
-      {page === 'Dashboard' && <header className="la-topbar">
-        <div className="la-topbar-heading"><h1>{page}</h1><p>{descriptions[page]}</p></div>
-        <div className="la-topbar-tools"><span className="la-topbar-account"><span className="la-topbar-account-mark"><BrandMark size={22} /></span><span><strong>LeadsGhr</strong><small>Local workspace</small></span></span></div>
-      </header>}
+      <PageHeader title={page} subtitle={descriptions[page]}>
+        {page === 'Dashboard' && <span className="la-topbar-account"><span className="la-topbar-account-mark"><BrandMark size={22} /></span><span><strong>LeadsGhr</strong><small>Local workspace</small></span></span>}
+      </PageHeader>
       <div className="la-content">
         <UpdateBanner state={updateState} />
         {historyMessage && <p className="la-search-message" role="alert">{historyMessage}</p>}
@@ -240,7 +240,7 @@ export function LeadsGhrApp() {
               {visibleLeads.map((lead) => <tr key={lead.sourceUrl}><td><strong>{lead.name}</strong></td><td>{lead.emails.join(', ') || 'No email'}</td><td>{lead.phones.join(', ') || '—'}</td><td>{lead.sourceUrl}</td></tr>)}
             </tbody></table>{visibleLeads.length === 0 && <EmptyTable title={leads.length === 0 ? 'No saved leads yet' : 'No matching leads'} description={leads.length === 0 ? 'Saved businesses will appear here after a crawl.' : 'Try another email filter or search term.'} />}</div>
           </section>
-          : <Card className="la-local-page"><h2>{page}</h2><p>This desktop feature is planned. Use the Crawler tab to test public pages from a homepage without saving data.</p></Card>}
+          : <Card className="la-local-page"><p>This desktop feature is planned. Use the Crawler tab to test public pages from a homepage without saving data.</p></Card>}
       </div>
     </main>
   </div>

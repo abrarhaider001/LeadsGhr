@@ -24,8 +24,6 @@ export function EmailSendingPage() {
     onDownload={() => { void downloadExtension() }}
     message={message}
     eyebrow="LEADSGHR MAILER"
-    title="Install sending in Gmail"
-    summary="Download LeadsGhr Mailer, load it into Chrome, then send saved templates to CSV or Excel recipient ranges from your Gmail session."
     finalStep={<>Click the LeadsGhr Mailer toolbar icon, open settings with the gear button, and save a template. Then open Gmail, click the LeadsGhr Mailer toolbar icon, pick the template, upload a CSV or Excel file, set Start, End, and Delay, and press <strong>Start sending</strong>.</>}
     requirement={<><strong>Sending uses your Gmail session.</strong> Messages go out one at a time with a polite delay. Keep the Gmail tab open, stay signed in, and start with a small range while you verify delivery. Campaign recipients and bodies stay in the Chrome profile.</>}
   />
