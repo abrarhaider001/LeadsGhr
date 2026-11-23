@@ -92,15 +92,27 @@ function rangeError(from: string, to: string, delaySec: string, total: number): 
   const start = Number(from)
   const end = Number(to)
   const delay = Number(delaySec)
-  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < 1) return 'Start and End must be whole numbers from 1.'
+  if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < 1)
+    return 'Start and End must be whole numbers from 1.'
   if (start > end) return 'Start cannot be after End.'
   if (end > total) return `End cannot be more than ${total}.`
-  if (!Number.isFinite(delay) || delay < MIN_DELAY || delay > MAX_DELAY) return `Delay must be ${MIN_DELAY}–${MAX_DELAY} seconds.`
+  if (!Number.isFinite(delay) || delay < MIN_DELAY || delay > MAX_DELAY)
+    return `Delay must be ${MIN_DELAY}–${MAX_DELAY} seconds.`
   return ''
 }
 
-function TemplateSelect({ options, value, disabled, empty, onChange }: {
-  options: Option[]; value: string; disabled: boolean; empty: React.ReactNode; onChange(id: string): void
+function TemplateSelect({
+  options,
+  value,
+  disabled,
+  empty,
+  onChange,
+}: {
+  options: Option[]
+  value: string
+  disabled: boolean
+  empty: React.ReactNode
+  onChange(id: string): void
 }) {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -109,37 +121,104 @@ function TemplateSelect({ options, value, disabled, empty, onChange }: {
 
   useEffect(() => {
     if (!open) return
-    const close = (event: MouseEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false) }
+    const close = (event: MouseEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false)
+    }
     document.addEventListener('mousedown', close)
     return () => document.removeEventListener('mousedown', close)
   }, [open])
 
   function toggle() {
     if (disabled) return
-    setActive(Math.max(0, options.findIndex((item) => item.id === value)))
+    setActive(
+      Math.max(
+        0,
+        options.findIndex((item) => item.id === value),
+      ),
+    )
     setOpen((current) => !current)
   }
 
   function onKeyDown(event: React.KeyboardEvent) {
     if (disabled) return
-    if (!open && (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggle(); return }
+    if (!open && (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault()
+      toggle()
+      return
+    }
     if (!open) return
-    if (event.key === 'Escape') { event.preventDefault(); setOpen(false) }
-    else if (event.key === 'ArrowDown') { event.preventDefault(); setActive((index) => Math.min(options.length - 1, index + 1)) }
-    else if (event.key === 'ArrowUp') { event.preventDefault(); setActive((index) => Math.max(0, index - 1)) }
-    else if ((event.key === 'Enter' || event.key === ' ') && options[active]) { event.preventDefault(); onChange(options[active].id); setOpen(false) }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setOpen(false)
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActive((index) => Math.min(options.length - 1, index + 1))
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActive((index) => Math.max(0, index - 1))
+    } else if ((event.key === 'Enter' || event.key === ' ') && options[active]) {
+      event.preventDefault()
+      onChange(options[active].id)
+      setOpen(false)
+    }
   }
 
-  return <div className="select" ref={root}>
-    <button type="button" id="template" className="select-btn" aria-haspopup="listbox" aria-expanded={open} aria-labelledby="template-label template" disabled={disabled} onClick={toggle} onKeyDown={onKeyDown}>
-      {selected ? <span className="value">{selected.name}</span> : <span className="value placeholder">Choose a template</span>}
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-    </button>
-    {open && <ul className="menu" role="listbox" aria-labelledby="template-label">
-      {options.map((item, index) => <li key={item.id} role="option" aria-selected={item.id === value} className={`option ${index === active ? 'active' : ''}`} onMouseEnter={() => setActive(index)} onClick={() => { onChange(item.id); setOpen(false) }}>{item.name}</li>)}
-      {!options.length && <li className="note" role="presentation">{empty}</li>}
-    </ul>}
-  </div>
+  return (
+    <div className="select" ref={root}>
+      <button
+        type="button"
+        id="template"
+        className="select-btn"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-labelledby="template-label template"
+        disabled={disabled}
+        onClick={toggle}
+        onKeyDown={onKeyDown}
+      >
+        {selected ? (
+          <span className="value">{selected.name}</span>
+        ) : (
+          <span className="value placeholder">Choose a template</span>
+        )}
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {open && (
+        <ul className="menu" role="listbox" aria-labelledby="template-label">
+          {options.map((item, index) => (
+            <li
+              key={item.id}
+              role="option"
+              aria-selected={item.id === value}
+              className={`option ${index === active ? 'active' : ''}`}
+              onMouseEnter={() => setActive(index)}
+              onClick={() => {
+                onChange(item.id)
+                setOpen(false)
+              }}
+            >
+              {item.name}
+            </li>
+          ))}
+          {!options.length && (
+            <li className="note" role="presentation">
+              {empty}
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 function Popup() {
@@ -160,25 +239,28 @@ function Popup() {
   const [dragging, setDragging] = useState(false)
 
   useEffect(() => {
-    void Promise.all([loadTemplates(), loadDraft(), loadJob(), loadHistory()]).then(([list, draft, currentJob, sends]) => {
-      setSaved(list)
-      if (draft) {
-        setTemplateId(draft.templateId ?? '')
-        setRecipients(draft.recipients ?? [])
-        setFileName(draft.fileName ?? '')
-        setFrom(draft.from || '1')
-        setTo(draft.to || '')
-        setDelaySec(draft.delaySec || '10')
-      }
-      setJob(currentJob)
-      setHistory(sends)
-      setLoaded(true)
-    })
+    void Promise.all([loadTemplates(), loadDraft(), loadJob(), loadHistory()]).then(
+      ([list, draft, currentJob, sends]) => {
+        setSaved(list)
+        if (draft) {
+          setTemplateId(draft.templateId ?? '')
+          setRecipients(draft.recipients ?? [])
+          setFileName(draft.fileName ?? '')
+          setFrom(draft.from || '1')
+          setTo(draft.to || '')
+          setDelaySec(draft.delaySec || '10')
+        }
+        setJob(currentJob)
+        setHistory(sends)
+        setLoaded(true)
+      },
+    )
     const onChanged = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
       if (area !== 'local') return
       if (changes[DATA_CHANGED_KEY]) void loadTemplates().then(setSaved)
       if (changes.sendingJob) setJob((changes.sendingJob.newValue as SendJob | undefined) ?? null)
-      if (changes.sendingHistory) setHistory((changes.sendingHistory.newValue as SendHistoryEntry[] | undefined) ?? [])
+      if (changes.sendingHistory)
+        setHistory((changes.sendingHistory.newValue as SendHistoryEntry[] | undefined) ?? [])
     }
     chrome.storage.onChanged.addListener(onChanged)
     return () => chrome.storage.onChanged.removeListener(onChanged)
@@ -191,7 +273,10 @@ function Popup() {
 
   // Countdown to the next send while a job runs.
   useEffect(() => {
-    if (job?.status !== 'running') { setNextAt(null); return }
+    if (job?.status !== 'running') {
+      setNextAt(null)
+      return
+    }
     const tick = () => {
       setNow(Date.now())
       void chrome.alarms.get(SENDING_ALARM).then((alarm) => setNextAt(alarm?.scheduledTime ?? null))
@@ -230,32 +315,42 @@ function Popup() {
     setMessage('')
   }
 
-  async function control(kind: 'sending:start' | 'sending:pause' | 'sending:resume' | 'sending:cancel') {
+  async function control(
+    kind: 'sending:start' | 'sending:pause' | 'sending:resume' | 'sending:cancel',
+  ) {
     setBusy(true)
     setMessage('')
     try {
-      const payload = kind === 'sending:start'
-        ? {
-            kind,
-            template: { subject: savedTemplate?.subject ?? '', bodyHtml: savedTemplate?.bodyHtml ?? '' },
-            recipients,
-            range: { from: Number(from), to: Number(to) },
-            delayMs: Number(delaySec) * 1000,
-          }
-        : { kind }
-      const result = await chrome.runtime.sendMessage(payload) as SendingActionResponse
+      const payload =
+        kind === 'sending:start'
+          ? {
+              kind,
+              template: {
+                subject: savedTemplate?.subject ?? '',
+                bodyHtml: savedTemplate?.bodyHtml ?? '',
+              },
+              recipients,
+              range: { from: Number(from), to: Number(to) },
+              delayMs: Number(delaySec) * 1000,
+            }
+          : { kind }
+      const result = (await chrome.runtime.sendMessage(payload)) as SendingActionResponse
       if (!result.ok) throw new Error(result.error)
       setJob(result.job)
     } catch (problem) {
       setMessage(problem instanceof Error ? problem.message : String(problem))
-    } finally { setBusy(false) }
+    } finally {
+      setBusy(false)
+    }
   }
 
   const footer = useMemo(() => {
     if (!job) return null
     const total = job.recipients.length
     const done = Math.min(job.cursor, total)
-    const failed = history.filter((entry) => entry.jobId === job.id && entry.status === 'failed').length
+    const failed = history.filter(
+      (entry) => entry.jobId === job.id && entry.status === 'failed',
+    ).length
     return { total, done, failed, nextIndex: job.recipients[job.cursor]?.index }
   }, [job, history])
 
@@ -264,79 +359,302 @@ function Popup() {
 
   let status: React.ReactNode = null
   if (job?.status === 'running' && footer) {
-    status = <><div className="progress"><b>{footer.done} of {footer.total} sent</b><span>{waitSec && waitSec > 1 ? `Next in ${waitSec}s` : 'Sending…'}</span></div><div className="track" role="progressbar" aria-valuemin={0} aria-valuemax={footer.total} aria-valuenow={footer.done} aria-label="Sending progress"><div style={{ width: `${percent}%` }}/></div></>
+    status = (
+      <>
+        <div className="progress">
+          <b>
+            {footer.done} of {footer.total} sent
+          </b>
+          <span>{waitSec && waitSec > 1 ? `Next in ${waitSec}s` : 'Sending…'}</span>
+        </div>
+        <div
+          className="track"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={footer.total}
+          aria-valuenow={footer.done}
+          aria-label="Sending progress"
+        >
+          <div style={{ width: `${percent}%` }} />
+        </div>
+      </>
+    )
   } else if (job?.status === 'paused' && footer) {
-    status = <><div className="progress"><b>Paused at {footer.done} of {footer.total}</b><span>{footer.nextIndex ? `Resumes at row ${footer.nextIndex}` : ''}</span></div><div className="track paused" role="progressbar" aria-valuemin={0} aria-valuemax={footer.total} aria-valuenow={footer.done} aria-label="Sending progress"><div style={{ width: `${percent}%` }}/></div></>
+    status = (
+      <>
+        <div className="progress">
+          <b>
+            Paused at {footer.done} of {footer.total}
+          </b>
+          <span>{footer.nextIndex ? `Resumes at row ${footer.nextIndex}` : ''}</span>
+        </div>
+        <div
+          className="track paused"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={footer.total}
+          aria-valuenow={footer.done}
+          aria-label="Sending progress"
+        >
+          <div style={{ width: `${percent}%` }} />
+        </div>
+      </>
+    )
   } else if (job && footer && job.status === 'completed') {
-    status = <p className="result" role="status">Sent {footer.done} of {footer.total}{footer.failed ? `, ${footer.failed} failed` : ''}.</p>
+    status = (
+      <p className="result" role="status">
+        Sent {footer.done} of {footer.total}
+        {footer.failed ? `, ${footer.failed} failed` : ''}.
+      </p>
+    )
   } else if (job && footer && job.status === 'failed') {
-    status = <p className="result warn" role="alert">Stopped at {footer.done + 1} of {footer.total}: {job.lastError ?? 'sending failed'}</p>
+    status = (
+      <p className="result warn" role="alert">
+        Stopped at {footer.done + 1} of {footer.total}: {job.lastError ?? 'sending failed'}
+      </p>
+    )
   } else if (job && footer && job.status === 'cancelled') {
-    status = <p className="result" role="status">Stopped after {footer.done} of {footer.total}.</p>
+    status = (
+      <p className="result" role="status">
+        Stopped after {footer.done} of {footer.total}.
+      </p>
+    )
   }
 
-  const play = <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3.5v17l14-8.5z"/></svg>
-  const primary = job?.status === 'running'
-    ? <button type="button" className="primary" disabled={busy} onClick={() => void control('sending:pause')}><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="3" width="5" height="18" rx="1"/><rect x="14" y="3" width="5" height="18" rx="1"/></svg>Pause</button>
-    : job?.status === 'paused'
-      ? <button type="button" className="primary outline" disabled={busy} onClick={() => void control('sending:resume')}>{play}Resume</button>
-      : <button type="button" className="primary" disabled={!canStart} onClick={() => void control('sending:start')}>{play}{busy ? 'Starting…' : count > 0 ? `Send ${plural(count, 'email')}` : 'Start sending'}</button>
-
-  return <div className="app">
-    <style>{styles}</style>
-    <header className="top">
-      <img src="/icon.png" alt=""/>
-      <strong>LeadsGhr Mailer</strong>
-      <button type="button" className="icon-btn" aria-label="Settings" title="Settings" onClick={() => void chrome.runtime.openOptionsPage()}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  const play = (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M6 3.5v17l14-8.5z" />
+    </svg>
+  )
+  const primary =
+    job?.status === 'running' ? (
+      <button
+        type="button"
+        className="primary"
+        disabled={busy}
+        onClick={() => void control('sending:pause')}
+      >
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <rect x="5" y="3" width="5" height="18" rx="1" />
+          <rect x="14" y="3" width="5" height="18" rx="1" />
+        </svg>
+        Pause
       </button>
-    </header>
+    ) : job?.status === 'paused' ? (
+      <button
+        type="button"
+        className="primary outline"
+        disabled={busy}
+        onClick={() => void control('sending:resume')}
+      >
+        {play}Resume
+      </button>
+    ) : (
+      <button
+        type="button"
+        className="primary"
+        disabled={!canStart}
+        onClick={() => void control('sending:start')}
+      >
+        {play}
+        {busy ? 'Starting…' : count > 0 ? `Send ${plural(count, 'email')}` : 'Start sending'}
+      </button>
+    )
 
-    <div className={`body ${active ? 'locked' : ''}`}>
-      <div className="field-group">
-        <span className="label" id="template-label">Template</span>
-        <TemplateSelect options={savedOptions} value={templateId} disabled={active} onChange={setTemplateId}
-          empty={<>No templates saved yet. <button type="button" className="link" onClick={() => void chrome.runtime.openOptionsPage()}>Create one in settings</button></>}/>
+  return (
+    <div className="app">
+      <style>{styles}</style>
+      <header className="top">
+        <img src="/icon.png" alt="" />
+        <strong>LeadsGhr Mailer</strong>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="Settings"
+          title="Settings"
+          onClick={() => void chrome.runtime.openOptionsPage()}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+          </svg>
+        </button>
+      </header>
+
+      <div className={`body ${active ? 'locked' : ''}`}>
+        <div className="field-group">
+          <span className="label" id="template-label">
+            Template
+          </span>
+          <TemplateSelect
+            options={savedOptions}
+            value={templateId}
+            disabled={active}
+            onChange={setTemplateId}
+            empty={
+              <>
+                No templates saved yet.{' '}
+                <button
+                  type="button"
+                  className="link"
+                  onClick={() => void chrome.runtime.openOptionsPage()}
+                >
+                  Create one in settings
+                </button>
+              </>
+            }
+          />
+        </div>
+
+        <div className="field-group grid">
+          <label>
+            Start
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={recipients.length || undefined}
+              value={from}
+              disabled={!recipients.length || active}
+              onChange={(event) => setFrom(event.target.value)}
+            />
+          </label>
+          <label>
+            End
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={recipients.length || undefined}
+              value={recipients.length ? to : ''}
+              disabled={!recipients.length || active}
+              onChange={(event) => setTo(event.target.value)}
+            />
+          </label>
+          <label>
+            Delay (s)
+            <input
+              type="number"
+              inputMode="numeric"
+              min={MIN_DELAY}
+              max={MAX_DELAY}
+              value={delaySec}
+              disabled={active}
+              onChange={(event) => setDelaySec(event.target.value)}
+            />
+          </label>
+        </div>
+
+        <div className="field-group">
+          <span className="label">Recipients</span>
+          <label
+            className={`drop ${dragging ? 'dragging' : ''}`}
+            aria-disabled={active}
+            onDragOver={(event) => {
+              if (active) return
+              event.preventDefault()
+              setDragging(true)
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(event) => {
+              event.preventDefault()
+              setDragging(false)
+              const file = event.dataTransfer.files?.[0]
+              if (file && !active) void chooseFile(file)
+            }}
+          >
+            <svg viewBox="0 0 48 34" aria-hidden="true">
+              <path
+                style={{ fill: 'var(--ui-color-primary)' }}
+                d="M38 13.5A14 14 0 0 0 11.2 10 11.5 11.5 0 0 0 12 34h25a10.5 10.5 0 0 0 1-20.5z"
+              />
+              <path
+                style={{ fill: 'var(--ui-color-surface)' }}
+                d="M24 11l-7 7.5h4.6V27h4.8v-8.5H31z"
+              />
+            </svg>
+            <span>Browse files to upload</span>
+            <small>.csv or .xlsx</small>
+            <input
+              type="file"
+              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              disabled={active}
+              aria-label="Upload a CSV or Excel file of recipients"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) void chooseFile(file)
+                event.currentTarget.value = ''
+              }}
+            />
+          </label>
+          {fileName && (
+            <div className="filebar">
+              <span className="name" title={fileName}>
+                {fileName}
+              </span>
+              <button
+                type="button"
+                className="remove"
+                aria-label={`Remove ${fileName}`}
+                title="Remove file"
+                disabled={active}
+                onClick={clearFile}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M6 6l12 12M18 6 6 18" />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
+        {error && !active && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        {message && (
+          <p className="error" role="alert">
+            {message}
+          </p>
+        )}
       </div>
 
-      <div className="field-group grid">
-        <label>Start<input type="number" inputMode="numeric" min={1} max={recipients.length || undefined} value={from} disabled={!recipients.length || active} onChange={(event) => setFrom(event.target.value)}/></label>
-        <label>End<input type="number" inputMode="numeric" min={1} max={recipients.length || undefined} value={recipients.length ? to : ''} disabled={!recipients.length || active} onChange={(event) => setTo(event.target.value)}/></label>
-        <label>Delay (s)<input type="number" inputMode="numeric" min={MIN_DELAY} max={MAX_DELAY} value={delaySec} disabled={active} onChange={(event) => setDelaySec(event.target.value)}/></label>
-      </div>
-
-      <div className="field-group">
-        <span className="label">Recipients</span>
-        <label className={`drop ${dragging ? 'dragging' : ''}`} aria-disabled={active}
-          onDragOver={(event) => { if (active) return; event.preventDefault(); setDragging(true) }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(event) => { event.preventDefault(); setDragging(false); const file = event.dataTransfer.files?.[0]; if (file && !active) void chooseFile(file) }}>
-          <svg viewBox="0 0 48 34" aria-hidden="true"><path style={{ fill: 'var(--ui-color-primary)' }} d="M38 13.5A14 14 0 0 0 11.2 10 11.5 11.5 0 0 0 12 34h25a10.5 10.5 0 0 0 1-20.5z"/><path style={{ fill: 'var(--ui-color-surface)' }} d="M24 11l-7 7.5h4.6V27h4.8v-8.5H31z"/></svg>
-          <span>Browse files to upload</span>
-          <small>.csv or .xlsx</small>
-          <input type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" disabled={active} aria-label="Upload a CSV or Excel file of recipients"
-            onChange={(event) => { const file = event.target.files?.[0]; if (file) void chooseFile(file); event.currentTarget.value = '' }}/>
-        </label>
-        {fileName && <div className="filebar">
-          <span className="name" title={fileName}>{fileName}</span>
-          <button type="button" className="remove" aria-label={`Remove ${fileName}`} title="Remove file" disabled={active} onClick={clearFile}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
-          </button>
-        </div>}
-      </div>
-      {error && !active && <p className="error" role="alert">{error}</p>}
-      {message && <p className="error" role="alert">{message}</p>}
+      <footer className="foot">
+        {status}
+        <div className="actions">
+          {primary}
+          <button
+            type="button"
+            className="stop"
+            aria-label="Stop sending"
+            title="Stop"
+            disabled={busy || !active}
+            onClick={() => void control('sending:cancel')}
+          />
+        </div>
+      </footer>
     </div>
-
-    <footer className="foot">
-      {status}
-      <div className="actions">
-        {primary}
-        <button type="button" className="stop" aria-label="Stop sending" title="Stop" disabled={busy || !active} onClick={() => void control('sending:cancel')}/>
-      </div>
-    </footer>
-  </div>
+  )
 }
 
 // The license screen is the entry point: the popup opens only with an active license key.
-createRoot(document.getElementById('root')!).render(<LicenseGate product="mailer" logo="/icon.svg"><Popup /></LicenseGate>)
+createRoot(document.getElementById('root')!).render(
+  <LicenseGate product="mailer" logo="/icon.svg">
+    <Popup />
+  </LicenseGate>,
+)

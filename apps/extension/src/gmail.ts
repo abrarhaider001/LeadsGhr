@@ -1,7 +1,19 @@
 import { tokens } from '@leadsghr/ui/tokens' // design tokens, resolved (Gmail pages have no LeadsGhr CSS variables)
-type RecordEntry = { id: string; recipient: string; subject: string; sentAt: number; sent?: boolean; sender?: string; loads: number; firstLoad?: string | null; lastLoad: string | null; events?: string[] }
+type RecordEntry = {
+  id: string
+  recipient: string
+  subject: string
+  sentAt: number
+  sent?: boolean
+  sender?: string
+  loads: number
+  firstLoad?: string | null
+  lastLoad: string | null
+  events?: string[]
+}
 type TickState = 'untracked' | 'sent' | 'loaded'
-const observedLoads = (count: number): string => count ? `${count} image load${count === 1 ? '' : 's'} observed` : 'No image load observed yet'
+const observedLoads = (count: number): string =>
+  count ? `${count} image load${count === 1 ? '' : 's'} observed` : 'No image load observed yet'
 
 const css = document.createElement('style')
 css.textContent = `.lg-track-banner{margin:0;padding:${tokens['space-1-5']} ${tokens['space-4']} ${tokens['space-0-5']};font:${tokens['text-sm']}/1.4 'Google Sans',Roboto,Arial,sans-serif;color:${tokens['color-primary']}}.lg-track-banner[hidden]{display:none}.lg-track-banner.error{color:${tokens['color-danger']}}.lg-track-navbar{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;margin:0 ${tokens['space-1-5']};padding:${tokens['space-1-5']};border:0;border-radius:50%;background:transparent;cursor:pointer}.lg-track-navbar:hover{background:${tokens['color-primary-subtle']}}.lg-track-navbar img{display:block;width:23px;height:23px;object-fit:contain}
@@ -37,8 +49,10 @@ function ticks(state: TickState): HTMLElement {
   return span
 }
 
-const BODY_SELECTOR = '[g_editable="true"][contenteditable="true"], [role="textbox"][contenteditable="true"][aria-label*="Message Body"], div[contenteditable="true"][aria-label*="Message Body"]'
-const SEND_SELECTOR = '[role="button"][data-tooltip^="Send"], [role="button"][aria-label^="Send"], button[aria-label^="Send"]'
+const BODY_SELECTOR =
+  '[g_editable="true"][contenteditable="true"], [role="textbox"][contenteditable="true"][aria-label*="Message Body"], div[contenteditable="true"][aria-label*="Message Body"]'
+const SEND_SELECTOR =
+  '[role="button"][data-tooltip^="Send"], [role="button"][aria-label^="Send"], button[aria-label^="Send"]'
 
 function getComposeBody(compose: Element): HTMLElement | null {
   return compose.querySelector<HTMLElement>(BODY_SELECTOR)
@@ -73,7 +87,8 @@ function threadSubject(): string {
 }
 
 /** A new email has a Subject field; an inline reply inherits the conversation subject. */
-const FIELD_SELECTOR = 'input[name="subjectbox"], input[name="to"], [name="to"], [aria-label^="To"], [email], [data-hovercard-id*="@"]'
+const FIELD_SELECTOR =
+  'input[name="subjectbox"], input[name="to"], [name="to"], [aria-label^="To"], [email], [data-hovercard-id*="@"]'
 
 /**
  * Area to read Recipients and Subject from. In Gmail these fields sit above the body/Send block,
@@ -85,7 +100,8 @@ function fieldScope(compose: Element): Element {
   let scope = compose
   while (!scope.querySelector('input[name="subjectbox"]')) {
     const parent = scope.parentElement
-    if (!parent || parent === document.body || parent.querySelectorAll(BODY_SELECTOR).length > 1) break
+    if (!parent || parent === document.body || parent.querySelectorAll(BODY_SELECTOR).length > 1)
+      break
     scope = parent
     if (scope.matches('[role="dialog"]')) break
   }
@@ -99,21 +115,30 @@ function getComposeSubject(compose: Element): string {
   return thread ? `Re: ${thread}` : ''
 }
 
-const addressOf = (node: Element): string => (node.getAttribute('email') ?? node.getAttribute('data-hovercard-id') ?? '').trim().toLowerCase()
+const addressOf = (node: Element): string =>
+  (node.getAttribute('email') ?? node.getAttribute('data-hovercard-id') ?? '').trim().toLowerCase()
 
 /** Recipient chips in the compose area; for a reply whose chips are collapsed, the other people in the conversation. */
 function getRecipient(compose: Element): string {
   const account = currentAccount()
-  const unique = (values: string[]) => [...new Set(values.filter(value => value.includes('@')))]
-  const preferOthers = (values: string[]) => values.some(value => value !== account) ? values.filter(value => value !== account) : values
+  const unique = (values: string[]) => [...new Set(values.filter((value) => value.includes('@')))]
+  const preferOthers = (values: string[]) =>
+    values.some((value) => value !== account) ? values.filter((value) => value !== account) : values
   // Recipient chips only: Gmail's address-suggestion dropdown also carries addresses and must be ignored.
-  const chips = unique([...compose.querySelectorAll('[email], [data-hovercard-id*="@"]')]
-    .filter(node => !node.closest('[role="listbox"], [role="option"], [role="menu"], [role="menuitem"]'))
-    .map(addressOf))
+  const chips = unique(
+    [...compose.querySelectorAll('[email], [data-hovercard-id*="@"]')]
+      .filter(
+        (node) =>
+          !node.closest('[role="listbox"], [role="option"], [role="menu"], [role="menuitem"]'),
+      )
+      .map(addressOf),
+  )
   if (chips.length) return preferOthers(chips).join(', ')
   const typed = compose.querySelector<HTMLInputElement>('input[name="to"]')?.value?.trim()
   if (typed) return typed
-  const thread = unique([...document.querySelectorAll('[role="main"] [role="listitem"] [email]')].map(addressOf))
+  const thread = unique(
+    [...document.querySelectorAll('[role="main"] [role="listitem"] [email]')].map(addressOf),
+  )
   return preferOthers(thread).slice(0, 5).join(', ')
 }
 
@@ -125,7 +150,7 @@ const BANNER_TEXT = 'LeadsGhr tracking enabled'
 
 /** Tracking follows the popup's "Tracking by default" switch; when it is off the line is hidden and mail is sent untracked. */
 function updateComposeDefault() {
-  document.querySelectorAll<HTMLElement>('.lg-track-banner').forEach(banner => {
+  document.querySelectorAll<HTMLElement>('.lg-track-banner').forEach((banner) => {
     banner.dataset.enabled = String(defaultTrackingEnabled)
     banner.hidden = !defaultTrackingEnabled
     banner.textContent = BANNER_TEXT
@@ -149,7 +174,9 @@ function resolveCompose(send: Element): Element | null {
 function resolveBody(compose: Element): HTMLElement | null {
   const inside = getComposeBody(compose)
   if (inside) return inside
-  const visible = [...document.querySelectorAll<HTMLElement>(BODY_SELECTOR)].filter(node => node.offsetParent !== null)
+  const visible = [...document.querySelectorAll<HTMLElement>(BODY_SELECTOR)].filter(
+    (node) => node.offsetParent !== null,
+  )
   return visible.length === 1 ? visible[0] : null
 }
 
@@ -183,7 +210,10 @@ function decorateCompose(compose: Element): void {
   banner.dataset.enabled = String(defaultTrackingEnabled)
   banner.hidden = !defaultTrackingEnabled
   banner.textContent = BANNER_TEXT
-  if (!toolbar) { body.after(banner); return }
+  if (!toolbar) {
+    body.after(banner)
+    return
+  }
   // Gmail lays the compose window out as table rows; keep the markup valid when the toolbar is a row.
   if (toolbar.tagName === 'TR') {
     const row = document.createElement('tr')
@@ -197,69 +227,108 @@ function decorateCompose(compose: Element): void {
 
 const replaying = new WeakSet<Element>()
 const registering = new WeakSet<Element>()
-document.addEventListener('keydown', event => {
-  if (!(event.ctrlKey || event.metaKey) || event.key !== 'Enter') return
-  const target = event.target as Element | null
-  const dialog = target?.closest('[role="dialog"], form, .M9, .ip, .iN') ?? null
-  const compose = target ? composeRoot(target) ?? dialog : null
-  if (!compose || !trackingEnabledFor(compose)) return
-  const send = compose.querySelector<HTMLElement>(SEND_SELECTOR)
-  if (!send) return
-  event.preventDefault()
-  event.stopImmediatePropagation()
-  send.click()
-}, true)
-document.addEventListener('click', async event => {
-  const target = event.target as Element
-  const send = target.closest(SEND_SELECTOR)
-  if (!send || replaying.has(send)) { if (send) replaying.delete(send); return }
-  if (registering.has(send)) { event.preventDefault(); event.stopImmediatePropagation(); return }
-  if (!defaultTrackingEnabled) return
-  const compose = resolveCompose(send)
-  if (!compose) { reportSkipped('LeadsGhr could not find the compose window for this Send button.'); return }
-  const body = resolveBody(compose)
-  if (!body) { reportSkipped('LeadsGhr could not find the message body.'); return }
-  // Never skip tracking because a field could not be read: the pixel ID identifies the message.
-  const fields = fieldScope(compose)
-  const recipient = getRecipient(fields) || '(unknown recipient)'
-  const subject = getComposeSubject(fields) || '(no subject)'
-  console.info('[LeadsGhr] Registering tracking', { recipient, subject, sender: currentAccount() })
-  event.preventDefault()
-  event.stopImmediatePropagation()
-  registering.add(send)
-  try {
-    const result = await chrome.runtime.sendMessage({ kind: 'tracking:register', recipient, subject, sender: currentAccount() }) as { pixelUrl?: string; id?: string; error?: string }
-    if (result.error || !result.pixelUrl) throw new Error(result.error || 'Could not create tracking pixel.')
-    console.info('[LeadsGhr] Tracking pixel added', result.id)
-    const image = document.createElement('img')
-    image.src = result.pixelUrl
-    image.width = 1
-    image.height = 1
-    image.alt = ''
-    image.style.cssText = 'width:1px;height:1px;opacity:0.01'
-    // Replies and forwards quote earlier messages together with their tracking images. Remove those
-    // so opening this message does not count as another open of the earlier email.
-    for (const quoted of body.querySelectorAll<HTMLImageElement>('img')) if (PIXEL_ID_PATTERN.test(quoted.src)) quoted.remove()
-    body.append(image)
-    replaying.add(send)
-    ;(send as HTMLElement).click()
-    if (result.id) {
-      let checks = 0
-      const armAfterSend = () => {
-        if (!compose.isConnected || !body.isConnected) { void chrome.runtime.sendMessage({ kind: 'tracking:arm', id: result.id }).catch(() => undefined); return }
-        if (++checks < 24) window.setTimeout(armAfterSend, 500)
+document.addEventListener(
+  'keydown',
+  (event) => {
+    if (!(event.ctrlKey || event.metaKey) || event.key !== 'Enter') return
+    const target = event.target as Element | null
+    const dialog = target?.closest('[role="dialog"], form, .M9, .ip, .iN') ?? null
+    const compose = target ? (composeRoot(target) ?? dialog) : null
+    if (!compose || !trackingEnabledFor(compose)) return
+    const send = compose.querySelector<HTMLElement>(SEND_SELECTOR)
+    if (!send) return
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    send.click()
+  },
+  true,
+)
+document.addEventListener(
+  'click',
+  async (event) => {
+    const target = event.target as Element
+    const send = target.closest(SEND_SELECTOR)
+    if (!send || replaying.has(send)) {
+      if (send) replaying.delete(send)
+      return
+    }
+    if (registering.has(send)) {
+      event.preventDefault()
+      event.stopImmediatePropagation()
+      return
+    }
+    if (!defaultTrackingEnabled) return
+    const compose = resolveCompose(send)
+    if (!compose) {
+      reportSkipped('LeadsGhr could not find the compose window for this Send button.')
+      return
+    }
+    const body = resolveBody(compose)
+    if (!body) {
+      reportSkipped('LeadsGhr could not find the message body.')
+      return
+    }
+    // Never skip tracking because a field could not be read: the pixel ID identifies the message.
+    const fields = fieldScope(compose)
+    const recipient = getRecipient(fields) || '(unknown recipient)'
+    const subject = getComposeSubject(fields) || '(no subject)'
+    console.info('[LeadsGhr] Registering tracking', {
+      recipient,
+      subject,
+      sender: currentAccount(),
+    })
+    event.preventDefault()
+    event.stopImmediatePropagation()
+    registering.add(send)
+    try {
+      const result = (await chrome.runtime.sendMessage({
+        kind: 'tracking:register',
+        recipient,
+        subject,
+        sender: currentAccount(),
+      })) as { pixelUrl?: string; id?: string; error?: string }
+      if (result.error || !result.pixelUrl)
+        throw new Error(result.error || 'Could not create tracking pixel.')
+      console.info('[LeadsGhr] Tracking pixel added', result.id)
+      const image = document.createElement('img')
+      image.src = result.pixelUrl
+      image.width = 1
+      image.height = 1
+      image.alt = ''
+      image.style.cssText = 'width:1px;height:1px;opacity:0.01'
+      // Replies and forwards quote earlier messages together with their tracking images. Remove those
+      // so opening this message does not count as another open of the earlier email.
+      for (const quoted of body.querySelectorAll<HTMLImageElement>('img'))
+        if (PIXEL_ID_PATTERN.test(quoted.src)) quoted.remove()
+      body.append(image)
+      replaying.add(send)
+      ;(send as HTMLElement).click()
+      if (result.id) {
+        let checks = 0
+        const armAfterSend = () => {
+          if (!compose.isConnected || !body.isConnected) {
+            void chrome.runtime
+              .sendMessage({ kind: 'tracking:arm', id: result.id })
+              .catch(() => undefined)
+            return
+          }
+          if (++checks < 24) window.setTimeout(armAfterSend, 500)
+        }
+        window.setTimeout(armAfterSend, 500)
       }
-      window.setTimeout(armAfterSend, 500)
+    } catch (error) {
+      console.error('[LeadsGhr] Tracking failed; message not sent', error)
+      const banner = compose.querySelector<HTMLElement>('.lg-track-banner')
+      if (banner) {
+        banner.classList.add('error')
+        banner.textContent = `LeadsGhr tracking unavailable: ${error instanceof Error ? error.message : String(error)} The message was not sent. Try again, or turn off Tracking by default in the LeadsGhr popup to send without tracking.`
+      }
+    } finally {
+      registering.delete(send)
     }
-  } catch (error) {
-    console.error('[LeadsGhr] Tracking failed; message not sent', error)
-    const banner = compose.querySelector<HTMLElement>('.lg-track-banner')
-    if (banner) {
-      banner.classList.add('error')
-      banner.textContent = `LeadsGhr tracking unavailable: ${error instanceof Error ? error.message : String(error)} The message was not sent. Try again, or turn off Tracking by default in the LeadsGhr popup to send without tracking.`
-    }
-  } finally { registering.delete(send) }
-}, true)
+  },
+  true,
+)
 
 let records: RecordEntry[] = []
 async function loadRecords(): Promise<void> {
@@ -297,7 +366,11 @@ function rowTime(row: HTMLElement): number | null {
 
 /** Recipient addresses Gmail attaches to the row's participant names (`<span email="...">`). */
 function rowRecipients(row: HTMLElement): Set<string> {
-  return new Set([...row.querySelectorAll<HTMLElement>('[email]')].map(node => (node.getAttribute('email') ?? '').trim().toLowerCase()).filter(Boolean))
+  return new Set(
+    [...row.querySelectorAll<HTMLElement>('[email]')]
+      .map((node) => (node.getAttribute('email') ?? '').trim().toLowerCase())
+      .filter(Boolean),
+  )
 }
 
 /** "Re: Fwd: Hello" and "Hello" belong to the same conversation. */
@@ -311,7 +384,11 @@ function normalizeSubject(value: string): string {
   return subject.trim()
 }
 
-const recordRecipients = (item: RecordEntry): string[] => item.recipient.split(',').map(value => value.trim().toLowerCase()).filter(Boolean)
+const recordRecipients = (item: RecordEntry): string[] =>
+  item.recipient
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean)
 
 /**
  * Pick the tracked message for a row. A Sent row is a whole conversation, and its date is the date
@@ -324,13 +401,20 @@ const recordRecipients = (item: RecordEntry): string[] => item.recipient.split('
  */
 function matchRecord(row: HTMLElement, text: string, used: Set<string>): RecordEntry | undefined {
   const addresses = rowRecipients(row)
-  const bySubject = records.filter(item => !used.has(item.id) && normalizeSubject(item.subject) && text.includes(normalizeSubject(item.subject)))
+  const bySubject = records.filter(
+    (item) =>
+      !used.has(item.id) &&
+      normalizeSubject(item.subject) &&
+      text.includes(normalizeSubject(item.subject)),
+  )
   // The recipient only narrows same-subject candidates; a recipient read differently (or unknown) never blocks a match.
-  const byRecipient = addresses.size ? bySubject.filter(item => recordRecipients(item).some(address => addresses.has(address))) : []
+  const byRecipient = addresses.size
+    ? bySubject.filter((item) => recordRecipients(item).some((address) => addresses.has(address)))
+    : []
   const time = rowTime(row)
   if (byRecipient.length) {
     const upTo = time === null ? Infinity : time + MATCH_WINDOW_MS
-    const sentBefore = byRecipient.filter(item => item.sentAt <= upTo)
+    const sentBefore = byRecipient.filter((item) => item.sentAt <= upTo)
     const pool = sentBefore.length ? sentBefore : byRecipient
     return pool.reduce((latest, item) => (item.sentAt > latest.sentAt ? item : latest))
   }
@@ -342,14 +426,24 @@ function matchRecord(row: HTMLElement, text: string, used: Set<string>): RecordE
   let bestGap = Infinity
   for (const item of candidates) {
     const gap = Math.abs(item.sentAt - time)
-    if (gap < bestGap) { best = item; bestGap = gap }
+    if (gap < bestGap) {
+      best = item
+      bestGap = gap
+    }
   }
   return bestGap <= MATCH_WINDOW_MS ? best : undefined
 }
 
 function decorateSentRows(): void {
-  const sentView = location.hash.startsWith('#sent') || document.querySelector<HTMLInputElement>('input[aria-label="Search mail"]')?.value?.includes('in:sent')
-  if (!sentView || !defaultTrackingEnabled) { document.querySelectorAll('.lg-list-ticks').forEach(node => node.remove()); return }
+  const sentView =
+    location.hash.startsWith('#sent') ||
+    document
+      .querySelector<HTMLInputElement>('input[aria-label="Search mail"]')
+      ?.value?.includes('in:sent')
+  if (!sentView || !defaultTrackingEnabled) {
+    document.querySelectorAll('.lg-list-ticks').forEach((node) => node.remove())
+    return
+  }
   const used = new Set<string>()
   for (const row of document.querySelectorAll<HTMLElement>('tr[role="row"], tr.zA')) {
     const cells = row.querySelectorAll<HTMLElement>('td')
@@ -369,10 +463,14 @@ function decorateSentRows(): void {
 /** More loads than this marks an email HOT beside its ticks. */
 const HOT_LOADS = 5
 
-const indicatorState = (record: RecordEntry | undefined): string => record ? `${record.id}:${record.sent ? 1 : 0}:${record.loads}` : 'untracked'
+const indicatorState = (record: RecordEntry | undefined): string =>
+  record ? `${record.id}:${record.sent ? 1 : 0}:${record.loads}` : 'untracked'
 
 /** Focusable double-check button that opens the details card; used in the Sent list and in conversations. */
-function makeIndicator(record: RecordEntry | undefined, placement: 'lg-list-ticks' | 'lg-msg-ticks'): HTMLElement {
+function makeIndicator(
+  record: RecordEntry | undefined,
+  placement: 'lg-list-ticks' | 'lg-msg-ticks',
+): HTMLElement {
   const indicator = document.createElement('span')
   indicator.className = `lg-track-row ${placement}`
   indicator.dataset.state = indicatorState(record)
@@ -397,13 +495,17 @@ function makeIndicator(record: RecordEntry | undefined, placement: 'lg-list-tick
 
 /** Sender address in a message header (expanded `.gD`, collapsed `.zF`/`.yP`). */
 function messageSender(item: HTMLElement): string {
-  const node = item.querySelector('.gD[email], .zF[email], .yP[email], h3 [email]') ?? item.querySelector('[email]')
+  const node =
+    item.querySelector('.gD[email], .zF[email], .yP[email], h3 [email]') ??
+    item.querySelector('[email]')
   return node ? addressOf(node) : ''
 }
 
 /** Innermost Gmail message items of the open conversation. */
 function conversationMessages(): HTMLElement[] {
-  return [...document.querySelectorAll<HTMLElement>('[role="main"] [role="listitem"]')].filter(item => !item.querySelector('[role="listitem"]'))
+  return [...document.querySelectorAll<HTMLElement>('[role="main"] [role="listitem"]')].filter(
+    (item) => !item.querySelector('[role="listitem"]'),
+  )
 }
 
 /**
@@ -414,39 +516,66 @@ function conversationMessages(): HTMLElement[] {
 function decorateConversation(): void {
   const heading = threadSubject()
   const items = heading && defaultTrackingEnabled ? conversationMessages() : []
-  if (!items.length) { document.querySelectorAll('.lg-msg-ticks').forEach(node => node.remove()); return }
+  if (!items.length) {
+    document.querySelectorAll('.lg-msg-ticks').forEach((node) => node.remove())
+    return
+  }
   const account = currentAccount()
   const subject = normalizeSubject(heading)
   const used = new Set<string>()
-  const mine = items.filter(item => { const sender = messageSender(item); return !!sender && sender === account })
+  const mine = items.filter((item) => {
+    const sender = messageSender(item)
+    return !!sender && sender === account
+  })
   const matches = new Map<HTMLElement, RecordEntry | undefined>()
   // Exact matches first, so time-based matching cannot take a record that a pixel identifies.
   for (const item of mine) {
-    const pixelId = [...item.querySelectorAll<HTMLImageElement>('img[src*="pixel=1"]')].map(image => image.src.match(PIXEL_ID_PATTERN)?.[1]?.toLowerCase()).find(Boolean)
-    const record = pixelId ? records.find(entry => entry.id === pixelId) : undefined
-    if (record) { used.add(record.id); matches.set(item, record) }
+    const pixelId = [...item.querySelectorAll<HTMLImageElement>('img[src*="pixel=1"]')]
+      .map((image) => image.src.match(PIXEL_ID_PATTERN)?.[1]?.toLowerCase())
+      .find(Boolean)
+    const record = pixelId ? records.find((entry) => entry.id === pixelId) : undefined
+    if (record) {
+      used.add(record.id)
+      matches.set(item, record)
+    }
   }
   for (const item of mine) {
     if (matches.has(item)) continue
     const time = rowTime(item)
     let best: RecordEntry | undefined
     let bestGap = Infinity
-    if (time !== null) for (const entry of records) {
-      if (used.has(entry.id) || normalizeSubject(entry.subject) !== subject || (entry.sender && entry.sender !== account)) continue
-      const gap = Math.abs(entry.sentAt - time)
-      if (gap < bestGap) { best = entry; bestGap = gap }
-    }
+    if (time !== null)
+      for (const entry of records) {
+        if (
+          used.has(entry.id) ||
+          normalizeSubject(entry.subject) !== subject ||
+          (entry.sender && entry.sender !== account)
+        )
+          continue
+        const gap = Math.abs(entry.sentAt - time)
+        if (gap < bestGap) {
+          best = entry
+          bestGap = gap
+        }
+      }
     const record = best && bestGap <= MATCH_WINDOW_MS ? best : undefined
     if (record) used.add(record.id)
     matches.set(item, record)
   }
   for (const item of items) {
     const old = item.querySelector<HTMLElement>('.lg-msg-ticks')
-    if (!matches.has(item)) { old?.remove(); continue }
+    if (!matches.has(item)) {
+      old?.remove()
+      continue
+    }
     const record = matches.get(item)
     if (old?.dataset.state === indicatorState(record)) continue
     old?.remove()
-    const anchor = item.querySelector<HTMLElement>('span.g3') ?? [...item.querySelectorAll<HTMLElement>('span[title]')].find(span => /\d{4}/.test(span.title) && /\d{1,2}[:.]\d{2}/.test(span.title))
+    const anchor =
+      item.querySelector<HTMLElement>('span.g3') ??
+      [...item.querySelectorAll<HTMLElement>('span[title]')].find(
+        (span) => /\d{4}/.test(span.title) && /\d{1,2}[:.]\d{2}/.test(span.title),
+      )
     anchor?.insertAdjacentElement('afterend', makeIndicator(record, 'lg-msg-ticks'))
   }
 }
@@ -463,8 +592,11 @@ function ago(from: number, to = Date.now()): string {
   return `${days} day${days === 1 ? '' : 's'}`
 }
 
-
-function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
+function element<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className?: string,
+  text?: string,
+): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag)
   if (className) node.className = className
   if (text !== undefined) node.textContent = text
@@ -479,7 +611,10 @@ function rowWithIcon(paths: string[], ...content: (string | Node)[]): HTMLElemen
   return row
 }
 
-const EYE = ['M1.5 12s3.8-7 10.5-7 10.5 7 10.5 7-3.8 7-10.5 7S1.5 12 1.5 12z', 'M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z']
+const EYE = [
+  'M1.5 12s3.8-7 10.5-7 10.5 7 10.5 7-3.8 7-10.5 7S1.5 12 1.5 12z',
+  'M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z',
+]
 const CLOCK = ['M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18z', 'M12 7.5V12l3 2']
 const SEND = ['M21 3L10 14', 'M21 3l-7 18-4-7-7-4z']
 
@@ -495,9 +630,18 @@ function ensureCard(): HTMLElement {
   created.setAttribute('aria-label', 'LeadsGhr tracking details')
   created.addEventListener('mouseenter', cancelHide)
   created.addEventListener('mouseleave', scheduleHide)
-  created.addEventListener('focusout', event => { if (!isInsideCard(event.relatedTarget)) scheduleHide() })
-  created.addEventListener('keydown', event => { if (event.key === 'Escape') { const anchor = cardAnchor; hideCard(); anchor?.focus() } })
-  for (const type of ['click', 'mousedown', 'mouseup']) created.addEventListener(type, event => event.stopPropagation())
+  created.addEventListener('focusout', (event) => {
+    if (!isInsideCard(event.relatedTarget)) scheduleHide()
+  })
+  created.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      const anchor = cardAnchor
+      hideCard()
+      anchor?.focus()
+    }
+  })
+  for (const type of ['click', 'mousedown', 'mouseup'])
+    created.addEventListener(type, (event) => event.stopPropagation())
   document.body.append(created)
   card = created
   return created
@@ -518,25 +662,63 @@ function renderCard(target: HTMLElement, record: RecordEntry | undefined): void 
 
   if (!record) {
     title.append(element('strong', '', 'Not tracked by LeadsGhr'))
-    target.append(element('p', 'lg-card-note', 'Only messages sent while “LeadsGhr tracking enabled” shows above Send are tracked. Turn on Tracking by default in the LeadsGhr popup to track new messages.'))
+    target.append(
+      element(
+        'p',
+        'lg-card-note',
+        'Only messages sent while “LeadsGhr tracking enabled” shows above Send are tracked. Turn on Tracking by default in the LeadsGhr popup to track new messages.',
+      ),
+    )
     return
   }
   titleBlock.append(element('span', 'lg-card-to', `To ${record.recipient}`))
   if (!record.sent) {
     title.append(element('strong', '', 'Send not confirmed'))
-    target.append(element('p', 'lg-card-note', 'A tracking image was prepared, but LeadsGhr did not confirm that this message was sent, so loads are not counted.'))
+    target.append(
+      element(
+        'p',
+        'lg-card-note',
+        'A tracking image was prepared, but LeadsGhr did not confirm that this message was sent, so loads are not counted.',
+      ),
+    )
   } else if (!record.loads) {
     title.append(element('strong', '', 'No image load observed yet'))
     target.append(rowWithIcon(SEND, 'Sent ', element('strong', '', `${ago(record.sentAt)} ago`)))
-    target.append(element('p', 'lg-card-note', 'This changes when the recipient opens the email with images shown. Mail apps that block images report nothing.'))
+    target.append(
+      element(
+        'p',
+        'lg-card-note',
+        'This changes when the recipient opens the email with images shown. Mail apps that block images report nothing.',
+      ),
+    )
   } else {
     const events = record.events ?? []
     const lastLoad = record.lastLoad ? Date.parse(record.lastLoad) : NaN
-    const firstLoad = record.firstLoad ? Date.parse(record.firstLoad) : events.length ? Date.parse(events[events.length - 1]) : NaN
-    title.append('Opened or image loaded ', element('strong', '', Number.isNaN(lastLoad) ? 'recently' : `${ago(lastLoad)} ago`))
-    if (!Number.isNaN(firstLoad)) target.append(rowWithIcon(EYE, element('strong', '', 'First loaded'), ` ${ago(record.sentAt, firstLoad)} after you sent it`))
+    const firstLoad = record.firstLoad
+      ? Date.parse(record.firstLoad)
+      : events.length
+        ? Date.parse(events[events.length - 1])
+        : NaN
+    title.append(
+      'Opened or image loaded ',
+      element('strong', '', Number.isNaN(lastLoad) ? 'recently' : `${ago(lastLoad)} ago`),
+    )
+    if (!Number.isNaN(firstLoad))
+      target.append(
+        rowWithIcon(
+          EYE,
+          element('strong', '', 'First loaded'),
+          ` ${ago(record.sentAt, firstLoad)} after you sent it`,
+        ),
+      )
     target.append(rowWithIcon(CLOCK, element('strong', '', observedLoads(record.loads))))
-    target.append(element('p', 'lg-card-note', 'Gmail may show a cached image on later opens, so repeat opens can go unobserved. Counts are observed image loads, not exact reads.'))
+    target.append(
+      element(
+        'p',
+        'lg-card-note',
+        'Gmail may show a cached image on later opens, so repeat opens can go unobserved. Counts are observed image loads, not exact reads.',
+      ),
+    )
   }
 }
 
@@ -551,7 +733,10 @@ function positionCard(target: HTMLElement, anchor: HTMLElement): void {
   const height = target.offsetHeight
   const roomRight = window.innerWidth - rect.right - gap - 8
   const left = roomRight >= width ? rect.right + gap : Math.max(8, rect.left - gap - width)
-  const top = Math.min(Math.max(8, rect.top + rect.height / 2 - 24), window.innerHeight - height - 8)
+  const top = Math.min(
+    Math.max(8, rect.top + rect.height / 2 - 24),
+    window.innerHeight - height - 8,
+  )
   target.style.left = `${left}px`
   target.style.top = `${top}px`
 }
@@ -572,7 +757,10 @@ function showCard(anchor: HTMLElement): void {
   if (cardAnchor && cardAnchor !== anchor) cardAnchor.setAttribute('aria-expanded', 'false')
   cardAnchor = anchor
   anchor.setAttribute('aria-expanded', 'true')
-  renderCard(target, records.find(item => item.id === anchor.dataset.recordId))
+  renderCard(
+    target,
+    records.find((item) => item.id === anchor.dataset.recordId),
+  )
   target.hidden = false
   positionCard(target, anchor)
 }
@@ -598,12 +786,22 @@ function cancelHide(): void {
 function refreshOpenCard(): void {
   if (!card || card.hidden || !cardAnchor) return
   const id = cardAnchor.dataset.recordId
-  const anchor = cardAnchor.isConnected ? cardAnchor : id ? document.querySelector<HTMLElement>(`.lg-track-row[data-record-id="${CSS.escape(id)}"]`) : null
-  if (!anchor) { hideCard(); return }
+  const anchor = cardAnchor.isConnected
+    ? cardAnchor
+    : id
+      ? document.querySelector<HTMLElement>(`.lg-track-row[data-record-id="${CSS.escape(id)}"]`)
+      : null
+  if (!anchor) {
+    hideCard()
+    return
+  }
   const hadFocus = card.contains(document.activeElement)
   cardAnchor = anchor
   anchor.setAttribute('aria-expanded', 'true')
-  renderCard(card, records.find(item => item.id === anchor.dataset.recordId))
+  renderCard(
+    card,
+    records.find((item) => item.id === anchor.dataset.recordId),
+  )
   positionCard(card, anchor)
   if (hadFocus) card.querySelector<HTMLElement>('.lg-card-button')?.focus()
 }
@@ -612,15 +810,18 @@ function bindCardTrigger(indicator: HTMLElement): void {
   indicator.addEventListener('mouseenter', () => showCard(indicator))
   indicator.addEventListener('mouseleave', scheduleHide)
   indicator.addEventListener('focus', () => showCard(indicator))
-  indicator.addEventListener('blur', event => { if (!isInsideCard(event.relatedTarget)) scheduleHide() })
+  indicator.addEventListener('blur', (event) => {
+    if (!isInsideCard(event.relatedTarget)) scheduleHide()
+  })
   // Keep clicks on the ticks from opening the Gmail conversation.
-  for (const type of ['mousedown', 'mouseup']) indicator.addEventListener(type, event => event.stopPropagation())
-  indicator.addEventListener('click', event => {
+  for (const type of ['mousedown', 'mouseup'])
+    indicator.addEventListener(type, (event) => event.stopPropagation())
+  indicator.addEventListener('click', (event) => {
     event.preventDefault()
     event.stopPropagation()
     showCard(indicator)
   })
-  indicator.addEventListener('keydown', event => {
+  indicator.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
       event.stopPropagation()
@@ -630,16 +831,35 @@ function bindCardTrigger(indicator: HTMLElement): void {
   })
 }
 
-window.addEventListener('scroll', event => { if (!isInsideCard(event.target)) hideCard() }, true)
+window.addEventListener(
+  'scroll',
+  (event) => {
+    if (!isInsideCard(event.target)) hideCard()
+  },
+  true,
+)
 window.addEventListener('resize', hideCard)
 window.addEventListener('hashchange', hideCard)
 
 function decorateNavbar(): void {
-  const anchor = [...document.querySelectorAll<HTMLElement>('[aria-label="Settings"], [data-tooltip="Settings"], [aria-label="Google apps"]')]
-    .find(element => element.getBoundingClientRect().top < 160 && element.getBoundingClientRect().left > window.innerWidth * .45)
+  const anchor = [
+    ...document.querySelectorAll<HTMLElement>(
+      '[aria-label="Settings"], [data-tooltip="Settings"], [aria-label="Google apps"]',
+    ),
+  ].find(
+    (element) =>
+      element.getBoundingClientRect().top < 160 &&
+      element.getBoundingClientRect().left > window.innerWidth * 0.45,
+  )
   const existing = document.querySelector<HTMLElement>('.lg-track-navbar')
-  if (!anchor) { existing?.remove(); return }
-  if (existing) { if (existing.nextElementSibling !== anchor) anchor.before(existing); return }
+  if (!anchor) {
+    existing?.remove()
+    return
+  }
+  if (existing) {
+    if (existing.nextElementSibling !== anchor) anchor.before(existing)
+    return
+  }
   const button = document.createElement('button')
   button.className = 'lg-track-navbar'
   button.type = 'button'
@@ -651,7 +871,9 @@ function decorateNavbar(): void {
   logo.alt = ''
   button.append(logo)
   button.title = 'Open LeadsGhr tracking settings and records'
-  button.addEventListener('click', () => { void chrome.runtime.openOptionsPage() })
+  button.addEventListener('click', () => {
+    void chrome.runtime.openOptionsPage()
+  })
   anchor.before(button)
 }
 
@@ -661,13 +883,15 @@ let scheduled = false
 // (src "https://…googleusercontent.com/…#<endpoint>?id=<uuid>&pixel=1"), which the server would count
 // as an open. Report such views so the background worker can subtract the matching load.
 const EMAIL_PATTERN = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/
-const PIXEL_ID_PATTERN = /[?&]id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})&pixel=1/i
+const PIXEL_ID_PATTERN =
+  /[?&]id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})&pixel=1/i
 
 /** Address of the Gmail account in this tab, e.g. from the title "Inbox - name@gmail.com - Gmail". */
 function currentAccount(): string {
   const fromTitle = document.title.match(EMAIL_PATTERN)?.[0]
   if (fromTitle) return fromTitle.toLowerCase()
-  const label = document.querySelector('a[aria-label^="Google Account"]')?.getAttribute('aria-label') ?? ''
+  const label =
+    document.querySelector('a[aria-label^="Google Account"]')?.getAttribute('aria-label') ?? ''
   return label.match(EMAIL_PATTERN)?.[0]?.toLowerCase() ?? ''
 }
 
@@ -685,8 +909,11 @@ function reportOwnViews(): void {
     if (!id || image.closest('[contenteditable="true"]')) continue
     // Only a tracked email sent from this same account counts as the sender's own view, so a
     // recipient account opened in another tab of this Chrome profile is still counted.
-    const record = id ? records.find(item => item.id === id) : undefined
-    if (record?.sender && record.sender === account) void chrome.runtime.sendMessage({ kind: 'tracking:own-view', id: record.id }).catch(() => undefined)
+    const record = id ? records.find((item) => item.id === id) : undefined
+    if (record?.sender && record.sender === account)
+      void chrome.runtime
+        .sendMessage({ kind: 'tracking:own-view', id: record.id })
+        .catch(() => undefined)
   }
 }
 
@@ -704,7 +931,11 @@ const observer = new MutationObserver(() => {
       ['sent rows', decorateSentRows],
     ]
     for (const [name, pass] of passes) {
-      try { pass() } catch (error) { console.error(`[LeadsGhr] ${name} update failed`, error) }
+      try {
+        pass()
+      } catch (error) {
+        console.error(`[LeadsGhr] ${name} update failed`, error)
+      }
     }
   }, 250)
 })
@@ -713,13 +944,23 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return
   if (changes.records) void loadRecords()
   if (changes.enabled) trackingSetting = changes.enabled.newValue !== false
-  if (changes['leadsghr.licenseActive']) licensed = changes['leadsghr.licenseActive'].newValue === true
-  if (changes.enabled || changes['leadsghr.licenseActive']) { defaultTrackingEnabled = trackingSetting && licensed; updateComposeDefault(); decorateSentRows() }
+  if (changes['leadsghr.licenseActive'])
+    licensed = changes['leadsghr.licenseActive'].newValue === true
+  if (changes.enabled || changes['leadsghr.licenseActive']) {
+    defaultTrackingEnabled = trackingSetting && licensed
+    updateComposeDefault()
+    decorateSentRows()
+  }
 })
-void chrome.storage.local.get(['enabled', 'leadsghr.licenseActive']).then(data => { trackingSetting = data.enabled !== false; licensed = data['leadsghr.licenseActive'] === true; defaultTrackingEnabled = trackingSetting && licensed; updateComposeDefault(); decorateSentRows() })
+void chrome.storage.local.get(['enabled', 'leadsghr.licenseActive']).then((data) => {
+  trackingSetting = data.enabled !== false
+  licensed = data['leadsghr.licenseActive'] === true
+  defaultTrackingEnabled = trackingSetting && licensed
+  updateComposeDefault()
+  decorateSentRows()
+})
 void loadRecords()
 void chrome.runtime.sendMessage({ kind: 'tracking:refresh' }).catch(() => undefined)
-
 
 // ---- Reload Gmail when LeadsGhr is turned off, reloaded, or updated (as Mailsuite does) ----
 // A port to the background worker closes when the extension goes away. If the extension context is
@@ -727,9 +968,17 @@ void chrome.runtime.sendMessage({ kind: 'tracking:refresh' }).catch(() => undefi
 // the service worker restarted, the context is intact and the port simply reconnects.
 function watchExtension(): void {
   let port: chrome.runtime.Port
-  try { port = chrome.runtime.connect({ name: 'leadsghr-gmail' }) } catch { location.reload(); return }
+  try {
+    port = chrome.runtime.connect({ name: 'leadsghr-gmail' })
+  } catch {
+    location.reload()
+    return
+  }
   port.onDisconnect.addListener(() => {
-    if (!chrome.runtime?.id) { location.reload(); return }
+    if (!chrome.runtime?.id) {
+      location.reload()
+      return
+    }
     window.setTimeout(watchExtension, 1000)
   })
 }
@@ -737,5 +986,13 @@ watchExtension()
 
 // The background worker pings open Gmail tabs; a tab without a live LeadsGhr script is reloaded.
 chrome.runtime.onMessage.addListener((message: unknown, _sender, respond) => {
-  if (message && typeof message === 'object' && 'kind' in message && message.kind === 'leadsghr:ping') { respond({ ok: true }); return }
+  if (
+    message &&
+    typeof message === 'object' &&
+    'kind' in message &&
+    message.kind === 'leadsghr:ping'
+  ) {
+    respond({ ok: true })
+    return
+  }
 })

@@ -1,7 +1,12 @@
 import { BrowserWindow, clipboard, ipcMain, safeStorage } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { readFile, rm, writeFile } from 'node:fs/promises'
-import { activateLicense, checkStoredLicense, type LicenseView, type StoredLicense } from '@leadsghr/license'
+import {
+  activateLicense,
+  checkStoredLicense,
+  type LicenseView,
+  type StoredLicense,
+} from '@leadsghr/license'
 import { leadsGhrDataFile } from './data-folder'
 
 /*
@@ -16,12 +21,17 @@ const licenseFile = () => leadsGhrDataFile('license.bin')
 const installationFile = () => leadsGhrDataFile('installation.bin')
 
 function encrypt(value: string): Buffer {
-  if (!safeStorage.isEncryptionAvailable()) throw new Error('Windows encryption is unavailable, so the license cannot be stored safely.')
+  if (!safeStorage.isEncryptionAvailable())
+    throw new Error('Windows encryption is unavailable, so the license cannot be stored safely.')
   return safeStorage.encryptString(value)
 }
 
 async function decrypt(path: string): Promise<string | null> {
-  try { return safeStorage.decryptString(await readFile(path)) } catch { return null }
+  try {
+    return safeStorage.decryptString(await readFile(path))
+  } catch {
+    return null
+  }
 }
 
 async function installationId(): Promise<string> {
@@ -35,7 +45,11 @@ async function installationId(): Promise<string> {
 async function readLicense(): Promise<StoredLicense | null> {
   const text = await decrypt(licenseFile())
   if (!text) return null
-  try { return JSON.parse(text) as StoredLicense } catch { return null }
+  try {
+    return JSON.parse(text) as StoredLicense
+  } catch {
+    return null
+  }
 }
 
 async function saveLicense(stored: StoredLicense | null): Promise<void> {
@@ -83,7 +97,12 @@ export function registerLicenseIpc(): void {
       startupCheck = Promise.resolve(result.view)
       return result.view
     } catch {
-      return { state: 'locked', reason: 'error', message: 'The license service did not answer. Check your internet connection and try again.' } satisfies LicenseView
+      return {
+        state: 'locked',
+        reason: 'error',
+        message:
+          'The license service did not answer. Check your internet connection and try again.',
+      } satisfies LicenseView
     }
   })
 }

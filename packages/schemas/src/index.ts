@@ -62,13 +62,29 @@ export type SearchCriteria = z.infer<typeof searchCriteriaSchema>
 export const DISPLAY_SIZE_MIN = 70
 export const DISPLAY_SIZE_MAX = 200
 export const DISPLAY_SIZE_STEP = 10
-export const clampDisplaySize = (value: number) => Math.min(DISPLAY_SIZE_MAX, Math.max(DISPLAY_SIZE_MIN, Math.round(value / DISPLAY_SIZE_STEP) * DISPLAY_SIZE_STEP))
+export const clampDisplaySize = (value: number) =>
+  Math.min(
+    DISPLAY_SIZE_MAX,
+    Math.max(DISPLAY_SIZE_MIN, Math.round(value / DISPLAY_SIZE_STEP) * DISPLAY_SIZE_STEP),
+  )
+
+/** Font size limits, in percent. Only type scales; spacing and controls stay the same. */
+export const FONT_SIZE_MIN = 80
+export const FONT_SIZE_MAX = 150
+export const FONT_SIZE_STEP = 10
+export const clampFontSize = (value: number) =>
+  Math.min(
+    FONT_SIZE_MAX,
+    Math.max(FONT_SIZE_MIN, Math.round(value / FONT_SIZE_STEP) * FONT_SIZE_STEP),
+  )
 
 export const desktopPreferencesSchema = z.object({
   /** Light or dark look; `system` follows the Windows setting (Settings → Preferences → Appearance). */
   theme: z.enum(['light', 'dark', 'system']).default('light'),
   /** Display size in percent (the window zoom), also changed with Ctrl + / Ctrl - / Ctrl 0 (Settings → Preferences → Appearance). */
   displaySize: z.number().int().min(70).max(200).default(100),
+  /** Font size in percent. Scales type only (Settings → Preferences → Appearance). */
+  fontSize: z.number().int().min(80).max(150).default(100),
   showCrawlerPreview: z.boolean(),
   crawlerContactOnly: z.boolean().default(true),
   crawlerEmailSource: z.enum(['leadsghr', 'email-hunter']).default('leadsghr'),
@@ -102,6 +118,7 @@ export type DesktopPreferences = z.infer<typeof desktopPreferencesSchema>
 export const defaultDesktopPreferences: DesktopPreferences = {
   theme: 'light',
   displaySize: 100,
+  fontSize: 100,
   showCrawlerPreview: true,
   crawlerContactOnly: true,
   crawlerEmailSource: 'leadsghr',
@@ -161,7 +178,9 @@ export function normalizeEmailVerifyChecks<T extends EmailVerifyCheckFlags>(flag
   return next
 }
 
-export function emailVerifyChecksFromPreferences(preferences: DesktopPreferences): EmailVerifyCheckFlags {
+export function emailVerifyChecksFromPreferences(
+  preferences: DesktopPreferences,
+): EmailVerifyCheckFlags {
   return normalizeEmailVerifyChecks({
     checkSyntax: preferences.emailVerifyCheckSyntax,
     checkDomain: preferences.emailVerifyCheckDomain,
@@ -175,15 +194,18 @@ export function emailVerifyChecksFromPreferences(preferences: DesktopPreferences
 
 export function applyEmailVerifyChecksToPreferences(
   preferences: DesktopPreferences,
-  patch: Partial<Pick<DesktopPreferences,
-    | 'emailVerifyCheckSyntax'
-    | 'emailVerifyCheckDomain'
-    | 'emailVerifyCheckMx'
-    | 'emailVerifyCheckSmtp'
-    | 'emailVerifyCheckDisposable'
-    | 'emailVerifyCheckRoleBased'
-    | 'emailVerifyCheckCatchAll'
-  >>,
+  patch: Partial<
+    Pick<
+      DesktopPreferences,
+      | 'emailVerifyCheckSyntax'
+      | 'emailVerifyCheckDomain'
+      | 'emailVerifyCheckMx'
+      | 'emailVerifyCheckSmtp'
+      | 'emailVerifyCheckDisposable'
+      | 'emailVerifyCheckRoleBased'
+      | 'emailVerifyCheckCatchAll'
+    >
+  >,
 ): DesktopPreferences {
   const merged = { ...preferences, ...patch }
   const checks = normalizeEmailVerifyChecks({
@@ -209,54 +231,127 @@ export function applyEmailVerifyChecksToPreferences(
 
 export const mapsQuerySchema = z.string().trim().min(2).max(260)
 
-export const mapsScanSchema = z.object({ query: mapsQuerySchema, location: z.string().trim().min(2).max(160) })
+export const mapsScanSchema = z.object({
+  query: mapsQuerySchema,
+  location: z.string().trim().min(2).max(160),
+})
 
-export const preparedCrawlSearchSchema = z.object({ niche: z.string().trim().min(1).max(120), term: z.string().trim().min(1).max(120), place: z.string().trim().min(1).max(160), query: mapsQuerySchema })
+export const preparedCrawlSearchSchema = z.object({
+  niche: z.string().trim().min(1).max(120),
+  term: z.string().trim().min(1).max(120),
+  place: z.string().trim().min(1).max(160),
+  query: mapsQuerySchema,
+})
 export type PreparedCrawlSearch = z.infer<typeof preparedCrawlSearchSchema>
-export const crawlRowSchema = z.object({ id: z.string().min(1).max(500), niche: z.string().max(120).optional(), name: z.string().max(500), website: z.string().max(2000), phone: z.string().max(200), location: z.string().max(200), address: z.string().max(1000), mapsUrl: z.string().max(2000), source: z.enum(['Maps', 'Website', 'Maps + website']), emails: z.array(z.string()).max(1000), emailsScanned: z.boolean() })
+export const crawlRowSchema = z.object({
+  id: z.string().min(1).max(500),
+  niche: z.string().max(120).optional(),
+  name: z.string().max(500),
+  website: z.string().max(2000),
+  phone: z.string().max(200),
+  location: z.string().max(200),
+  address: z.string().max(1000),
+  mapsUrl: z.string().max(2000),
+  source: z.enum(['Maps', 'Website', 'Maps + website']),
+  emails: z.array(z.string()).max(1000),
+  emailsScanned: z.boolean(),
+})
 export type CrawlRow = z.infer<typeof crawlRowSchema>
 export const pipelineProviderSchema = z.enum(['google-maps', 'google', 'facebook', 'linkedin'])
 export type PipelineProvider = z.infer<typeof pipelineProviderSchema>
-export const createCrawlRunSchema = z.object({ name: z.string().trim().min(1).max(100).optional(), provider: pipelineProviderSchema.default('google-maps'), kind: z.enum(['pipeline', 'search']).default('search'), criteria: searchCriteriaSchema, preferences: desktopPreferencesSchema, searches: z.array(preparedCrawlSearchSchema).min(1).max(100000), stateStartNumber: z.number().int().min(1).max(50), stateEndNumber: z.number().int().min(1).max(50) })
+export const createCrawlRunSchema = z.object({
+  name: z.string().trim().min(1).max(100).optional(),
+  provider: pipelineProviderSchema.default('google-maps'),
+  kind: z.enum(['pipeline', 'search']).default('search'),
+  criteria: searchCriteriaSchema,
+  preferences: desktopPreferencesSchema,
+  searches: z.array(preparedCrawlSearchSchema).min(1).max(100000),
+  stateStartNumber: z.number().int().min(1).max(50),
+  stateEndNumber: z.number().int().min(1).max(50),
+})
 export type CreateCrawlRun = z.infer<typeof createCrawlRunSchema>
 export const crawlRunIdSchema = z.string().uuid()
-export const crawlRunProgressSchema = z.object({ id: crawlRunIdSchema, nextQueryIndex: z.number().int().min(0).max(100000), status: z.enum(['running', 'stopped', 'completed', 'failed']), error: z.string().max(2000).optional() })
+export const crawlRunProgressSchema = z.object({
+  id: crawlRunIdSchema,
+  nextQueryIndex: z.number().int().min(0).max(100000),
+  status: z.enum(['running', 'stopped', 'completed', 'failed']),
+  error: z.string().max(2000).optional(),
+})
 export const crawlRunRowInputSchema = z.object({ id: crawlRunIdSchema, row: crawlRowSchema })
-export type CrawlRunSummary = { id: string; name: string; provider: PipelineProvider; kind: 'pipeline' | 'search'; niches: string[]; states: string[]; stateStartNumber: number; stateEndNumber: number; startedAt: string; finishedAt: string | null; status: 'running' | 'stopped' | 'completed' | 'failed'; nextQueryIndex: number; totalQueries: number; entryCount: number; latestFileName: string | null; latestFileSize: number | null; latestFilePath: string | null; /** Why the run stopped, or which searches were skipped. */ error: string | null }
-export type CrawlExport = { id: string; runId: string; fileName: string; filePath: string; fileSize: number; entryCount: number; exportedAt: string }
-export type CrawlRunDetail = CrawlRunSummary & { criteria: SearchCriteria; preferences: DesktopPreferences; searches: PreparedCrawlSearch[]; rows: CrawlRow[] }
+export type CrawlRunSummary = {
+  id: string
+  name: string
+  provider: PipelineProvider
+  kind: 'pipeline' | 'search'
+  niches: string[]
+  states: string[]
+  stateStartNumber: number
+  stateEndNumber: number
+  startedAt: string
+  finishedAt: string | null
+  status: 'running' | 'stopped' | 'completed' | 'failed'
+  nextQueryIndex: number
+  totalQueries: number
+  entryCount: number
+  latestFileName: string | null
+  latestFileSize: number | null
+  latestFilePath: string | null
+  /** Why the run stopped, or which searches were skipped. */ error: string | null
+}
+export type CrawlExport = {
+  id: string
+  runId: string
+  fileName: string
+  filePath: string
+  fileSize: number
+  entryCount: number
+  exportedAt: string
+}
+export type CrawlRunDetail = CrawlRunSummary & {
+  criteria: SearchCriteria
+  preferences: DesktopPreferences
+  searches: PreparedCrawlSearch[]
+  rows: CrawlRow[]
+}
 
 export const emailVerifyStatusSchema = z.enum(['valid', 'risky', 'invalid'])
 export type EmailVerifyStatus = z.infer<typeof emailVerifyStatusSchema>
 export const EMAIL_VERIFY_CONCURRENCY_MIN = 1
 export const EMAIL_VERIFY_CONCURRENCY_MAX = 20
 export const EMAIL_VERIFY_CONCURRENCY_DEFAULT = 5
-export const emailVerifyRequestSchema = z.object({
-  emails: z.array(z.string().trim().min(1).max(300)).min(1).max(50000),
-  concurrency: z.number().int().min(EMAIL_VERIFY_CONCURRENCY_MIN).max(EMAIL_VERIFY_CONCURRENCY_MAX).default(EMAIL_VERIFY_CONCURRENCY_DEFAULT),
-  checkSyntax: z.boolean().default(true),
-  checkDomain: z.boolean().default(true),
-  checkMx: z.boolean().default(true),
-  checkSmtp: z.boolean().default(true),
-  checkDisposable: z.boolean().default(true),
-  checkRoleBased: z.boolean().default(true),
-  checkCatchAll: z.boolean().default(true),
-  mailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
-  ehlo: z.string().trim().min(1).max(255).default('verify.example.com'),
-  perSession: z.number().int().min(1).max(40).default(8),
-  paceMs: z.number().int().min(0).max(5000).default(400),
-}).transform((value) => {
-  const checks = normalizeEmailVerifyChecks({
-    checkSyntax: value.checkSyntax,
-    checkDomain: value.checkDomain,
-    checkMx: value.checkMx,
-    checkSmtp: value.checkSmtp,
-    checkDisposable: value.checkDisposable,
-    checkRoleBased: value.checkRoleBased,
-    checkCatchAll: value.checkCatchAll,
+export const emailVerifyRequestSchema = z
+  .object({
+    emails: z.array(z.string().trim().min(1).max(300)).min(1).max(50000),
+    concurrency: z
+      .number()
+      .int()
+      .min(EMAIL_VERIFY_CONCURRENCY_MIN)
+      .max(EMAIL_VERIFY_CONCURRENCY_MAX)
+      .default(EMAIL_VERIFY_CONCURRENCY_DEFAULT),
+    checkSyntax: z.boolean().default(true),
+    checkDomain: z.boolean().default(true),
+    checkMx: z.boolean().default(true),
+    checkSmtp: z.boolean().default(true),
+    checkDisposable: z.boolean().default(true),
+    checkRoleBased: z.boolean().default(true),
+    checkCatchAll: z.boolean().default(true),
+    mailFrom: z.string().trim().min(3).max(254).default('verify@example.com'),
+    ehlo: z.string().trim().min(1).max(255).default('verify.example.com'),
+    perSession: z.number().int().min(1).max(40).default(8),
+    paceMs: z.number().int().min(0).max(5000).default(400),
   })
-  return { ...value, ...checks }
-})
+  .transform((value) => {
+    const checks = normalizeEmailVerifyChecks({
+      checkSyntax: value.checkSyntax,
+      checkDomain: value.checkDomain,
+      checkMx: value.checkMx,
+      checkSmtp: value.checkSmtp,
+      checkDisposable: value.checkDisposable,
+      checkRoleBased: value.checkRoleBased,
+      checkCatchAll: value.checkCatchAll,
+    })
+    return { ...value, ...checks }
+  })
 export type EmailVerifyRequest = z.infer<typeof emailVerifyRequestSchema>
 export const emailVerifyChecksSchema = z.object({
   syntax: z.boolean(),

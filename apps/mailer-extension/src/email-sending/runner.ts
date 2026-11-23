@@ -1,4 +1,10 @@
-import { SENDING_ALARM, type SendingActionResponse, type SendingRequest, type SendingStatusResponse, isSendingRequest } from './messages'
+import {
+  SENDING_ALARM,
+  type SendingActionResponse,
+  type SendingRequest,
+  type SendingStatusResponse,
+  isSendingRequest,
+} from './messages'
 import { parseRange, sliceRecipients } from './range'
 import { appendHistory, clearHistory, loadJob, loadSendingPreferences, saveJob } from './storage'
 import { renderMessage } from './template'
@@ -20,19 +26,29 @@ async function touch(job: SendJob, patch: Partial<SendJob>): Promise<SendJob> {
 }
 
 async function gmailTabId(): Promise<number> {
-  const tabs = await chrome.tabs.query({ url: ['https://mail.google.com/*', 'https://mail.google.com/mail/*'] })
-  const preferred = tabs.find((item) => item.active && typeof item.id === 'number') ?? tabs.find((item) => typeof item.id === 'number')
+  const tabs = await chrome.tabs.query({
+    url: ['https://mail.google.com/*', 'https://mail.google.com/mail/*'],
+  })
+  const preferred =
+    tabs.find((item) => item.active && typeof item.id === 'number') ??
+    tabs.find((item) => typeof item.id === 'number')
   if (!preferred?.id) throw new Error('Open Gmail in a Chrome tab before starting a send job.')
   await chrome.tabs.update(preferred.id, { active: true })
   if (preferred.windowId != null) {
-    try { await chrome.windows.update(preferred.windowId, { focused: true }) } catch { /* tab focus is enough */ }
+    try {
+      await chrome.windows.update(preferred.windowId, { focused: true })
+    } catch {
+      /* tab focus is enough */
+    }
   }
   return preferred.id
 }
 
 async function ping(tabId: number): Promise<boolean> {
   try {
-    const result = await chrome.tabs.sendMessage(tabId, { kind: 'sending:ping' }) as { ok?: boolean } | undefined
+    const result = (await chrome.tabs.sendMessage(tabId, { kind: 'sending:ping' })) as
+      | { ok?: boolean }
+      | undefined
     return result?.ok === true
   } catch {
     return false
@@ -50,12 +66,28 @@ async function ensureContentScript(tabId: number): Promise<void> {
   throw new Error('Open mail.google.com, reload that tab, then start sending again.')
 }
 
-async function sendCompose(tabId: number, to: string, subject: string, bodyHtml: string, stepDelayMs: number): Promise<ComposeResult> {
+async function sendCompose(
+  tabId: number,
+  to: string,
+  subject: string,
+  bodyHtml: string,
+  stepDelayMs: number,
+): Promise<ComposeResult> {
   await ensureContentScript(tabId)
   try {
-    return await chrome.tabs.sendMessage(tabId, { kind: 'sending:compose', to, subject, bodyHtml, stepDelayMs }) as ComposeResult
+    return (await chrome.tabs.sendMessage(tabId, {
+      kind: 'sending:compose',
+      to,
+      subject,
+      bodyHtml,
+      stepDelayMs,
+    })) as ComposeResult
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Could not control Gmail compose. Reload the Gmail tab and try again.')
+    throw new Error(
+      error instanceof Error
+        ? error.message
+        : 'Could not control Gmail compose. Reload the Gmail tab and try again.',
+    )
   }
 }
 
@@ -79,7 +111,13 @@ async function processNext(): Promise<void> {
     const tabId = await gmailTabId()
     const rendered = renderMessage(job.template, recipient.fields)
     if (!rendered.subject) throw new Error('Rendered subject is empty.')
-    const result = await sendCompose(tabId, recipient.email, rendered.subject, rendered.bodyHtml, spread ? Math.round(job.delayMs / COMPOSE_STEPS) : 0)
+    const result = await sendCompose(
+      tabId,
+      recipient.email,
+      rendered.subject,
+      rendered.bodyHtml,
+      spread ? Math.round(job.delayMs / COMPOSE_STEPS) : 0,
+    )
     if (!result.ok) throw new Error(result.error)
     await appendHistory({
       id: crypto.randomUUID(),
@@ -114,13 +152,21 @@ async function processNext(): Promise<void> {
   }
 }
 
-async function start(request: Extract<SendingRequest, { kind: 'sending:start' }>): Promise<SendJob> {
+async function start(
+  request: Extract<SendingRequest, { kind: 'sending:start' }>,
+): Promise<SendJob> {
   const existing = await loadJob()
-  if (existing?.status === 'running') throw new Error('A send job is already running. Pause or cancel it first.')
-  const range = parseRange(String(request.range.from), String(request.range.to), request.recipients.length)
+  if (existing?.status === 'running')
+    throw new Error('A send job is already running. Pause or cancel it first.')
+  const range = parseRange(
+    String(request.range.from),
+    String(request.range.to),
+    request.recipients.length,
+  )
   const recipients = sliceRecipients(request.recipients, range)
   if (!recipients.length) throw new Error('Selected range has no recipients.')
-  if (!request.template.subject.trim() || !request.template.bodyHtml.trim()) throw new Error('Template subject and body are required.')
+  if (!request.template.subject.trim() || !request.template.bodyHtml.trim())
+    throw new Error('Template subject and body are required.')
   const job: SendJob = {
     id: crypto.randomUUID(),
     status: 'running',
@@ -140,7 +186,9 @@ async function start(request: Extract<SendingRequest, { kind: 'sending:start' }>
   return job
 }
 
-export async function handleSendingMessage(message: SendingRequest): Promise<SendingActionResponse | SendingStatusResponse> {
+export async function handleSendingMessage(
+  message: SendingRequest,
+): Promise<SendingActionResponse | SendingStatusResponse> {
   if (message.kind === 'sending:status') return { ok: true, job: await loadJob() }
   if (message.kind === 'sending:clear-history') {
     await clearHistory()
@@ -161,7 +209,8 @@ export async function handleSendingMessage(message: SendingRequest): Promise<Sen
   }
   if (message.kind === 'sending:cancel') {
     const job = await loadJob()
-    if (!job || (job.status !== 'running' && job.status !== 'paused')) throw new Error('No active send job to cancel.')
+    if (!job || (job.status !== 'running' && job.status !== 'paused'))
+      throw new Error('No active send job to cancel.')
     await chrome.alarms.clear(SENDING_ALARM)
     return { ok: true, job: await touch(job, { status: 'cancelled' }) }
   }
@@ -178,7 +227,9 @@ export function registerSendingRuntime(): void {
     if (!isSendingRequest(message) || message.kind === 'sending:compose') return
     void handleSendingMessage(message)
       .then(respond)
-      .catch((error) => respond({ ok: false, error: error instanceof Error ? error.message : String(error) }))
+      .catch((error) =>
+        respond({ ok: false, error: error instanceof Error ? error.message : String(error) }),
+      )
     return true
   })
 }

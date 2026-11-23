@@ -77,13 +77,15 @@ export function scoreChecks(
 export function checksComplete(checks: unknown): checks is EmailVerifyChecks {
   if (!checks || typeof checks !== 'object') return false
   const value = checks as EmailVerifyChecks
-  return typeof value.syntax === 'boolean'
-    && typeof value.domain === 'boolean'
-    && typeof value.mx === 'boolean'
-    && typeof value.smtp === 'string'
-    && typeof value.disposable === 'boolean'
-    && typeof value.roleBased === 'boolean'
-    && typeof value.catchAll === 'boolean'
+  return (
+    typeof value.syntax === 'boolean' &&
+    typeof value.domain === 'boolean' &&
+    typeof value.mx === 'boolean' &&
+    typeof value.smtp === 'string' &&
+    typeof value.disposable === 'boolean' &&
+    typeof value.roleBased === 'boolean' &&
+    typeof value.catchAll === 'boolean'
+  )
 }
 
 function classifyStatus(
@@ -120,18 +122,26 @@ function classifyStatus(
     return { status: 'valid', code: 'accepted', reason: 'Accepted' }
   }
   if (
-    enabled.smtp
-    && (input.smtp === 'temp' || input.smtp === 'blocked' || input.smtp === 'unverifiable' || input.smtp === 'skipped')
+    enabled.smtp &&
+    (input.smtp === 'temp' ||
+      input.smtp === 'blocked' ||
+      input.smtp === 'unverifiable' ||
+      input.smtp === 'skipped')
   ) {
     return {
       status: 'valid',
-      code: input.code ?? (
-        input.smtp === 'temp' ? 'temp_failure'
-          : input.smtp === 'blocked' ? 'policy_block'
-            : input.smtp === 'skipped' ? 'smtp_skipped'
-              : 'provider_unverifiable'
-      ),
-      reason: input.reason ?? (input.smtp === 'skipped' ? 'SMTP skipped' : 'Accepted without mailbox proof'),
+      code:
+        input.code ??
+        (input.smtp === 'temp'
+          ? 'temp_failure'
+          : input.smtp === 'blocked'
+            ? 'policy_block'
+            : input.smtp === 'skipped'
+              ? 'smtp_skipped'
+              : 'provider_unverifiable'),
+      reason:
+        input.reason ??
+        (input.smtp === 'skipped' ? 'SMTP skipped' : 'Accepted without mailbox proof'),
     }
   }
   if (!enabled.smtp && input.smtp === 'skipped') {

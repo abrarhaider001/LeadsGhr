@@ -4,7 +4,10 @@ import { connect as tlsConnect } from 'node:tls'
 export type Reply = { code: number; text: string }
 
 export class SmtpError extends Error {
-  constructor(readonly kind: 'timeout' | 'closed' | 'connect' | 'stopped', message: string) {
+  constructor(
+    readonly kind: 'timeout' | 'closed' | 'connect' | 'stopped',
+    message: string,
+  ) {
     super(message)
   }
 }
@@ -17,10 +20,18 @@ export class SmtpConn {
   private buf = ''
   private partial: string[] = []
   private ready: Reply[] = []
-  private waiter?: { ok: (reply: Reply) => void; bad: (error: Error) => void; timer: NodeJS.Timeout }
+  private waiter?: {
+    ok: (reply: Reply) => void
+    bad: (error: Error) => void
+    timer: NodeJS.Timeout
+  }
   private failure?: SmtpError
 
-  private constructor(private sock: Socket, readonly host: string, private signal: AbortSignal) {
+  private constructor(
+    private sock: Socket,
+    readonly host: string,
+    private signal: AbortSignal,
+  ) {
     this.attach(sock)
     signal.addEventListener('abort', this.onAbort, { once: true })
   }
@@ -137,7 +148,12 @@ export class SmtpConn {
     this.extensions = new Set(
       reply.text
         .split('\n')
-        .map((line) => line.replace(/^\d{3}[ -]/, '').trim().toUpperCase())
+        .map((line) =>
+          line
+            .replace(/^\d{3}[ -]/, '')
+            .trim()
+            .toUpperCase(),
+        )
         .filter(Boolean),
     )
     return reply
@@ -147,7 +163,11 @@ export class SmtpConn {
     const reply = await this.cmd('STARTTLS')
     if (reply.code !== 220) return reply
     this.detach(this.sock)
-    const secure = tlsConnect({ socket: this.sock, servername: this.host, rejectUnauthorized: false })
+    const secure = tlsConnect({
+      socket: this.sock,
+      servername: this.host,
+      rejectUnauthorized: false,
+    })
     this.sock = secure
     this.buf = ''
     this.partial = []
@@ -156,15 +176,23 @@ export class SmtpConn {
     this.attach(secure)
     await new Promise<void>((ok, bad) => {
       const timer = setTimeout(() => bad(new SmtpError('timeout', 'TLS handshake timed out')), 8000)
-      secure.once('secureConnect', () => { clearTimeout(timer); ok() })
-      secure.once('error', (error) => { clearTimeout(timer); bad(new SmtpError('closed', error.message)) })
+      secure.once('secureConnect', () => {
+        clearTimeout(timer)
+        ok()
+      })
+      secure.once('error', (error) => {
+        clearTimeout(timer)
+        bad(new SmtpError('closed', error.message))
+      })
     })
     this.secure = true
     return this.hello(name)
   }
 
   async quit() {
-    try { await this.cmd('QUIT', 3000) } catch {}
+    try {
+      await this.cmd('QUIT', 3000)
+    } catch {}
     this.close()
   }
 

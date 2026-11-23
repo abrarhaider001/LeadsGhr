@@ -11,9 +11,14 @@ export async function readRecipientsFile(file: File): Promise<Recipient[]> {
   let recipients: Recipient[]
   if (name.endsWith('.xlsx')) {
     const sheets = await readXlsxFile(file)
-    recipients = sheets
-      .map(({ data }) => recipientsFromRows(data.map((row) => row.map((cell) => (cell == null ? '' : String(cell))))))
-      .sort((a, b) => b.length - a.length)[0] ?? []
+    recipients =
+      sheets
+        .map(({ data }) =>
+          recipientsFromRows(
+            data.map((row) => row.map((cell) => (cell == null ? '' : String(cell)))),
+          ),
+        )
+        .sort((a, b) => b.length - a.length)[0] ?? []
   } else if (name.endsWith('.csv') || file.type === 'text/csv') {
     recipients = recipientsFromRows(parseCsv(await file.text()))
   } else throw new Error('Choose a .csv or .xlsx file.')

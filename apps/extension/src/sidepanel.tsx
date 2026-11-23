@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { LicenseGate } from '@leadsghr/license/extension'
 
-
 const style = `
 body{font:var(--ui-text-base) var(--ui-font-sans);color:var(--ui-color-text);margin:0;background:var(--ui-color-surface)}main{max-width:900px;margin:var(--ui-space-10) auto;padding:0 var(--ui-space-6)}.brand{display:flex;align-items:center;gap:var(--ui-space-3)}.brand img{width:40px;height:40px}h1{margin:0;font-size:var(--ui-text-6xl)}h2{margin:0 0 var(--ui-space-2);font-size:var(--ui-text-3xl)}h3{margin:var(--ui-space-5) 0 var(--ui-space-2);font-size:var(--ui-text-lg)}p{color:var(--ui-color-text-muted);line-height:1.5}section{border:1px solid var(--ui-color-border);border-radius:var(--ui-radius-xl);padding:var(--ui-space-5);margin:var(--ui-space-5) 0}label{display:block;font-weight: var(--ui-weight-semibold);margin:var(--ui-space-3) 0}input[type=text],input[type=password]{display:block;width:100%;box-sizing:border-box;padding:var(--ui-space-3);border:1px solid var(--ui-color-border);border-radius:var(--ui-field-radius);margin-top:var(--ui-space-1-5);font:inherit;font-weight: var(--ui-weight-regular)}input[type=text]:focus,input[type=password]:focus{border-color:var(--ui-color-primary);outline:none}input[type=checkbox]{accent-color:var(--ui-color-primary)}button{background:var(--ui-color-primary);color:var(--ui-color-on-primary);border:0;border-radius:var(--ui-button-radius);padding:var(--ui-space-2-5) var(--ui-space-3-5);cursor:pointer;font:inherit;font-weight: var(--ui-weight-semibold)}button:focus-visible{outline:2px solid var(--ui-color-focus);outline-offset:2px}.muted{font-size:var(--ui-text-sm);color:var(--ui-color-text-muted)}.ticks{display:inline-block;width:20px;height:12px;vertical-align:middle;fill:none;stroke:var(--ui-color-text-disabled);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.ticks.sent .tick-first,.ticks.open path{stroke:var(--ui-color-primary)}.hot{margin-left:var(--ui-space-1-5);padding:var(--ui-space-0-5) var(--ui-space-2);border-radius:var(--ui-radius-lg);background:var(--ui-color-primary);color:var(--ui-color-on-primary);font-size:var(--ui-text-2xs);font-weight: var(--ui-weight-bold);letter-spacing:.06em;vertical-align:middle}
 .report-head{display:flex;align-items:center;justify-content:space-between;gap:var(--ui-space-3)}.report-head h2{margin:0}.report-head button{background:var(--ui-color-surface);color:var(--ui-color-text);border:1px solid var(--ui-color-border)}.report-head button:hover{background:var(--ui-color-primary-soft)}
@@ -33,14 +32,74 @@ function Options() {
   }, [])
   async function save() {
     try {
-      if (endpoint && new URL(endpoint).protocol !== 'https:') throw new Error('Use a public HTTPS endpoint.')
-      if (endpoint && !await chrome.permissions.request({ origins: [`${new URL(endpoint).origin}/*`] })) throw new Error('Endpoint access was declined.')
+      if (endpoint && new URL(endpoint).protocol !== 'https:')
+        throw new Error('Use a public HTTPS endpoint.')
+      if (
+        endpoint &&
+        !(await chrome.permissions.request({ origins: [`${new URL(endpoint).origin}/*`] }))
+      )
+        throw new Error('Endpoint access was declined.')
       await chrome.storage.local.set({ endpoint: endpoint.trim(), registrationKey, enabled })
       setMessage('Settings saved. Reload Gmail to use them.')
-    } catch (error) { setMessage(String(error)) }
+    } catch (error) {
+      setMessage(String(error))
+    }
   }
-  return <main><style>{style}</style><div className="brand"><img src="/icon.png" alt=""/><h1>LeadsGhr Tracker</h1></div><p>See when emails you send from Gmail are opened. Set the tracking endpoint and registration key once below.</p>
-    <section><h2>Tracking settings</h2><label>Public HTTPS endpoint<input type="text" value={endpoint} onChange={event => setEndpoint(event.target.value)} placeholder="https://YOUR_PROJECT.supabase.co/functions/v1/mail-tracking" /></label><label>Registration key<input type="password" value={registrationKey} onChange={event => setRegistrationKey(event.target.value)} placeholder="Server registration key" /></label><label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> Enable tracking by default</label><button onClick={() => void save()}>Save settings</button><p className="muted">Only opaque pixel tokens are stored online. Recipient and subject stay in this Chrome profile. An image load can come from a mail proxy or preview and does not prove a person read the email. Gmail fetches the image through its proxy and may reuse a cached copy, so repeat opens can go unobserved; counts are observed image loads, not exact opens.</p></section>
-    {message && <p role="status">{message}</p>}</main>
+  return (
+    <main>
+      <style>{style}</style>
+      <div className="brand">
+        <img src="/icon.png" alt="" />
+        <h1>LeadsGhr Tracker</h1>
+      </div>
+      <p>
+        See when emails you send from Gmail are opened. Set the tracking endpoint and registration
+        key once below.
+      </p>
+      <section>
+        <h2>Tracking settings</h2>
+        <label>
+          Public HTTPS endpoint
+          <input
+            type="text"
+            value={endpoint}
+            onChange={(event) => setEndpoint(event.target.value)}
+            placeholder="https://YOUR_PROJECT.supabase.co/functions/v1/mail-tracking"
+          />
+        </label>
+        <label>
+          Registration key
+          <input
+            type="password"
+            value={registrationKey}
+            onChange={(event) => setRegistrationKey(event.target.value)}
+            placeholder="Server registration key"
+          />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(event) => setEnabled(event.target.checked)}
+          />{' '}
+          Enable tracking by default
+        </label>
+        <button onClick={() => void save()}>Save settings</button>
+        <p className="muted">
+          Only opaque pixel tokens are stored online. Recipient and subject stay in this Chrome
+          profile. An image load can come from a mail proxy or preview and does not prove a person
+          read the email. Gmail fetches the image through its proxy and may reuse a cached copy, so
+          repeat opens can go unobserved; counts are observed image loads, not exact opens.
+        </p>
+      </section>
+      {message && <p role="status">{message}</p>}
+    </main>
+  )
 }
-createRoot(document.getElementById('root')!).render(<React.StrictMode><LicenseGate product="tracker" logo="/icon.svg"><Options /></LicenseGate></React.StrictMode>)
+createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <LicenseGate product="tracker" logo="/icon.svg">
+      <Options />
+    </LicenseGate>
+  </React.StrictMode>,
+)

@@ -1,7 +1,12 @@
-const STRICT_EMAIL = /^[a-z0-9](?:[a-z0-9.!#$%&'*+/=?^_`{|}~-]*[a-z0-9])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i
+const STRICT_EMAIL =
+  /^[a-z0-9](?:[a-z0-9.!#$%&'*+/=?^_`{|}~-]*[a-z0-9])?@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i
 
 function stripEmail(value: string): string {
-  return value.trim().replace(/^mailto:/i, '').replace(/^[<\[("']+|[>\])"'.,;:!?]+$/g, '').toLowerCase()
+  return value
+    .trim()
+    .replace(/^mailto:/i, '')
+    .replace(/^[<\[("']+|[>\])"'.,;:!?]+$/g, '')
+    .toLowerCase()
 }
 
 /** Strict syntax used when the Syntax preference is on. */
@@ -21,6 +26,7 @@ export function looseVerifyEmail(value: string): string | null {
   if (at <= 0 || at === email.length - 1) return null
   const local = email.slice(0, at)
   const domain = email.slice(at + 1)
-  if (!local || !domain || local.includes(' ') || domain.includes(' ') || !domain.includes('.')) return null
+  if (!local || !domain || local.includes(' ') || domain.includes(' ') || !domain.includes('.'))
+    return null
   return `${local}@${domain}`
 }

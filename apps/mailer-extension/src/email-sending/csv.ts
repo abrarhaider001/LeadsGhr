@@ -7,7 +7,11 @@ const EMAIL_TOKEN = /[^\s,;<>()[\]"']+@[^\s,;<>()[\]"']+/g
 export function parseCsv(text: string): string[][] {
   const content = text.replace(/^\uFEFF/, '')
   const first = content.split(/\r?\n/, 1)[0] ?? ''
-  const counts = new Map([[',', 0], [';', 0], ['\t', 0]])
+  const counts = new Map([
+    [',', 0],
+    [';', 0],
+    ['\t', 0],
+  ])
   let inHeaderQuote = false
   for (const char of first) {
     if (char === '"') inHeaderQuote = !inHeaderQuote
@@ -21,8 +25,10 @@ export function parseCsv(text: string): string[][] {
   for (let i = 0; i < content.length; i++) {
     const ch = content[i]
     if (ch === '"') {
-      if (quoted && content[i + 1] === '"') { cell += '"'; i++ }
-      else quoted = !quoted
+      if (quoted && content[i + 1] === '"') {
+        cell += '"'
+        i++
+      } else quoted = !quoted
     } else if (ch === delimiter && !quoted) {
       row.push(cell)
       cell = ''
@@ -50,8 +56,14 @@ function pickEmailColumn(headers: string[], sample: string[][]): number {
   let best = 0
   let bestCount = -1
   for (let index = 0; index < headers.length; index++) {
-    const count = sample.reduce((total, row) => total + ((row[index] ?? '').match(EMAIL_TOKEN)?.length ?? 0), 0)
-    if (count > bestCount) { best = index; bestCount = count }
+    const count = sample.reduce(
+      (total, row) => total + ((row[index] ?? '').match(EMAIL_TOKEN)?.length ?? 0),
+      0,
+    )
+    if (count > bestCount) {
+      best = index
+      bestCount = count
+    }
   }
   return best
 }

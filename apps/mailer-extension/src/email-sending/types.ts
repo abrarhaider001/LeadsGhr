@@ -79,9 +79,11 @@ export type ComposePayload = {
   stepDelayMs?: number
 }
 
-export type ComposeResult = {
-  ok: true
-} | {
-  ok: false
-  error: string
-}
+export type ComposeResult =
+  | {
+      ok: true
+    }
+  | {
+      ok: false
+      error: string
+    }

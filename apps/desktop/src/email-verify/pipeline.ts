@@ -48,25 +48,32 @@ type Emit = (result: EmailVerifyResult, index: number) => void
 type Provider = 'google' | 'microsoft' | 'yahoo' | 'generic'
 const NO_PROBE = new Set<Provider>(['microsoft', 'yahoo'])
 
-const sleep = (ms: number, signal: AbortSignal) => new Promise<void>((resolve, reject) => {
-  if (signal.aborted) return reject(new SmtpError('stopped', 'Validation stopped'))
-  const timer = setTimeout(resolve, ms)
-  signal.addEventListener('abort', () => {
-    clearTimeout(timer)
-    reject(new SmtpError('stopped', 'Validation stopped'))
-  }, { once: true })
-})
+const sleep = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve, reject) => {
+    if (signal.aborted) return reject(new SmtpError('stopped', 'Validation stopped'))
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener(
+      'abort',
+      () => {
+        clearTimeout(timer)
+        reject(new SmtpError('stopped', 'Validation stopped'))
+      },
+      { once: true },
+    )
+  })
 
 async function pool<T>(items: T[], n: number, fn: (item: T) => Promise<void>, signal: AbortSignal) {
   let next = 0
   const width = Math.max(1, Math.min(n, items.length || 1))
-  await Promise.all(Array.from({ length: width }, async () => {
-    while (!signal.aborted) {
-      const index = next++
-      if (index >= items.length) return
-      await fn(items[index])
-    }
-  }))
+  await Promise.all(
+    Array.from({ length: width }, async () => {
+      while (!signal.aborted) {
+        const index = next++
+        if (index >= items.length) return
+        await fn(items[index])
+      }
+    }),
+  )
 }
 
 function detectProvider(mx: string): Provider {
@@ -113,37 +120,53 @@ function mapSmtp(signal: SmtpClassified['signal']): EmailVerifyResult['checks'][
 function emitAll(
   domains: Map<string, DomainGroup>,
   host: string,
-  patch: Partial<Parameters<typeof finalizeResult>[0]> & Pick<Parameters<typeof finalizeResult>[0], 'smtp' | 'code' | 'reason'>,
+  patch: Partial<Parameters<typeof finalizeResult>[0]> &
+    Pick<Parameters<typeof finalizeResult>[0], 'smtp' | 'code' | 'reason'>,
   emit: Emit,
   enabled: EmailVerifyEnabledChecks,
 ) {
   for (const group of domains.values()) {
     for (const item of group.items) {
-      emit(finalizeResult({
-        email: item.email,
-        syntax: true,
-        domain: true,
-        mx: true,
-        disposable: item.disposable,
-        roleBased: item.roleBased,
-        catchAll: false,
-        mxHost: host,
-        enabled,
-        ...patch,
-      }), item.index)
+      emit(
+        finalizeResult({
+          email: item.email,
+          syntax: true,
+          domain: true,
+          mx: true,
+          disposable: item.disposable,
+          roleBased: item.roleBased,
+          catchAll: false,
+          mxHost: host,
+          enabled,
+          ...patch,
+        }),
+        item.index,
+      )
     }
   }
 }
 
-async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Opts, signal: AbortSignal, emit: Emit) {
+async function runHost(
+  host: string,
+  domains: Map<string, DomainGroup>,
+  opts: Opts,
+  signal: AbortSignal,
+  emit: Emit,
+) {
   const enabled = enabledChecks(opts)
   const provider = detectProvider(host)
   if (NO_PROBE.has(provider)) {
-    emitAll(domains, host, {
-      smtp: 'unverifiable',
-      code: 'provider_unverifiable',
-      reason: 'Provider hides mailboxes',
-    }, emit, enabled)
+    emitAll(
+      domains,
+      host,
+      {
+        smtp: 'unverifiable',
+        code: 'provider_unverifiable',
+        reason: 'Provider hides mailboxes',
+      },
+      emit,
+      enabled,
+    )
     return
   }
 
@@ -209,17 +232,24 @@ async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Op
       let catchAll = false
 
       if (probeItems.length && (opts.checkCatchAll || provider === 'google')) {
-        const probeEmail = provider === 'google' || !opts.checkCatchAll
-          ? probeItems[0].email
-          : `zz${randomBytes(6).toString('hex')}@${domain}`
+        const probeEmail =
+          provider === 'google' || !opts.checkCatchAll
+            ? probeItems[0].email
+            : `zz${randomBytes(6).toString('hex')}@${domain}`
         const sample = await safe(group.hosts, probeEmail)
         if (sample.code === 'sender_blocked') {
-          emitAll(domains, host, {
-            smtp: 'blocked',
-            code: 'sender_blocked',
-            reason: 'MAIL FROM rejected — set a routable address in Preferences',
-            smtpCode: sample.smtpCode,
-          }, emit, enabled)
+          emitAll(
+            domains,
+            host,
+            {
+              smtp: 'blocked',
+              code: 'sender_blocked',
+              reason: 'MAIL FROM rejected — set a routable address in Preferences',
+              smtpCode: sample.smtpCode,
+            },
+            emit,
+            enabled,
+          )
           return
         }
         if (opts.checkCatchAll && provider !== 'google') catchAll = sample.signal === 'accepted'
@@ -228,52 +258,70 @@ async function runHost(host: string, domains: Map<string, DomainGroup>, opts: Op
       for (const item of group.items) {
         if (signal.aborted) throw new SmtpError('stopped', 'Validation stopped')
         if (item.disposable) {
-          emit(finalizeResult({
+          emit(
+            finalizeResult({
+              email: item.email,
+              syntax: true,
+              domain: true,
+              mx: true,
+              disposable: true,
+              roleBased: item.roleBased,
+              catchAll: false,
+              smtp: 'skipped',
+              code: 'disposable',
+              reason: 'Disposable domain',
+              mxHost: host,
+              enabled,
+            }),
+            item.index,
+          )
+          continue
+        }
+
+        const smtp =
+          provider !== 'google' && catchAll
+            ? {
+                signal: 'accepted' as const,
+                code: 'catch_all',
+                reason: 'Catch-all domain',
+                smtpCode: 250,
+              }
+            : await safe(group.hosts, item.email)
+
+        if (smtp.code === 'sender_blocked') {
+          emitAll(
+            domains,
+            host,
+            {
+              smtp: 'blocked',
+              code: 'sender_blocked',
+              reason: 'MAIL FROM rejected — set a routable address in Preferences',
+              smtpCode: smtp.smtpCode,
+            },
+            emit,
+            enabled,
+          )
+          return
+        }
+
+        emit(
+          finalizeResult({
             email: item.email,
             syntax: true,
             domain: true,
             mx: true,
-            disposable: true,
+            disposable: false,
             roleBased: item.roleBased,
-            catchAll: false,
-            smtp: 'skipped',
-            code: 'disposable',
-            reason: 'Disposable domain',
+            catchAll,
+            smtp: mapSmtp(smtp.signal),
+            code: catchAll ? 'catch_all' : smtp.code,
+            reason: catchAll ? 'Catch-all domain' : smtp.reason,
             mxHost: host,
-            enabled,
-          }), item.index)
-          continue
-        }
-
-        const smtp = provider !== 'google' && catchAll
-          ? { signal: 'accepted' as const, code: 'catch_all', reason: 'Catch-all domain', smtpCode: 250 }
-          : await safe(group.hosts, item.email)
-
-        if (smtp.code === 'sender_blocked') {
-          emitAll(domains, host, {
-            smtp: 'blocked',
-            code: 'sender_blocked',
-            reason: 'MAIL FROM rejected — set a routable address in Preferences',
             smtpCode: smtp.smtpCode,
-          }, emit, enabled)
-          return
-        }
-
-        emit(finalizeResult({
-          email: item.email,
-          syntax: true,
-          domain: true,
-          mx: true,
-          disposable: false,
-          roleBased: item.roleBased,
-          catchAll,
-          smtp: mapSmtp(smtp.signal),
-          code: catchAll ? 'catch_all' : smtp.code,
-          reason: catchAll ? 'Catch-all domain' : smtp.reason,
-          mxHost: host,
-          smtpCode: smtp.smtpCode,
-          enabled,
-        }), item.index)
+            enabled,
+          }),
+          item.index,
+        )
       }
     }
   } finally {
@@ -301,19 +349,22 @@ export async function verifyPipeline(
     const strict = normalizeVerifyEmail(value)
     const email = strict ?? (opts.checkSyntax ? null : looseVerifyEmail(value))
     if (!email) {
-      out(finalizeResult({
-        email: value.trim() || value,
-        syntax: false,
-        domain: false,
-        mx: false,
-        disposable: false,
-        roleBased: false,
-        catchAll: false,
-        smtp: 'skipped',
-        code: 'bad_syntax',
-        reason: opts.checkSyntax ? 'Bad syntax' : 'Could not parse address',
-        enabled,
-      }), index)
+      out(
+        finalizeResult({
+          email: value.trim() || value,
+          syntax: false,
+          domain: false,
+          mx: false,
+          disposable: false,
+          roleBased: false,
+          catchAll: false,
+          smtp: 'skipped',
+          code: 'bad_syntax',
+          reason: opts.checkSyntax ? 'Bad syntax' : 'Could not parse address',
+          enabled,
+        }),
+        index,
+      )
       return
     }
     const hit = cache?.get(email)
@@ -325,19 +376,22 @@ export async function verifyPipeline(
     const disposable = opts.checkDisposable ? checkDisposable(domain) : false
     const roleBased = opts.checkRoleBased ? checkRoleBased(email) : false
     if (!needsDns) {
-      out(finalizeResult({
-        email,
-        syntax: true,
-        domain: true,
-        mx: true,
-        disposable,
-        roleBased,
-        catchAll: false,
-        smtp: 'skipped',
-        code: disposable ? 'disposable' : 'checks_limited',
-        reason: disposable ? 'Disposable domain' : 'Domain, MX, and SMTP checks off',
-        enabled,
-      }), index)
+      out(
+        finalizeResult({
+          email,
+          syntax: true,
+          domain: true,
+          mx: true,
+          disposable,
+          roleBased,
+          catchAll: false,
+          smtp: 'skipped',
+          code: disposable ? 'disposable' : 'checks_limited',
+          reason: disposable ? 'Disposable domain' : 'Domain, MX, and SMTP checks off',
+          enabled,
+        }),
+        index,
+      )
       return
     }
     const list = byDomain.get(domain) ?? []
@@ -348,15 +402,24 @@ export async function verifyPipeline(
   if (!byDomain.size) return
 
   const resolved = new Map<string, DomainGroup>()
-  await pool([...byDomain.keys()], 10, async (domain) => {
-    const dns = await resolveDomain(domain).catch(() => ({ exists: false, hosts: [] as string[], nullMx: false }))
-    resolved.set(domain, {
-      hosts: dns.hosts,
-      items: byDomain.get(domain) ?? [],
-      exists: dns.exists,
-      nullMx: dns.nullMx,
-    })
-  }, signal)
+  await pool(
+    [...byDomain.keys()],
+    10,
+    async (domain) => {
+      const dns = await resolveDomain(domain).catch(() => ({
+        exists: false,
+        hosts: [] as string[],
+        nullMx: false,
+      }))
+      resolved.set(domain, {
+        hosts: dns.hosts,
+        items: byDomain.get(domain) ?? [],
+        exists: dns.exists,
+        nullMx: dns.nullMx,
+      })
+    },
+    signal,
+  )
 
   const smtpUnits = new Map<string, Map<string, DomainGroup>>()
 
@@ -364,97 +427,112 @@ export async function verifyPipeline(
     const hasMx = !group.nullMx && group.hosts.length > 0
     if (!group.exists) {
       for (const item of group.items) {
-        out(finalizeResult({
-          email: item.email,
-          syntax: true,
-          domain: false,
-          mx: false,
-          disposable: item.disposable,
-          roleBased: item.roleBased,
-          catchAll: false,
-          smtp: 'skipped',
-          code: 'domain_not_found',
-          reason: 'Domain not found',
-          enabled,
-        }), item.index)
+        out(
+          finalizeResult({
+            email: item.email,
+            syntax: true,
+            domain: false,
+            mx: false,
+            disposable: item.disposable,
+            roleBased: item.roleBased,
+            catchAll: false,
+            smtp: 'skipped',
+            code: 'domain_not_found',
+            reason: 'Domain not found',
+            enabled,
+          }),
+          item.index,
+        )
       }
       continue
     }
 
     if (opts.checkMx && !hasMx) {
       for (const item of group.items) {
-        out(finalizeResult({
-          email: item.email,
-          syntax: true,
-          domain: true,
-          mx: false,
-          disposable: item.disposable,
-          roleBased: item.roleBased,
-          catchAll: false,
-          smtp: 'skipped',
-          code: 'no_mx',
-          reason: 'No MX',
-          enabled,
-        }), item.index)
+        out(
+          finalizeResult({
+            email: item.email,
+            syntax: true,
+            domain: true,
+            mx: false,
+            disposable: item.disposable,
+            roleBased: item.roleBased,
+            catchAll: false,
+            smtp: 'skipped',
+            code: 'no_mx',
+            reason: 'No MX',
+            enabled,
+          }),
+          item.index,
+        )
       }
       continue
     }
 
     if (!opts.checkSmtp) {
       for (const item of group.items) {
-        out(finalizeResult({
-          email: item.email,
-          syntax: true,
-          domain: true,
-          mx: hasMx || !opts.checkMx,
-          disposable: item.disposable,
-          roleBased: item.roleBased,
-          catchAll: false,
-          smtp: 'skipped',
-          code: item.disposable ? 'disposable' : 'smtp_disabled',
-          reason: item.disposable ? 'Disposable domain' : 'SMTP check off',
-          mxHost: group.hosts[0],
-          enabled,
-        }), item.index)
+        out(
+          finalizeResult({
+            email: item.email,
+            syntax: true,
+            domain: true,
+            mx: hasMx || !opts.checkMx,
+            disposable: item.disposable,
+            roleBased: item.roleBased,
+            catchAll: false,
+            smtp: 'skipped',
+            code: item.disposable ? 'disposable' : 'smtp_disabled',
+            reason: item.disposable ? 'Disposable domain' : 'SMTP check off',
+            mxHost: group.hosts[0],
+            enabled,
+          }),
+          item.index,
+        )
       }
       continue
     }
 
     if (!hasMx) {
       for (const item of group.items) {
-        out(finalizeResult({
-          email: item.email,
-          syntax: true,
-          domain: true,
-          mx: false,
-          disposable: item.disposable,
-          roleBased: item.roleBased,
-          catchAll: false,
-          smtp: 'skipped',
-          code: 'no_mx',
-          reason: 'No MX',
-          enabled,
-        }), item.index)
+        out(
+          finalizeResult({
+            email: item.email,
+            syntax: true,
+            domain: true,
+            mx: false,
+            disposable: item.disposable,
+            roleBased: item.roleBased,
+            catchAll: false,
+            smtp: 'skipped',
+            code: 'no_mx',
+            reason: 'No MX',
+            enabled,
+          }),
+          item.index,
+        )
       }
       continue
     }
 
     if (group.items.every((item) => item.disposable)) {
       for (const item of group.items) {
-        out(finalizeResult({
-          email: item.email,
-          syntax: true,
-          domain: true,
-          mx: true,
-          disposable: true,
-          roleBased: item.roleBased,
-          catchAll: false,
-          smtp: 'skipped',
-          code: 'disposable',
-          reason: 'Disposable domain',
-          mxHost: group.hosts[0],
-          enabled,
-        }), item.index)
+        out(
+          finalizeResult({
+            email: item.email,
+            syntax: true,
+            domain: true,
+            mx: true,
+            disposable: true,
+            roleBased: item.roleBased,
+            catchAll: false,
+            smtp: 'skipped',
+            code: 'disposable',
+            reason: 'Disposable domain',
+            mxHost: group.hosts[0],
+            enabled,
+          }),
+          item.index,
+        )
       }
       continue
     }
@@ -467,7 +545,13 @@ export async function verifyPipeline(
 
   if (!smtpUnits.size) return
 
-  const size = (unit: Map<string, DomainGroup>) => [...unit.values()].reduce((count, group) => count + group.items.length, 0)
+  const size = (unit: Map<string, DomainGroup>) =>
+    [...unit.values()].reduce((count, group) => count + group.items.length, 0)
   const ordered = [...smtpUnits.entries()].sort((a, b) => size(b[1]) - size(a[1]))
-  await pool(ordered, opts.workers, ([mxHost, domains]) => runHost(mxHost, domains, opts, signal, out), signal)
+  await pool(
+    ordered,
+    opts.workers,
+    ([mxHost, domains]) => runHost(mxHost, domains, opts, signal, out),
+    signal,
+  )
 }

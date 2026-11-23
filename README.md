@@ -252,6 +252,8 @@ The specification describes Explorer, Starter, Professional and Agency plans. Th
 
 ## Desktop zoom
 
+**Font size:** Settings → Preferences → Appearance → **Font size** sets the type from 80% to 150% in 10% steps. Only the letters change. Spacing, buttons, and the rest of the layout stay the same. It is saved in `preferences.json` and included in the Appearance section of exported settings.
+
 **Display size:** Settings → Preferences → Appearance → **Display size** sets the window zoom from 70% to 200% in 10% steps with the **Zoom** row's − / + stepper (and **Reset** to 100%); a second row lists the keyboard shortcuts. `Ctrl + Plus` (or `Ctrl + =`) makes everything larger, `Ctrl + Minus` smaller, and `Ctrl + 0` returns to 100%. The shortcuts and the setting are the same thing: either one is saved in `preferences.json`, shown on the Appearance page, and applied the next time LeadsGhr opens. Display size is part of the Appearance section in exported settings files.
 
 The Crawler test lists same-site homepage links in a queue table and reports publicly exposed contact-form recipient addresses. It visits the contact page first, then other homepage links when the contact-only preference is off. It does not submit forms or save test results. Server-side form destinations are not visible to the crawler.

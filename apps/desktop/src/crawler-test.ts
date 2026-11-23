@@ -35,12 +35,22 @@ export function registerCrawlerTest(window: BrowserWindow, http: HttpAdapter) {
         const target = new URL(details.url)
         if (['data:', 'blob:'].includes(target.protocol)) return callback({})
         if (!['http:', 'https:'].includes(target.protocol)) return callback({ cancel: true })
-        void lookup(target.hostname, { all: true }).then((addresses) => {
-          callback(addresses.length && addresses.every(({ address }) => publicIp(address)) ? {} : { cancel: true })
-        }).catch(() => callback({ cancel: true }))
-      } catch { callback({ cancel: true }) }
+        void lookup(target.hostname, { all: true })
+          .then((addresses) => {
+            callback(
+              addresses.length && addresses.every(({ address }) => publicIp(address))
+                ? {}
+                : { cancel: true },
+            )
+          })
+          .catch(() => callback({ cancel: true }))
+      } catch {
+        callback({ cancel: true })
+      }
     })
-    guest.session.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false))
+    guest.session.setPermissionRequestHandler((_webContents, _permission, callback) =>
+      callback(false),
+    )
     guest.session.webRequest.onBeforeSendHeaders((details, callback) => {
       const headers = { ...details.requestHeaders }
       delete headers.Cookie
@@ -56,10 +66,17 @@ export function registerCrawlerTest(window: BrowserWindow, http: HttpAdapter) {
     let policy = robotsPolicies.get(origin)
     if (!policy) {
       const robotsUrl = `${origin}/robots.txt`
-      policy = http.get(robotsUrl, { maxBytes: 250_000, timeoutMs: 20000 }).then((response) => {
-        if (response.status !== 200 && response.status !== 404) throw new Error('Robots policy unavailable; crawl paused')
-        return robotsParser(robotsUrl, response.status === 200 ? response.body : '')
-      }).catch((error) => { robotsPolicies.delete(origin); throw error })
+      policy = http
+        .get(robotsUrl, { maxBytes: 250_000, timeoutMs: 20000 })
+        .then((response) => {
+          if (response.status !== 200 && response.status !== 404)
+            throw new Error('Robots policy unavailable; crawl paused')
+          return robotsParser(robotsUrl, response.status === 200 ? response.body : '')
+        })
+        .catch((error) => {
+          robotsPolicies.delete(origin)
+          throw error
+        })
       robotsPolicies.set(origin, policy)
     }
     const robots = await policy
@@ -80,10 +97,13 @@ export function registerCrawlerTest(window: BrowserWindow, http: HttpAdapter) {
     const response = await http.get(url, { maxBytes: 24_000_000, timeoutMs: 20000 })
     const target = new URL(response.url)
     const source = new URL(url)
-    if (target.hostname.replace(/^www\./, '') !== source.hostname.replace(/^www\./, '')) throw new Error('Cross-site redirect paused')
+    if (target.hostname.replace(/^www\./, '') !== source.hostname.replace(/^www\./, ''))
+      throw new Error('Cross-site redirect paused')
     if (target.origin !== source.origin) await checkRobots(response.url)
-    if (response.status !== 200 || !response.contentType.includes('text/html')) throw new Error('Page did not return public HTML')
-    if (challenge.test(response.body.slice(0, 10000))) throw new Error('Page presented a challenge; crawl paused')
+    if (response.status !== 200 || !response.contentType.includes('text/html'))
+      throw new Error('Page did not return public HTML')
+    if (challenge.test(response.body.slice(0, 10000)))
+      throw new Error('Page presented a challenge; crawl paused')
     approvedUrls.add(response.url)
     return { url: response.url, html: response.body }
   }
@@ -96,16 +116,32 @@ export function registerCrawlerTest(window: BrowserWindow, http: HttpAdapter) {
 
   ipcMain.handle('leadsghr:crawler-test:inspect', async (event, input: unknown) => {
     if (event.sender !== window.webContents) throw new Error('Unexpected caller')
-    const { url, method } = scanRequestSchema.extend({ method: desktopPreferencesSchema.shape.crawlerFetchMethod }).parse(input)
+    const { url, method } = scanRequestSchema
+      .extend({ method: desktopPreferencesSchema.shape.crawlerFetchMethod })
+      .parse(input)
     const prepared = await fetchPage(url)
     const snapshots = [prepared.html]
     if (method === 'http') return { url: prepared.url, snapshots }
-    const preview = new BrowserWindow({ show: false, webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, partition: `crawler-worker-${randomUUID()}` } })
+    const preview = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
+        webSecurity: true,
+        partition: `crawler-worker-${randomUUID()}`,
+      },
+    })
     preview.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-    preview.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
+    preview.webContents.session.setPermissionRequestHandler((_contents, _permission, callback) =>
+      callback(false),
+    )
     preview.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
       const headers = { ...details.requestHeaders }
-      delete headers.Cookie; delete headers.cookie; delete headers.Authorization; delete headers.authorization
+      delete headers.Cookie
+      delete headers.cookie
+      delete headers.Authorization
+      delete headers.authorization
       callback({ requestHeaders: headers })
     })
     preview.webContents.session.webRequest.onBeforeRequest((details, callback) => {
@@ -113,24 +149,45 @@ export function registerCrawlerTest(window: BrowserWindow, http: HttpAdapter) {
         const target = new URL(details.url)
         if (['data:', 'blob:'].includes(target.protocol)) return callback({})
         if (!['http:', 'https:'].includes(target.protocol)) return callback({ cancel: true })
-        void lookup(target.hostname, { all: true }).then((addresses) => callback(addresses.length && addresses.every(({ address }) => publicIp(address)) ? {} : { cancel: true })).catch(() => callback({ cancel: true }))
-      } catch { callback({ cancel: true }) }
+        void lookup(target.hostname, { all: true })
+          .then((addresses) =>
+            callback(
+              addresses.length && addresses.every(({ address }) => publicIp(address))
+                ? {}
+                : { cancel: true },
+            ),
+          )
+          .catch(() => callback({ cancel: true }))
+      } catch {
+        callback({ cancel: true })
+      }
     })
-    preview.webContents.on('will-navigate', (event, destination) => { if (destination !== prepared.url) event.preventDefault() })
+    preview.webContents.on('will-navigate', (event, destination) => {
+      if (destination !== prepared.url) event.preventDefault()
+    })
     try {
       await reservePageFetch(prepared.url)
-      await Promise.race([preview.loadURL(prepared.url), new Promise<never>((_resolve, reject) => setTimeout(() => reject(new Error('Rendered page timed out')), 20000))])
+      await Promise.race([
+        preview.loadURL(prepared.url),
+        new Promise<never>((_resolve, reject) =>
+          setTimeout(() => reject(new Error('Rendered page timed out')), 20000),
+        ),
+      ])
       for (let step = 0; step < 8; step++) {
-        const html = await preview.webContents.executeJavaScript(`window.scrollTo(0, document.documentElement.scrollHeight * ${(step + 1) / 8}); document.documentElement.outerHTML`) as string
-        if (challenge.test(html.slice(0, 10000))) throw new Error('Page presented a challenge; crawl paused')
+        const html = (await preview.webContents.executeJavaScript(
+          `window.scrollTo(0, document.documentElement.scrollHeight * ${(step + 1) / 8}); document.documentElement.outerHTML`,
+        )) as string
+        if (challenge.test(html.slice(0, 10000)))
+          throw new Error('Page presented a challenge; crawl paused')
         snapshots.push(html)
         await new Promise((resolve) => setTimeout(resolve, 350))
       }
     } catch (error) {
       if (challenge.test(String(error))) throw error
       // Keep the public HTML response when JavaScript rendering fails.
-    } finally { if (!preview.isDestroyed()) preview.destroy() }
+    } finally {
+      if (!preview.isDestroyed()) preview.destroy()
+    }
     return { url: prepared.url, snapshots }
   })
 }
-
