@@ -17,6 +17,7 @@ export const leadsGhrExtensionsDirectory = (): string => join(leadsGhrRoot(), 'e
  * LeadsGhr's data: the SQLite database, preferences.json, search-criteria.json, and profile.json.
  * LEADSGHR_DATA_DIR points it elsewhere, for example a separate folder for performance tests.
  */
-export const leadsGhrDataDirectory = (): string => process.env.LEADSGHR_DATA_DIR || join(leadsGhrRoot(), 'data')
+export const leadsGhrDataDirectory = (): string =>
+  process.env.LEADSGHR_DATA_DIR || join(leadsGhrRoot(), 'data')
 /** Exported preference files (Preferences → Export settings). */
 export const leadsGhrSettingsDirectory = (): string => join(leadsGhrRoot(), 'settings')

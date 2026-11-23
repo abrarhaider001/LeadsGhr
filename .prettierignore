@@ -1,0 +1,7 @@
+node_modules
+dist
+out
+**/*.generated.ts
+apps/desktop/setup
+packages/ui/src/tokens.css
+supabase/.temp

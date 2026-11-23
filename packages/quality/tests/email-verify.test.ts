@@ -39,7 +39,10 @@ test('classifyRcpt keeps policy blocks out of Invalid', () => {
   assert.equal(classifyRcpt(451, '4.7.1 Greylisted').signal, 'temp')
   assert.equal(classifyRcpt(550, '5.7.1 Client host blocked').signal, 'blocked')
   assert.equal(classifyRcpt(572, 'host name is unknown').code, 'domain_not_found')
-  assert.equal(classifyMailFrom(573, 'verify@localhost failed to route the address').code, 'sender_blocked')
+  assert.equal(
+    classifyMailFrom(573, 'verify@localhost failed to route the address').code,
+    'sender_blocked',
+  )
 })
 
 test('finalizeResult decides status from signals then clamps score to that band', () => {

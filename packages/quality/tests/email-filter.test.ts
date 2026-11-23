@@ -12,7 +12,10 @@ test('pipeline filtering keeps valid addresses and removes junk before export', 
     { value: 'bad@@company.com', source: 'company' },
     { value: 'info@company.com', source: 'company' },
   ])
-  assert.deepEqual(result.kept.map((item) => item.email), ['sales@company.com', 'info@company.com'])
+  assert.deepEqual(
+    result.kept.map((item) => item.email),
+    ['sales@company.com', 'info@company.com'],
+  )
   assert.equal(result.rejected.length, 5)
   assert.equal(result.duplicates, 1)
 })
@@ -26,7 +29,15 @@ test('error-reporting keys and placeholder addresses never reach the export', ()
     { value: 'john.doe@company.com', source: 'template' },
     { value: 'office@realbuilder.com', source: 'site' },
   ])
-  assert.deepEqual(result.kept.map((item) => item.email), ['office@realbuilder.com'])
-  assert.equal(result.rejected.filter((item) => item.reason === 'Error-reporting or tracking key, not a mailbox').length, 3)
+  assert.deepEqual(
+    result.kept.map((item) => item.email),
+    ['office@realbuilder.com'],
+  )
+  assert.equal(
+    result.rejected.filter(
+      (item) => item.reason === 'Error-reporting or tracking key, not a mailbox',
+    ).length,
+    3,
+  )
   assert.equal(result.rejected.filter((item) => item.reason === 'Placeholder address').length, 2)
 })

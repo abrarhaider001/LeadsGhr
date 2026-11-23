@@ -7,5 +7,15 @@ const root = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
-  build: { rollupOptions: { input: { popup: resolve(root, 'popup.html'), sidepanel: resolve(root, 'sidepanel.html'), background: resolve(root, 'src/background.ts'), gmail: resolve(root, 'src/gmail.ts') }, output: { entryFileNames: '[name].js' } } },
+  build: {
+    rollupOptions: {
+      input: {
+        popup: resolve(root, 'popup.html'),
+        sidepanel: resolve(root, 'sidepanel.html'),
+        background: resolve(root, 'src/background.ts'),
+        gmail: resolve(root, 'src/gmail.ts'),
+      },
+      output: { entryFileNames: '[name].js' },
+    },
+  },
 })

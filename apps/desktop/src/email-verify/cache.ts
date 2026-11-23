@@ -21,16 +21,24 @@ export function createEmailVerifyCache(db: Database.Database): ResultCache {
     checked_at TEXT NOT NULL
   )`)
 
-  try { db.exec('ALTER TABLE email_verify_cache ADD COLUMN confidence INTEGER NOT NULL DEFAULT 0') } catch {}
-  try { db.exec('ALTER TABLE email_verify_cache ADD COLUMN checks_json TEXT NOT NULL DEFAULT "{}"') } catch {}
+  try {
+    db.exec('ALTER TABLE email_verify_cache ADD COLUMN confidence INTEGER NOT NULL DEFAULT 0')
+  } catch {}
+  try {
+    db.exec('ALTER TABLE email_verify_cache ADD COLUMN checks_json TEXT NOT NULL DEFAULT "{}"')
+  } catch {}
 
-  db.prepare(`DELETE FROM email_verify_cache
-    WHERE checks_json IS NULL OR checks_json = '{}' OR checks_json = '' OR confidence IS NULL`).run()
+  db.prepare(
+    `DELETE FROM email_verify_cache
+    WHERE checks_json IS NULL OR checks_json = '{}' OR checks_json = '' OR confidence IS NULL`,
+  ).run()
 
-  const select = db.prepare(`SELECT email, status, code, reason, confidence, checks_json AS checksJson, mx_host AS mxHost, smtp_code AS smtpCode, checked_at AS checkedAt
+  const select =
+    db.prepare(`SELECT email, status, code, reason, confidence, checks_json AS checksJson, mx_host AS mxHost, smtp_code AS smtpCode, checked_at AS checkedAt
     FROM email_verify_cache WHERE email = ?`)
   const remove = db.prepare('DELETE FROM email_verify_cache WHERE email = ?')
-  const upsert = db.prepare(`INSERT INTO email_verify_cache (email, status, code, reason, confidence, checks_json, mx_host, smtp_code, checked_at)
+  const upsert =
+    db.prepare(`INSERT INTO email_verify_cache (email, status, code, reason, confidence, checks_json, mx_host, smtp_code, checked_at)
     VALUES (@email, @status, @code, @reason, @confidence, @checksJson, @mxHost, @smtpCode, @checkedAt)
     ON CONFLICT(email) DO UPDATE SET
       status = excluded.status,
@@ -44,17 +52,19 @@ export function createEmailVerifyCache(db: Database.Database): ResultCache {
 
   return {
     get(email) {
-      const row = select.get(email) as {
-        email: string
-        status: EmailVerifyResult['status']
-        code: string | null
-        reason: string
-        confidence: number
-        checksJson: string
-        mxHost: string | null
-        smtpCode: number | null
-        checkedAt: string
-      } | undefined
+      const row = select.get(email) as
+        | {
+            email: string
+            status: EmailVerifyResult['status']
+            code: string | null
+            reason: string
+            confidence: number
+            checksJson: string
+            mxHost: string | null
+            smtpCode: number | null
+            checkedAt: string
+          }
+        | undefined
       if (!row) return undefined
       if (Date.now() - Date.parse(row.checkedAt) > TTL_MS) {
         remove.run(email)
@@ -70,7 +80,15 @@ export function createEmailVerifyCache(db: Database.Database): ResultCache {
           remove.run(email)
           return undefined
         }
-        if (row.status === 'valid' && (!checks.syntax || !checks.domain || !checks.mx || checks.smtp !== 'accepted' || checks.catchAll || checks.disposable)) {
+        if (
+          row.status === 'valid' &&
+          (!checks.syntax ||
+            !checks.domain ||
+            !checks.mx ||
+            checks.smtp !== 'accepted' ||
+            checks.catchAll ||
+            checks.disposable)
+        ) {
           remove.run(email)
           return undefined
         }

@@ -1,4 +1,11 @@
-import type { ComposePayload, ComposeResult, Recipient, SendJob, SendRange, Template } from './types'
+import type {
+  ComposePayload,
+  ComposeResult,
+  Recipient,
+  SendJob,
+  SendRange,
+  Template,
+} from './types'
 
 export const SENDING_ALARM = 'sending-tick'
 
@@ -28,12 +35,16 @@ export type SendingStatusResponse = {
   job: SendJob | null
 }
 
-export type SendingActionResponse =
-  | { ok: true; job: SendJob | null }
-  | { ok: false; error: string }
+export type SendingActionResponse = { ok: true; job: SendJob | null } | { ok: false; error: string }
 
 export type SendingComposeResponse = ComposeResult
 
 export function isSendingRequest(message: unknown): message is SendingRequest {
-  return !!message && typeof message === 'object' && 'kind' in message && typeof (message as { kind: unknown }).kind === 'string' && String((message as { kind: string }).kind).startsWith('sending:')
+  return (
+    !!message &&
+    typeof message === 'object' &&
+    'kind' in message &&
+    typeof (message as { kind: unknown }).kind === 'string' &&
+    String((message as { kind: string }).kind).startsWith('sending:')
+  )
 }

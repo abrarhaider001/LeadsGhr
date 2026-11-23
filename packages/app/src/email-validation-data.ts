@@ -1,6 +1,12 @@
 import type { EmailVerifyResult } from '@leadsghr/schemas'
 
-export { collectEmailInputs, detectEmailColumns, parseCsv, type EmailColumn, type ImportTable } from './email-filtering-data'
+export {
+  collectEmailInputs,
+  detectEmailColumns,
+  parseCsv,
+  type EmailColumn,
+  type ImportTable,
+} from './email-filtering-data'
 export {
   EMAIL_VERIFY_CONCURRENCY_DEFAULT,
   EMAIL_VERIFY_CONCURRENCY_MAX,
@@ -12,30 +18,44 @@ export const EMAIL_VERIFY_MAX = 50000
 
 export function statusLabel(status: string): string {
   switch (status) {
-    case 'valid': return 'Valid'
-    case 'risky': return 'Risky'
-    case 'invalid': return 'Invalid'
-    default: return 'Valid'
+    case 'valid':
+      return 'Valid'
+    case 'risky':
+      return 'Risky'
+    case 'invalid':
+      return 'Invalid'
+    default:
+      return 'Valid'
   }
 }
 
 export function statusClass(status: string): string {
   switch (status) {
-    case 'valid': return 'la-email-verify-valid'
-    case 'risky': return 'la-email-verify-risky'
-    case 'invalid': return 'la-email-verify-invalid'
-    default: return 'la-email-verify-valid'
+    case 'valid':
+      return 'la-email-verify-valid'
+    case 'risky':
+      return 'la-email-verify-risky'
+    case 'invalid':
+      return 'la-email-verify-invalid'
+    default:
+      return 'la-email-verify-valid'
   }
 }
 
 export function smtpLabel(value: string): string {
   switch (value) {
-    case 'accepted': return 'Accepted'
-    case 'rejected': return 'Rejected'
-    case 'temp': return 'Temporary'
-    case 'blocked': return 'Blocked'
-    case 'skipped': return 'Skipped'
-    default: return 'Unverifiable'
+    case 'accepted':
+      return 'Accepted'
+    case 'rejected':
+      return 'Rejected'
+    case 'temp':
+      return 'Temporary'
+    case 'blocked':
+      return 'Blocked'
+    case 'skipped':
+      return 'Skipped'
+    default:
+      return 'Unverifiable'
   }
 }
 

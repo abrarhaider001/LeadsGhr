@@ -13,13 +13,17 @@ export function applyFontSize(percent: number): void {
 export function applyTheme(choice: ThemeChoice): void {
   const dark = choice === 'dark' || (choice === 'system' && darkQuery().matches)
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-  try { localStorage.setItem(STORAGE_KEY, choice) } catch {}
+  try {
+    localStorage.setItem(STORAGE_KEY, choice)
+  } catch {}
 }
 
 /** Applies the last chosen theme before the first paint, so the app does not flash the wrong theme. */
 export function applySavedTheme(): void {
   let saved: string | null = null
-  try { saved = localStorage.getItem(STORAGE_KEY) } catch {}
+  try {
+    saved = localStorage.getItem(STORAGE_KEY)
+  } catch {}
   applyTheme(saved === 'dark' || saved === 'system' ? saved : 'light')
 }
 

@@ -3,4 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { LeadsGhrApp } from '@leadsghr/app'
 import '@leadsghr/ui/styles.css'
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><LeadsGhrApp platform="web" /></React.StrictMode>)
+createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <LeadsGhrApp platform="web" />
+  </React.StrictMode>,
+)

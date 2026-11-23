@@ -32,13 +32,19 @@ export function isPlainText(body: string): boolean {
 
 /** Plain text for Gmail's editor: escaped, one <div> per line (blank lines kept), like text typed in Gmail. */
 function textToHtml(text: string): string {
-  return text.replace(/\r\n?/g, '\n').split('\n').map((line) => `<div>${line ? escapeHtml(line) : '<br>'}</div>`).join('')
+  return text
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => `<div>${line ? escapeHtml(line) : '<br>'}</div>`)
+    .join('')
 }
 
 export function renderMessage(template: Template, fields: Record<string, string>): Template {
   return {
     subject: renderText(template.subject, fields).trim(),
-    bodyHtml: isPlainText(template.bodyHtml) ? textToHtml(renderText(template.bodyHtml, fields)) : renderHtml(template.bodyHtml, fields),
+    bodyHtml: isPlainText(template.bodyHtml)
+      ? textToHtml(renderText(template.bodyHtml, fields))
+      : renderHtml(template.bodyHtml, fields),
   }
 }
 
@@ -47,9 +53,18 @@ export function readTemplateFile(file: File): Promise<Template> {
     const trimmed = text.trim()
     if (!trimmed) throw new Error('Template file is empty.')
     if (file.name.toLowerCase().endsWith('.json')) {
-      const parsed = JSON.parse(trimmed) as { subject?: unknown; bodyHtml?: unknown; body?: unknown }
+      const parsed = JSON.parse(trimmed) as {
+        subject?: unknown
+        bodyHtml?: unknown
+        body?: unknown
+      }
       const subject = typeof parsed.subject === 'string' ? parsed.subject.trim() : ''
-      const bodyHtml = typeof parsed.bodyHtml === 'string' ? parsed.bodyHtml : typeof parsed.body === 'string' ? parsed.body : ''
+      const bodyHtml =
+        typeof parsed.bodyHtml === 'string'
+          ? parsed.bodyHtml
+          : typeof parsed.body === 'string'
+            ? parsed.body
+            : ''
       if (!subject || !bodyHtml.trim()) throw new Error('JSON template needs subject and bodyHtml.')
       return { subject, bodyHtml }
     }

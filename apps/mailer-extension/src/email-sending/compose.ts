@@ -4,7 +4,11 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, ms))
 }
 
-async function waitFor<T>(read: () => T | null | undefined, timeoutMs = 20000, intervalMs = 120): Promise<T> {
+async function waitFor<T>(
+  read: () => T | null | undefined,
+  timeoutMs = 20000,
+  intervalMs = 120,
+): Promise<T> {
   const started = Date.now()
   while (Date.now() - started < timeoutMs) {
     const value = read()
@@ -21,11 +25,15 @@ function findComposes(): Element[] {
 }
 
 function composeButton(): HTMLElement | null {
-  return document.querySelector<HTMLElement>('div[role="button"][gh="cm"], .T-I.T-I-KE.L3, div[role="button"][aria-label*="Compose"]')
+  return document.querySelector<HTMLElement>(
+    'div[role="button"][gh="cm"], .T-I.T-I-KE.L3, div[role="button"][aria-label*="Compose"]',
+  )
 }
 
 function getBody(compose: Element): HTMLElement | null {
-  return compose.querySelector<HTMLElement>('[g_editable="true"][contenteditable="true"], [role="textbox"][contenteditable="true"][aria-label*="Message Body"], div[contenteditable="true"][aria-label*="Message Body"]')
+  return compose.querySelector<HTMLElement>(
+    '[g_editable="true"][contenteditable="true"], [role="textbox"][contenteditable="true"][aria-label*="Message Body"], div[contenteditable="true"][aria-label*="Message Body"]',
+  )
 }
 
 function getSubjectInput(compose: Element): HTMLInputElement | null {
@@ -33,16 +41,22 @@ function getSubjectInput(compose: Element): HTMLInputElement | null {
 }
 
 function getToField(compose: Element): HTMLElement | null {
-  return compose.querySelector<HTMLElement>('textarea[name="to"], input[name="to"], input[aria-label^="To"], div[aria-label^="To recipients"][contenteditable="true"], div[role="textbox"][aria-label^="To"]')
+  return compose.querySelector<HTMLElement>(
+    'textarea[name="to"], input[name="to"], input[aria-label^="To"], div[aria-label^="To recipients"][contenteditable="true"], div[role="textbox"][aria-label^="To"]',
+  )
 }
 
 function sendButton(compose: Element): HTMLElement | null {
-  return compose.querySelector<HTMLElement>('[role="button"][data-tooltip^="Send"], [role="button"][aria-label^="Send"], button[aria-label^="Send"]')
+  return compose.querySelector<HTMLElement>(
+    '[role="button"][data-tooltip^="Send"], [role="button"][aria-label^="Send"], button[aria-label^="Send"]',
+  )
 }
 
 function setNativeValue(input: HTMLInputElement | HTMLTextAreaElement, value: string): void {
   const proto = Object.getPrototypeOf(input) as { value?: PropertyDescriptor }
-  const descriptor = Object.getOwnPropertyDescriptor(proto, 'value') ?? Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
+  const descriptor =
+    Object.getOwnPropertyDescriptor(proto, 'value') ??
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')
   descriptor?.set?.call(input, value)
   input.dispatchEvent(new Event('input', { bubbles: true }))
   input.dispatchEvent(new Event('change', { bubbles: true }))
@@ -56,7 +70,9 @@ async function fillRecipient(compose: Element, email: string): Promise<void> {
     setNativeValue(field, email)
   } else {
     field.textContent = email
-    field.dispatchEvent(new InputEvent('input', { bubbles: true, data: email, inputType: 'insertText' }))
+    field.dispatchEvent(
+      new InputEvent('input', { bubbles: true, data: email, inputType: 'insertText' }),
+    )
   }
   field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', code: 'Tab', bubbles: true }))
   field.dispatchEvent(new KeyboardEvent('keyup', { key: 'Tab', code: 'Tab', bubbles: true }))
@@ -77,7 +93,9 @@ export async function composeAndSend(payload: ComposePayload): Promise<ComposeRe
     const pause = Math.max(0, payload.stepDelayMs ?? 0)
     const startedAt = Date.now()
     // Steps start at fixed offsets from the first one (0, 1, 2 and 3 pauses), so work inside a step never shifts the next.
-    const step = async (index: number) => { if (pause) await sleep(Math.max(0, startedAt + index * pause - Date.now())) }
+    const step = async (index: number) => {
+      if (pause) await sleep(Math.max(0, startedAt + index * pause - Date.now()))
+    }
     // Step 1: open compose.
     const compose = await ensureCompose()
     await step(1)
