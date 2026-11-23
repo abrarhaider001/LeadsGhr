@@ -4,6 +4,11 @@ type ThemeChoice = DesktopPreferences['theme']
 const STORAGE_KEY = 'leadsghr.theme'
 const darkQuery = () => window.matchMedia('(prefers-color-scheme: dark)')
 
+/** Scales only the type sizes. Spacing, controls, and the window zoom stay as they are. */
+export function applyFontSize(percent: number): void {
+  document.documentElement.style.setProperty('--ui-font-scale', String(percent / 100))
+}
+
 /** Sets data-theme on the page (the light or dark tokens in packages/ui/src/tokens.css) and remembers the choice. */
 export function applyTheme(choice: ThemeChoice): void {
   const dark = choice === 'dark' || (choice === 'system' && darkQuery().matches)

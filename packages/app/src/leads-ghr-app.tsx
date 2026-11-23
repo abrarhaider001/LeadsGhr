@@ -12,7 +12,7 @@ import { SearchSetupPage } from './search-setup-page'
 import { SearchResultsPage } from './search-results-page'
 import { ProfilePage } from './profile-page'
 import { defaultDesktopPreferences, type CrawlExport, type CrawlRunDetail, type CrawlRunSummary, type DesktopPreferences, type PipelineProvider, type SearchCriteria } from '@leadsghr/schemas'
-import { applyTheme, followSystemTheme } from './theme'
+import { applyFontSize, applyTheme, followSystemTheme } from './theme'
 import { crawlRunBridge } from './crawl-run-bridge'
 import { ExportsPage } from './exports-page'
 import { PipelineExportPage } from './pipeline-export-page'
@@ -97,6 +97,7 @@ export function LeadsGhrApp() {
   const [preferences, setPreferences] = useState<DesktopPreferences>(defaultDesktopPreferences)
   const [preferencesMessage, setPreferencesMessage] = useState('')
   useEffect(() => { applyTheme(preferences.theme); return followSystemTheme(preferences.theme) }, [preferences.theme])
+  useEffect(() => { applyFontSize(preferences.fontSize) }, [preferences.fontSize])
   // Ctrl + / Ctrl - / Ctrl 0 change the zoom in the main process, which saves it; mirror it here so Appearance shows it.
   useEffect(() => bridge()?.onDisplaySizeChanged?.((displaySize) => setPreferences((current) => ({ ...current, displaySize }))), [])
   const [account, setAccount] = useState(loadLocalAccount)

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Avatar, { genConfig } from 'react-nice-avatar'
-import { PREFERENCE_SECTIONS, DISPLAY_SIZE_MAX, DISPLAY_SIZE_MIN, DISPLAY_SIZE_STEP, clampDisplaySize, applyEmailVerifyChecksToPreferences, type DesktopPreferences } from '@leadsghr/schemas'
+import { PREFERENCE_SECTIONS, DISPLAY_SIZE_MAX, DISPLAY_SIZE_MIN, DISPLAY_SIZE_STEP, FONT_SIZE_MAX, FONT_SIZE_MIN, FONT_SIZE_STEP, clampDisplaySize, clampFontSize, applyEmailVerifyChecksToPreferences, type DesktopPreferences } from '@leadsghr/schemas'
 import { saveLocalAccount, type LocalAccount } from './account-data'
 import { UpdatesPanel, type UpdateState } from './updates'
 
@@ -38,7 +38,7 @@ function describeValue(key: PreferenceKeyName, value: DesktopPreferences[Prefere
   if (key === 'crawlerFetchMethod') return value === 'http' ? 'Lightweight HTTP' : 'Browser rendering'
   if (key === 'emailVerifyPaceMs') return `${value} ms`
   if (key === 'theme') return value === 'dark' ? 'Dark' : value === 'system' ? 'Match Windows' : 'Light'
-  if (key === 'displaySize') return `${value}%`
+  if (key === 'displaySize' || key === 'fontSize') return `${value}%`
   return String(value)
 }
 
@@ -176,7 +176,7 @@ type EmailVerifyCheckKey =
   | 'emailVerifyCheckRoleBased'
   | 'emailVerifyCheckCatchAll'
 
-type PreferenceKey = Exclude<keyof DesktopPreferences, 'crawlerEmailSource' | 'crawlerFetchMethod' | 'crawlerConcurrentPages' | EmailVerifyCheckKey | 'emailVerifyMailFrom' | 'emailVerifyEhlo' | 'emailVerifyPerSession' | 'emailVerifyPaceMs' | 'theme' | 'displaySize'>
+type PreferenceKey = Exclude<keyof DesktopPreferences, 'crawlerEmailSource' | 'crawlerFetchMethod' | 'crawlerConcurrentPages' | EmailVerifyCheckKey | 'emailVerifyMailFrom' | 'emailVerifyEhlo' | 'emailVerifyPerSession' | 'emailVerifyPaceMs' | 'theme' | 'displaySize' | 'fontSize'>
 
 const emailVerifyCheckOptions: { key: EmailVerifyCheckKey; title: string; detail: string }[] = [
   { key: 'emailVerifyCheckSyntax', title: 'Syntax', detail: 'Strict local format check. Used for confidence when the address shape is wrong.' },
@@ -235,6 +235,24 @@ const ZOOM_SHORTCUTS: { keys: string[]; label: string }[] = [
 ]
 const minusIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
 const plusIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg>
+/** Appearance → Font size. Scales type only; spacing, buttons, and the window zoom stay as they are. */
+function FontSizeSetting({ value, onChange }: { value: number; onChange(next: number): void }) {
+  const set = (next: number) => { const size = clampFontSize(next); if (size !== value) onChange(size) }
+  return <section className="la-profile-preference-group"><div><h2>Font size</h2><p>Make the type larger or smaller. Spacing and controls stay the same.</p></div>
+    <div className="la-profile-option-list">
+      <div className="la-profile-option la-size-row">
+        <span><strong>Type</strong><small>Default is 100%. Range {FONT_SIZE_MIN}–{FONT_SIZE_MAX}%.</small></span>
+        <span className="la-size-row-controls">
+          <span className="la-size-stepper" role="group" aria-label="Font size">
+            <button type="button" onClick={() => set(value - FONT_SIZE_STEP)} disabled={value <= FONT_SIZE_MIN} aria-label="Smaller type">{minusIcon}</button>
+            <output aria-live="polite">{value}%</output>
+            <button type="button" onClick={() => set(value + FONT_SIZE_STEP)} disabled={value >= FONT_SIZE_MAX} aria-label="Larger type">{plusIcon}</button>
+          </span>
+          <button type="button" className="la-size-reset" onClick={() => set(100)} disabled={value === 100}>Reset</button>
+        </span>
+      </div>
+    </div></section>
+}
 /** Appearance → Display size, in the settings-row style (owner-chosen 2026-11-22): the window zoom in percent, the same setting Ctrl + / Ctrl - / Ctrl 0 change. */
 function DisplaySizeSetting({ value, onChange }: { value: number; onChange(next: number): void }) {
   const set = (next: number) => { const size = clampDisplaySize(next); if (size !== value) onChange(size) }
@@ -297,6 +315,7 @@ export function ProfilePage({ section, updateState, preferences, onPreferencesCh
       <SettingsTransfer preferences={preferences} onImported={onPreferencesImported} />
       <div className="la-preference-content" id="la-preference-panel" aria-label={`${preferenceCategory} preferences`}>
         {preferenceCategory === 'Appearance' && <section className="la-profile-preference-group"><div><h2>Theme</h2><p>Choose a light or dark look, or match the Windows setting.</p></div><div className="la-theme-options" role="radiogroup" aria-label="Theme">{THEME_OPTIONS.map((option) => <label key={option.value} className={`la-theme-option${preferences.theme === option.value ? ' is-selected' : ''}`}><span className="la-theme-preview">{option.value === 'system' ? <><ThemePreview theme="light" /><ThemePreview theme="dark" /></> : <ThemePreview theme={option.value} />}</span><span className="la-theme-label"><input type="radio" name="theme" checked={preferences.theme === option.value} onChange={() => onPreferencesChange({ ...preferences, theme: option.value })} /><span><strong>{option.label}</strong><small>{option.hint}</small></span></span></label>)}</div></section>}
+        {preferenceCategory === 'Appearance' && <FontSizeSetting value={preferences.fontSize} onChange={(fontSize) => onPreferencesChange({ ...preferences, fontSize })} />}
         {preferenceCategory === 'Appearance' && <DisplaySizeSetting value={preferences.displaySize} onChange={(displaySize) => onPreferencesChange({ ...preferences, displaySize })} />}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Crawler email source</h2><p>Choose how the Crawler test finds addresses on public pages.</p></div><div className="la-profile-option-list"><label className="la-profile-option"><span><strong>Our behavior</strong><small>Use the existing LeadsGhr page extraction and URL queue.</small></span><input type="radio" name="crawler-email-source" checked={preferences.crawlerEmailSource === 'leadsghr'} onChange={() => onPreferencesChange({ ...preferences, crawlerEmailSource: 'leadsghr' })} /></label><label className="la-profile-option"><span><strong>Email Hunter-style</strong><small>Scan the complete rendered HTML, including scripts and attributes. This can include placeholders and false matches; it does not access the installed Chrome extension or its saved results.</small></span><input type="radio" name="crawler-email-source" checked={preferences.crawlerEmailSource === 'email-hunter'} onChange={() => onPreferencesChange({ ...preferences, crawlerEmailSource: 'email-hunter' })} /></label></div></section>}
         {preferenceCategory === 'Crawler' && <section className="la-profile-preference-group"><div><h2>Page fetch method</h2><p>Choose how Crawler and Pipeline inspect public websites. Search listings still use their existing browser flow.</p></div><div className="la-profile-option-list"><label className="la-profile-option"><span><strong>Browser rendering</strong><small>Open each page in an isolated Electron browser and scroll it. Slower, but can find content added by JavaScript.</small></span><input type="radio" name="crawler-fetch-method" checked={preferences.crawlerFetchMethod === 'browser'} onChange={() => onPreferencesChange({ ...preferences, crawlerFetchMethod: 'browser' })} /></label><label className="la-profile-option"><span><strong>Direct HTTP</strong><small>Inspect the public HTML response without loading a browser. Faster, but JavaScript-added content will be missed.</small></span><input type="radio" name="crawler-fetch-method" checked={preferences.crawlerFetchMethod === 'http'} onChange={() => onPreferencesChange({ ...preferences, crawlerFetchMethod: 'http' })} /></label></div></section>}

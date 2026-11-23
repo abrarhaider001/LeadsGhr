@@ -26,6 +26,7 @@ export const PREFERENCE_VALUE_UPGRADES: Readonly<Partial<Record<keyof DesktopPre
 export const PREFERENCE_SECTIONS: readonly { id: 'appearance' | 'crawler' | 'search' | 'email-validation' | 'updates'; title: string; settings: readonly { key: keyof DesktopPreferences; label: string }[] }[] = [
   { id: 'appearance', title: 'Appearance', settings: [
     { key: 'theme', label: 'Theme' },
+    { key: 'fontSize', label: 'Font size' },
     { key: 'displaySize', label: 'Display size' },
   ] },
   { id: 'crawler', title: 'Crawler', settings: [
