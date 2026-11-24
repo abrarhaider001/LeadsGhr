@@ -65,6 +65,12 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
     ipcRenderer.invoke('leadsghr:scraper:sync', crawlRunIdSchema.parse(jobId)),
   openScraperFolder: () => ipcRenderer.invoke('leadsghr:scraper:open-folder'),
   listScraperJobs: () => ipcRenderer.invoke('leadsghr:scraper:list-jobs'),
+  onScraperChanged: (callback: (jobIds: string[]) => void) => {
+    const listener = (_event: unknown, jobIds: unknown) =>
+      callback(Array.isArray(jobIds) ? jobIds.filter((id): id is string => typeof id === 'string') : [])
+    ipcRenderer.on('leadsghr:scraper:changed', listener)
+    return () => ipcRenderer.removeListener('leadsghr:scraper:changed', listener)
+  },
   onDisplaySizeChanged: (callback: (size: number) => void) => {
     const listener = (_event: unknown, size: unknown) => {
       if (typeof size === 'number') callback(size)

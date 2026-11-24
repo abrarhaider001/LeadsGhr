@@ -59,13 +59,13 @@ The run happens on the settings page, which must stay open while the Scraper wor
 One search at a time, in order:
 
 1. Opens a **new tab in the same Chrome window** as the settings page, at Google Search's business list for `<niche> in <place>`.
-2. Reads every business card: name, phone, address, and the **Website** button's link. It understands both of Google's layouts (the compact list and the larger photo cards). Ads are skipped and counted.
-3. Scrolls to the bottom, pressing **More places** when Google shows it, until no new businesses load.
+2. Reads the business cards: name, phone, address, and the **Website** button's link. It understands both of Google's layouts (the compact list and the larger photo cards). Ads are skipped and counted.
+3. Moves down the list **one business at a time**, like a person reading it: brings the card into view, looks up its website, saves it, and pauses (**Pause on each listing**, 1.2 seconds with Normal) before the next one. The website is looked up from inside the Google tab: the Scraper requests the Website link the way the page would, with the profile's own cookies, and reads where Google's redirect points (the `webRequest` permission) without opening the business's site. If Google refuses, the business is saved without it and the desktop app looks it up later. At the end of what is loaded, it loads more (pressing **More places** when Google shows it) until no new businesses appear.
 4. Follows the next-page arrow, up to the **pages per location** from Search timing (5 by default, and at most 300 businesses).
-5. Saves `results/<jobId>/<n>.json` after every step, so nothing is lost if it stops.
+5. Saves `results/<jobId>/<n>.json` after every business, so nothing is lost if it stops.
 6. Closes the tab, waits, and opens the next location in a new tab.
 
-Pauses keep it polite. They come from **Settings → Preferences → Search → Search timing** in the desktop app and are saved with the job when you send it (`pacing` in `jobs.json`), so changing them later does not affect jobs already in the list. With the default **Normal** preset: 2.2 seconds after each scroll (3 after **More places**, at most 12 scrolls per page), **4 to 7 seconds** between pages, at least **45 seconds** between locations, and a **5-minute break every 10 locations**. **Careful** and **Faster** presets, and every single pause, can be changed there; the lower limits cannot be passed. Jobs sent before this setting existed use Normal. The settings page's footnote shows the pauses of the picked job.
+Pauses keep it polite. They come from **Settings → Preferences → Search → Search timing** in the desktop app and are saved with the job when you send it (`pacing` in `jobs.json`), so changing them later does not affect jobs already in the list. With the default **Normal** preset: 1.2 seconds on each listing, 2.2 seconds before loading more (3 after **More places**, at most 12 loads per page), **4 to 7 seconds** between pages, at least **45 seconds** between locations, and a **5-minute break every 10 locations**. **Careful** and **Faster** presets, and every single pause, can be changed there; the lower limits cannot be passed. Jobs sent before this setting existed use Normal. The settings page's footnote shows the pauses of the picked job.
 
 If Google shows a captcha, consent, or "unusual traffic" page, the Scraper saves what it has and stops with **Stopped by Google**; it never tries to get past the check. **Resume** later continues with the location where it stopped; finished locations are not searched again. Closing the settings tab also stops the run; the popup then shows it as interrupted.
 
@@ -74,10 +74,10 @@ If Google shows a captcha, consent, or "unusual traffic" page, the Scraper saves
 The **LeadsGhr Scraper** page in the sidebar lists every job sent to the Scraper with its status, searches done, businesses, and websites found (and how many are still being looked up), refreshed every 5 seconds. **Open results** opens a job's Scraper Results at any time, also for jobs sent earlier.
 
 
-**Scraper Results** checks the data folder every 3 seconds, and the desktop app also checks every saved job in the background every 20 seconds (so results and websites arrive even when the page is closed, and after a restart). Only files that changed are imported:
+The desktop app **watches the data folder**: each time the Scraper saves a business, it is imported within about a second, and Scraper Results and the Jobs table refresh at once. As a fallback, Scraper Results also checks every 3 seconds and every saved job is checked in the background every 20 seconds (so results arrive after a restart too). Only files that changed are imported:
 
 - businesses are saved as rows of the run, with the source **Google Search**,
-- each Website link (a `google.com/goto` redirect) is turned into the business's own address. Google refuses many lookups in a row, so they are paced: at most 12 per check, 1.2 seconds apart, a 90-second pause when Google refuses, and a refused link is tried again later instead of being saved as "no website". The page says how many websites are still being looked up and keeps updating until they are done (a few minutes for a few hundred businesses),
+- the website the Scraper found is used as it is. A Website link it could not look up (a `google.com/goto` redirect) is looked up by the desktop app. Google refuses many lookups in a row from there, so they are paced: at most 12 per check, 1.2 seconds apart, a 90-second pause when Google refuses, and a refused link is tried again later instead of being saved as "no website". The page says how many websites are still being looked up and keeps updating until they are done (a few minutes for a few hundred businesses),
 - a later save never erases a website, phone, or address already known,
 - the page shows the Scraper's status and progress while it runs.
 

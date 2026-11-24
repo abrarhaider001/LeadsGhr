@@ -107,6 +107,7 @@ export const desktopPreferencesSchema = z.object({
   includeLocation: z.boolean(),
   /** Search timing (Preferences → Search): a preset or `custom`, and the pauses it sets (packages/schemas/src/search-timing.ts). */
   searchSpeed: z.enum(SEARCH_SPEEDS).default('normal'),
+  searchListingPauseSec: z.number().min(L.listingPauseSec[0]).max(L.listingPauseSec[1]).default(N.listingPauseSec),
   searchScrollPauseSec: z.number().min(L.scrollPauseSec[0]).max(L.scrollPauseSec[1]).default(N.scrollPauseSec),
   searchMorePlacesPauseSec: z.number().min(L.morePlacesPauseSec[0]).max(L.morePlacesPauseSec[1]).default(N.morePlacesPauseSec),
   searchScrollRounds: z.number().int().min(L.scrollRounds[0]).max(L.scrollRounds[1]).default(N.scrollRounds),
@@ -152,6 +153,7 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   includeAddress: true,
   includeLocation: true,
   searchSpeed: 'normal',
+  searchListingPauseSec: SEARCH_TIMING_PRESETS.normal.listingPauseSec,
   searchScrollPauseSec: SEARCH_TIMING_PRESETS.normal.scrollPauseSec,
   searchMorePlacesPauseSec: SEARCH_TIMING_PRESETS.normal.morePlacesPauseSec,
   searchScrollRounds: SEARCH_TIMING_PRESETS.normal.scrollRounds,

@@ -92,6 +92,9 @@ export const scraperBusinessSchema = z.object({
   name: z.string().min(1).max(500),
   /** The Website button's link as shown by Google (usually a google.com/goto redirect); resolved by the desktop app. */
   websiteLink: z.string().max(3000),
+  /** The business's own address, found by the Scraper from websiteLink while it reads the list ('' when the link
+   *  leads to no public website). Missing when the Scraper could not look it up; the desktop app then does. */
+  website: z.string().max(3000).optional(),
   phone: z.string().max(200),
   address: z.string().max(1000),
   page: z.number().int().min(1).max(50),

@@ -16,8 +16,9 @@ import { DONE_KEY, JOB_PROGRESS_KEY, PROGRESS_KEY, readJobProgress } from './sta
 
 /*
  * Runs a job's searches one at a time (AGENTS.md, rule 5 exception). Each search opens in a new tab in the settings
- * page's window: Google Search's business list for the search, read card by card. The list is scrolled to the bottom
- * (and "More places" pressed when Google shows it) until no new businesses appear, then the next-page arrow is
+ * page's window: Google Search's business list for the search. The list is read from top to bottom
+ * one business at a time (its card brought into view, its Website link looked up, the result saved), loading more
+ * (and pressing "More places" when Google shows it) until no new businesses appear, then the next-page arrow is
  * followed, up to the job's pages per location. When the search is finished its tab closes and the next search gets
  * a new tab. results/<jobId>/<n>.json is saved after every step. Pauses keep requests polite (several seconds between
  * pages, a pause between searches, and a longer break every few searches; all from the job's pacing, chosen in
@@ -56,6 +57,8 @@ function readPlacesPage(): PageRead {
   const cards: Card[] = []
   const describe = (card: HTMLElement, name: string) => {
     const body = card.innerText || ''
+    // Marks the card so the Scraper can scroll to it (scrollToCard) while it reads the list one business at a time.
+    card.setAttribute('data-leadsghr-key', name.toLowerCase().replace(/[^a-z0-9]/g, ''))
     const link = Array.from(card.querySelectorAll<HTMLAnchorElement>('a')).find(
       (anchor) =>
         /^website$/i.test((anchor.innerText || '').trim()) ||
@@ -123,6 +126,82 @@ function scrollForMore(): boolean {
   return false
 }
 
+/** Runs inside the Google tab: brings one business card into view, like a person reading the list. */
+function scrollToCard(key: string): boolean {
+  const card = document.querySelector<HTMLElement>(`[data-leadsghr-key="${CSS.escape(key)}"]`)
+  if (!card) return false
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  return true
+}
+
+/** Runs inside the Google tab: requests a Website link the way the page itself would (same site, the profile's own
+ *  cookies) without following it, so Google answers with its redirect; the extension reads where it points. */
+function requestRedirect(link: string): Promise<boolean> {
+  return fetch(link, { redirect: 'manual', credentials: 'include', cache: 'no-store' })
+    .then(() => true)
+    .catch(() => false)
+}
+
+const isGoogle = (hostname: string) => /(^|\.)google\.[a-z.]+$/i.test(hostname)
+
+/** Drops tracking parameters that Google adds to business websites. */
+function cleanWebsite(address: string): string {
+  try {
+    const url = new URL(address)
+    for (const key of [...url.searchParams.keys()])
+      if (/^(utm_|gclid$|fbclid$|y_source$|rwg_token$)/i.test(key)) url.searchParams.delete(key)
+    return url.toString()
+  } catch {
+    return address
+  }
+}
+
+/**
+ * The business's own address behind a Google Website link, looked up from inside the Google tab (webRequest reads the
+ * redirect's Location header; the business's site is never opened). Returns '' when the link leads to no public
+ * website, or undefined when Google refused or did not answer (the desktop app then looks it up later).
+ */
+async function lookUpWebsite(tabId: number, link: string): Promise<string | undefined> {
+  let start: URL
+  try {
+    start = new URL(link)
+  } catch {
+    return ''
+  }
+  if (!isGoogle(start.hostname)) return /^https?:$/.test(start.protocol) ? cleanWebsite(link) : ''
+  const direct = start.searchParams.get('adurl') || start.searchParams.get('q')
+  if (direct && /^https?:\/\//i.test(direct)) return cleanWebsite(direct)
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = (value: string | undefined) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      chrome.webRequest.onHeadersReceived.removeListener(listener)
+      resolve(value)
+    }
+    const listener = (details: chrome.webRequest.WebResponseHeadersDetails) => {
+      if (details.url !== start.href && details.url !== link) return
+      const location = details.responseHeaders?.find((header) => header.name.toLowerCase() === 'location')?.value
+      if (!location) return finish(details.statusCode >= 200 && details.statusCode < 300 ? '' : undefined)
+      try {
+        const target = new URL(location, start)
+        // A redirect back to Google (its check page) means "refused", not "no website".
+        if (isGoogle(target.hostname)) return finish(undefined)
+        if (!/^https?:$/.test(target.protocol) || target.username || target.password) return finish('')
+        finish(cleanWebsite(target.toString()))
+      } catch {
+        finish('')
+      }
+    }
+    const timer = setTimeout(() => finish(undefined), 8000)
+    chrome.webRequest.onHeadersReceived.addListener(listener, { urls: ['https://www.google.com/*'], tabId }, ['responseHeaders'])
+    void chrome.scripting
+      .executeScript({ target: { tabId }, func: requestRedirect, args: [link] })
+      .catch(() => finish(undefined))
+  })
+}
+
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /** Waits up to `ms`, ending early when the user pauses or stops. */
@@ -151,6 +230,14 @@ async function inject<T>(tabId: number, func: () => T): Promise<T | undefined> {
   return injection?.result as T | undefined
 }
 
+async function injectWith<T, A extends unknown[]>(tabId: number, func: (...args: A) => T, args: A): Promise<T | undefined> {
+  const [injection] = await chrome.scripting.executeScript({ target: { tabId }, func, args })
+  return injection?.result as T | undefined
+}
+
+/** The key a business card is matched by (also set on the card in the page, see readPlacesPage). */
+const keyOf = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '')
+
 export async function finishedSearches(jobId: string): Promise<Set<number>> {
   const saved = (await chrome.storage.local.get(DONE_KEY(jobId)))[DONE_KEY(jobId)]
   return new Set(Array.isArray(saved) ? (saved as number[]) : [])
@@ -175,6 +262,8 @@ export async function runJob(
   // The job's pauses (Preferences → Search → Search timing); jobs sent before that setting existed use Normal.
   const timing = clampSearchTiming(job.pacing ?? SEARCH_TIMING_PRESETS.normal)
   let searchedThisRun = 0
+  // Website link -> the business's own address (undefined: Google refused, the desktop app looks it up later).
+  const websites = new Map<string, string | undefined>()
   let page = 0
   const report = async (state: ScraperProgress['state'], current: number, message: string) => {
     const progress: ScraperProgress = {
@@ -249,9 +338,9 @@ export async function runJob(
           if (final) throw failure
         }
       }
-      // Adds the cards not seen yet; returns how many were new.
+      // The cards not read yet, in page order (ads are counted and skipped).
       const take = (cards: Card[]) => {
-        let added = 0
+        const fresh: { name: string; websiteLink: string; business: ScraperBusiness }[] = []
         for (const card of cards) {
           if (card.sponsored) {
             const adKey = `ad:${card.name}`
@@ -261,19 +350,16 @@ export async function runJob(
             }
             continue
           }
-          const key = card.name.toLowerCase().replace(/[^a-z0-9]/g, '')
-          if (!key || seen.has(key) || result.businesses.length >= MAX_BUSINESSES) continue
+          const key = keyOf(card.name)
+          if (!key || seen.has(key) || result.businesses.length + fresh.length >= MAX_BUSINESSES) continue
           seen.add(key)
-          result.businesses.push({ name: card.name, websiteLink: card.websiteLink, phone: card.phone, address: card.address, page })
-          counts.businesses++
-          if (card.websiteLink) {
-            counts.withWebsite++
-            counts.websitesPerSearch![search.index] = (counts.websitesPerSearch![search.index] ?? 0) + 1
-          }
-          added++
+          fresh.push({
+            name: card.name,
+            websiteLink: card.websiteLink,
+            business: { name: card.name, websiteLink: card.websiteLink, phone: card.phone, address: card.address, page },
+          })
         }
-        counts.perSearch[search.index] = result.businesses.length
-        return added
+        return fresh
       }
 
       // A new tab in the Scraper's own window for this search.
@@ -307,12 +393,41 @@ export async function runJob(
           if (read.cards.length) break
         }
         if (!read || !read.cards.length) break
-        take(read.cards)
-        await save()
-        // Scroll to the bottom until no new businesses load (pressing "More places" when it is shown).
+        // Move down the list one business at a time: bring its card into view, look up its website, save it, pause.
+        // At the end of what is loaded, load more (pressing "More places" when Google shows it) and carry on.
         let quiet = 0
-        for (let round = 0; round < timing.scrollRounds && quiet < 2 && control.action === 'run'; round++) {
-          await report('running', search.index, `Reading ${search.place}, page ${page}: scrolling for more...`)
+        let loads = 0
+        while (control.action === 'run' && result.businesses.length < MAX_BUSINESSES) {
+          const fresh = take(read.cards)
+          for (const card of fresh) {
+            if (control.action !== 'run') break
+            await injectWith(tabId, scrollToCard, [keyOf(card.name)])
+            const started = Date.now()
+            if (card.websiteLink) {
+              if (!websites.has(card.websiteLink)) websites.set(card.websiteLink, await lookUpWebsite(tabId, card.websiteLink))
+              card.business.website = websites.get(card.websiteLink)
+            }
+            result.businesses.push(card.business)
+            counts.businesses++
+            if (card.websiteLink) {
+              counts.withWebsite++
+              counts.websitesPerSearch![search.index] = (counts.websitesPerSearch![search.index] ?? 0) + 1
+            }
+            counts.perSearch[search.index] = result.businesses.length
+            await save()
+            await report(
+              'running',
+              search.index,
+              `Reading ${search.place}, page ${page}: ${result.businesses.length} ${result.businesses.length === 1 ? 'business' : 'businesses'} so far...`,
+            )
+            await pause(Math.max(0, timing.listingPauseSec * 1000 - (Date.now() - started)), control)
+          }
+          if (control.action !== 'run') break
+          if (fresh.length) quiet = 0
+          // Everything loaded so far is read: load more.
+          if (loads >= timing.scrollRounds || quiet >= 2) break
+          loads++
+          await report('running', search.index, `Reading ${search.place}, page ${page}: loading more...`)
           const pressed = await inject(tabId, scrollForMore)
           await pause((pressed ? timing.morePlacesPauseSec : timing.scrollPauseSec) * 1000, control)
           const more = await inject(tabId, readPlacesPage)
@@ -324,8 +439,7 @@ export async function runJob(
             return 'blocked'
           }
           read = more
-          quiet = take(more.cards) ? 0 : quiet + 1
-          await save()
+          if (!read.cards.some((card) => !card.sponsored && !seen.has(keyOf(card.name)))) quiet++
         }
         result.pages = page
         await save()

@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
-import { existsSync } from 'node:fs'
+import { existsSync, watch, type FSWatcher } from 'node:fs'
 import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
@@ -187,10 +187,11 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
         links.add(business.websiteLink)
         const saved =
           rows.get(businessMapsUrl(business.name, business.address, result.data.place))?.website ||
+          business.website ||
           websites.get(business.websiteLink)
         // Counted per Website link, so a business saved twice (a location read again after Resume) counts once.
         if (saved) websitesFound++
-        else if (!websites.has(business.websiteLink)) websitesPending++
+        else if (business.website === undefined && !websites.has(business.websiteLink)) websitesPending++
       }
     }
     return {
@@ -241,6 +242,8 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
         const link = business.websiteLink
         const mapsUrl = businessMapsUrl(business.name, business.address, result.data.place)
         const savedWebsite = savedRows.get(mapsUrl)?.website
+        // The Scraper looks websites up itself while it reads the list; use its answer when it has one.
+        if (link && business.website !== undefined && !websites.has(link)) websites.set(link, business.website)
         if (link && savedWebsite && !websites.has(link)) websites.set(link, savedWebsite)
         const known = !link || websites.has(link)
         if (!changed && known) continue
@@ -290,10 +293,47 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
     return syncOnce(crawlRunIdSchema.parse(input))
   })
 
+  // Instant import: the data folder is watched, so a result the Scraper saves is imported within a moment and the
+  // open pages are told to refresh (leadsghr:scraper:changed). The timer below stays as a fallback.
+  let watcher: FSWatcher | undefined
+  const changedJobs = new Set<string>()
+  let flushTimer: ReturnType<typeof setTimeout> | undefined
+  const flush = async () => {
+    const ids = [...changedJobs]
+    changedJobs.clear()
+    const jobs = await savedJobs()
+    const targets = ids.includes('*') ? jobs.map((job) => job.id) : ids.filter((id) => jobs.some((job) => job.id === id))
+    for (const id of targets) await syncOnce(id, false).catch(() => undefined)
+    for (const window of BrowserWindow.getAllWindows())
+      if (!window.isDestroyed()) window.webContents.send('leadsghr:scraper:changed', targets)
+  }
+  const startWatching = () => {
+    if (watcher || !existsSync(dataFolder())) return
+    try {
+      watcher = watch(dataFolder(), { recursive: true }, (_event, file) => {
+        const name = String(file ?? '').replace(/\\/g, '/')
+        const job = /^(?:results|progress)\/([0-9a-f-]{8,80})/i.exec(name)?.[1]
+        if (job) changedJobs.add(job)
+        else if (/^jobs/i.test(name)) changedJobs.add('*')
+        else return
+        clearTimeout(flushTimer)
+        flushTimer = setTimeout(() => void flush(), 300)
+      })
+      watcher.on('error', () => {
+        watcher?.close()
+        watcher = undefined
+      })
+    } catch {
+      watcher = undefined
+    }
+  }
+  startWatching()
+
   // Background sync of every saved job, so new results and the remaining Website lookups are saved even when
   // Scraper Results is not open (for example jobs sent earlier, or after a restart). Jobs run one after another.
   let background = false
   setInterval(() => {
+    startWatching()
     if (background || !existsSync(dataFolder())) return
     background = true
     void (async () => {

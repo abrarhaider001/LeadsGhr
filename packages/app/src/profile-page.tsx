@@ -465,6 +465,7 @@ type PreferenceKey = Exclude<
   | 'displaySize'
   | 'fontSize'
   | 'searchSpeed'
+  | 'searchListingPauseSec'
   | 'searchScrollPauseSec'
   | 'searchMorePlacesPauseSec'
   | 'searchScrollRounds'
@@ -825,13 +826,21 @@ function SearchTimingSettings({
       <section className="la-profile-preference-group">
         <div>
           <h2>Scrolling</h2>
-          <p>Each results page is scrolled to the bottom until no new businesses load.</p>
+          <p>
+            The Scraper moves down the list one business at a time, looks up its website, and saves
+            it; at the end of the list it loads more until no new businesses appear.
+          </p>
         </div>
         <div className="la-profile-option-list">
           {row(
-            'Pause after each scroll',
-            `${range('scrollPauseSec')} seconds. Time for Google to load more businesses before the next scroll.`,
-            field('scrollPauseSec', 's', 'Pause after each scroll', 0.1),
+            'Pause on each listing',
+            `${range('listingPauseSec')} seconds. Time spent on each business before moving to the next one.`,
+            field('listingPauseSec', 's', 'Pause on each listing', 0.1),
+          )}
+          {row(
+            'Pause before loading more',
+            `${range('scrollPauseSec')} seconds. At the end of the list, time for Google to load more businesses.`,
+            field('scrollPauseSec', 's', 'Pause before loading more', 0.1),
           )}
           {row(
             'Pause after "More places"',
@@ -839,9 +848,9 @@ function SearchTimingSettings({
             field('morePlacesPauseSec', 's', 'Pause after More places', 0.5),
           )}
           {row(
-            'Scrolls per page',
-            `${range('scrollRounds')}. Stops earlier when two scrolls in a row find nothing new.`,
-            field('scrollRounds', 'max', 'Scrolls per page'),
+            'Loads per page',
+            `${range('scrollRounds')}. How many times to load more on one page; stops earlier when two loads in a row find nothing new.`,
+            field('scrollRounds', 'max', 'Loads per page'),
           )}
         </div>
       </section>

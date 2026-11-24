@@ -77,3 +77,25 @@ test('a job title names the niche, state, and number of locations', () => {
   const many = { ...job, niches: ['A', 'B', 'C'], states: ['Florida', 'Texas'], searches: [...job.searches, { ...job.searches[0], index: 1 }] }
   assert.equal(scraperJobTitle(many), 'A, B +1 · Florida, Texas · 2 locations')
 })
+
+test('a business may carry the website the Scraper found, and older jobs without the listing pause still load', () => {
+  const result = {
+    version: SCRAPER_FORMAT_VERSION,
+    jobId: job.id,
+    index: 0,
+    place: 'Acacia Villas CDP, Florida',
+    query: job.searches[0].query,
+    complete: true,
+    pages: 1,
+    updatedAt: '2026-11-25T10:01:00.000Z',
+    businesses: [
+      { name: 'Found', websiteLink: 'https://www.google.com/goto?url=a', website: 'https://found.example/', phone: '', address: '', page: 1 },
+      { name: 'No site', websiteLink: 'https://www.google.com/goto?url=b', website: '', phone: '', address: '', page: 1 },
+      { name: 'Not looked up', websiteLink: 'https://www.google.com/goto?url=c', phone: '', address: '', page: 1 },
+    ],
+  }
+  const parsed = scraperResultSchema.parse(result)
+  assert.deepEqual(parsed.businesses.map((business) => business.website), ['https://found.example/', '', undefined])
+  const olderPacing = { scrollPauseSec: 2.2, morePlacesPauseSec: 3, scrollRounds: 12, pagePauseMinSec: 4, pagePauseMaxSec: 7, pagesPerLocation: 5, locationPauseSec: 45, breakEvery: 10, breakMinutes: 5 }
+  assert.equal(scraperJobSchema.parse({ ...job, pacing: olderPacing }).pacing?.listingPauseSec, 1.2)
+})

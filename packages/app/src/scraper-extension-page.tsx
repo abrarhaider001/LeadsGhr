@@ -6,6 +6,7 @@ import { ExtensionInstallPage } from './extension-install-page'
 type ScraperBridge = {
   downloadScraperExtension(): Promise<string | null>
   listScraperJobs(): Promise<ScraperJobSummary[]>
+  onScraperChanged(callback: (jobIds: string[]) => void): () => void
 }
 
 const bridge = () => (window as Window & { leadsGhrDesktop?: Partial<ScraperBridge> }).leadsGhrDesktop
@@ -57,9 +58,15 @@ export function ScraperExtensionPage({
       if (active) timer = window.setTimeout(() => void refresh(), REFRESH_MS)
     }
     void refresh()
+    const unsubscribe = bridge()?.onScraperChanged?.(() => {
+      if (!active) return
+      window.clearTimeout(timer)
+      void refresh()
+    })
     return () => {
       active = false
       window.clearTimeout(timer)
+      unsubscribe?.()
     }
   }, [])
 

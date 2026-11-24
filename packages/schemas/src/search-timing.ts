@@ -14,6 +14,7 @@ export type SearchSpeedPreset = Exclude<SearchSpeed, 'custom'>
 
 /** Allowed range of each setting: [lowest, highest]. */
 export const SEARCH_TIMING_LIMITS = {
+  listingPauseSec: [0.5, 10],
   scrollPauseSec: [1.5, 10],
   morePlacesPauseSec: [2, 15],
   scrollRounds: [3, 30],
@@ -27,6 +28,13 @@ export const SEARCH_TIMING_LIMITS = {
 } as const
 
 export const searchTimingSchema = z.object({
+  /** Pause on each listing while the Scraper moves down the list one business at a time (jobs sent before this
+   *  setting existed have none and use Normal's). */
+  listingPauseSec: z
+    .number()
+    .min(SEARCH_TIMING_LIMITS.listingPauseSec[0])
+    .max(SEARCH_TIMING_LIMITS.listingPauseSec[1])
+    .default(1.2),
   scrollPauseSec: z.number().min(SEARCH_TIMING_LIMITS.scrollPauseSec[0]).max(SEARCH_TIMING_LIMITS.scrollPauseSec[1]),
   morePlacesPauseSec: z
     .number()
@@ -58,6 +66,7 @@ export type SearchTiming = z.infer<typeof searchTimingSchema>
 /** The presets offered under Speed. Normal keeps the pauses LeadsGhr used before these settings existed. */
 export const SEARCH_TIMING_PRESETS: Record<SearchSpeedPreset, SearchTiming> = {
   careful: {
+    listingPauseSec: 2.5,
     scrollPauseSec: 3.5,
     morePlacesPauseSec: 4,
     scrollRounds: 12,
@@ -69,6 +78,7 @@ export const SEARCH_TIMING_PRESETS: Record<SearchSpeedPreset, SearchTiming> = {
     breakMinutes: 10,
   },
   normal: {
+    listingPauseSec: 1.2,
     scrollPauseSec: 2.2,
     morePlacesPauseSec: 3,
     scrollRounds: 12,
@@ -80,6 +90,7 @@ export const SEARCH_TIMING_PRESETS: Record<SearchSpeedPreset, SearchTiming> = {
     breakMinutes: 5,
   },
   faster: {
+    listingPauseSec: 0.8,
     scrollPauseSec: 1.5,
     morePlacesPauseSec: 2,
     scrollRounds: 8,
@@ -94,6 +105,7 @@ export const SEARCH_TIMING_PRESETS: Record<SearchSpeedPreset, SearchTiming> = {
 
 /** The preference that holds each timing setting. */
 export const SEARCH_TIMING_PREFERENCES = {
+  listingPauseSec: 'searchListingPauseSec',
   scrollPauseSec: 'searchScrollPauseSec',
   morePlacesPauseSec: 'searchMorePlacesPauseSec',
   scrollRounds: 'searchScrollRounds',
@@ -148,7 +160,9 @@ export const pagePauseMs = (timing: SearchTiming) =>
 /** Rough minutes one location takes at this timing (pauses only; for the preset cards). */
 export function minutesPerLocation(timing: SearchTiming): number {
   const pages = timing.pagesPerLocation
-  const scrolling = pages * Math.min(timing.scrollRounds, 6) * timing.scrollPauseSec
+  // About 20 businesses a page, each with its pause, and a few loads of more results.
+  const listings = pages * 20 * timing.listingPauseSec
+  const scrolling = pages * Math.min(timing.scrollRounds, 3) * timing.scrollPauseSec + listings
   const paging = (pages - 1) * ((timing.pagePauseMinSec + timing.pagePauseMaxSec) / 2)
   const breaks = timing.breakEvery ? (timing.breakMinutes * 60) / timing.breakEvery : 0
   return (timing.locationPauseSec + scrolling + paging + breaks) / 60

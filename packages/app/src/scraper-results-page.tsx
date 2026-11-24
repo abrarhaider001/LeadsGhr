@@ -8,6 +8,7 @@ type ScraperBridge = {
   sendScraperJob(input: unknown): Promise<{ jobId: string; runId: string }>
   syncScraperJob(jobId: string): Promise<{ progress: ScraperProgress | null; run: { rows: CrawlRow[] } | null; removed: boolean; websitesPending?: number }>
   openScraperFolder(): Promise<void>
+  onScraperChanged(callback: (jobIds: string[]) => void): () => void
   openWebsite(url: string): Promise<void>
 }
 const scraperBridge = () => (window as Window & { leadsGhrDesktop?: Partial<ScraperBridge> }).leadsGhrDesktop
@@ -92,9 +93,16 @@ export function ScraperResultsPage({
       if (active) timer = window.setTimeout(() => void tick(), SYNC_MS)
     }
     void tick()
+    // The desktop app watches the data folder: refresh at once when this job's files change.
+    const unsubscribe = scraperBridge()?.onScraperChanged?.((jobIds) => {
+      if (!active || !jobIds.includes(job.jobId)) return
+      window.clearTimeout(timer)
+      void tick()
+    })
     return () => {
       active = false
       window.clearTimeout(timer)
+      unsubscribe?.()
     }
   }, [job, onSaved])
 
