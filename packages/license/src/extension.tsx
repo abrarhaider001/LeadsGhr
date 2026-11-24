@@ -5,6 +5,7 @@ import {
   checkStoredLicense,
   LICENSE_KEY_LENGTH,
   LICENSE_PRODUCTS,
+  localLicenseView,
   type LicenseProduct,
   type LicenseView,
   type StoredLicense,
@@ -28,6 +29,12 @@ declare const chrome: {
   storage: { local: ChromeStorageArea }
   runtime: { getURL(path: string): string }
 }
+
+/** Set by each extension's vite.config.ts from LEADSGHR_LOCAL_MODE (the repository's .env) when it is built. */
+declare const __LEADSGHR_LOCAL_MODE__: boolean | undefined
+/** True in an extension built in local mode: no license key is needed or checked. */
+export const EXTENSION_LOCAL_MODE =
+  typeof __LEADSGHR_LOCAL_MODE__ !== 'undefined' && __LEADSGHR_LOCAL_MODE__ === true
 
 const LICENSE_RECORD = 'leadsghr.license'
 const CIPHER_KEY = 'leadsghr.licenseCipher'
@@ -100,6 +107,11 @@ export async function checkExtensionLicense(
   product: LicenseProduct,
   options: { force?: boolean } = {},
 ): Promise<LicenseView> {
+  if (EXTENSION_LOCAL_MODE) {
+    // Local mode: content scripts may act without a key.
+    await chrome.storage.local.set({ [LICENSE_ACTIVE_FLAG]: true })
+    return localLicenseView()
+  }
   const stored = await readLicense()
   if (
     stored &&
@@ -130,6 +142,7 @@ export async function activateExtensionLicense(
   product: LicenseProduct,
   key: string,
 ): Promise<LicenseView> {
+  if (EXTENSION_LOCAL_MODE) return localLicenseView()
   try {
     const result = await activateLicense(key, product, await installationId())
     if (result.stored) await saveLicense(result.stored)
@@ -154,6 +167,7 @@ const styles = `
   html,body{margin:0}
   .lg-lic{box-sizing:border-box;display:flex;flex-direction:column;width:360px;max-width:100%;margin:0 auto;height:100%;min-height:560px;font-family:var(--ui-font-sans);font-size:var(--ui-text-md);line-height:1.4;color:var(--ui-color-text);background:var(--ui-color-surface)}
   .lg-lic *{box-sizing:border-box}
+  .lg-lic-local{padding:var(--ui-space-1) var(--ui-space-3);background:var(--ui-color-warning-soft);border-bottom:var(--ui-border-width) solid var(--ui-color-warning-border);color:var(--ui-color-warning);font-family:var(--ui-font-sans);font-size:var(--ui-text-2xs);font-weight:var(--ui-weight-semibold);letter-spacing:.04em;text-align:center}
   .lg-lic-head{position:relative;overflow:hidden;padding:var(--ui-space-6) var(--ui-space-5) var(--ui-space-5);text-align:center;color:var(--ui-color-surface);background:linear-gradient(150deg,color-mix(in srgb,var(--ui-color-primary) 24%,var(--ui-color-surface-inverse)),var(--ui-color-surface-inverse) 70%)}
   .lg-lic-head::after{content:'';position:absolute;right:-60px;top:-60px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--ui-color-accent) 40%,transparent),transparent 65%)}
   .lg-lic-head img{position:relative;z-index:1;width:58px;height:58px;padding:var(--ui-space-1-5);border-radius:var(--ui-radius-xl);background:var(--ui-color-surface);box-shadow:var(--ui-shadow-lg)}
@@ -317,6 +331,16 @@ export function LicenseGate({
       <div className="lg-lic-wait">
         <style>{styles}</style>Checking license...
       </div>
+    )
+  if (view.state === 'active' && view.local)
+    return (
+      <>
+        <style>{styles}</style>
+        <div className="lg-lic-local" role="status">
+          LOCAL MODE · license check off (development build)
+        </div>
+        {children}
+      </>
     )
   if (view.state === 'active') return <>{children}</>
   return (

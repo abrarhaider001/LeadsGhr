@@ -8,6 +8,14 @@ Push-Location $projectRoot
 try {
   pnpm.cmd --filter @leadsghr/extension build
   if ($LASTEXITCODE -ne 0) { throw 'Extension build failed.' }
+  # Local mode (LEADSGHR_LOCAL_MODE=true in .env) builds without the license check. Such a build must never replace
+  # the ZIP committed in the repository (the one shipped to users), so it goes to a temporary file instead and only
+  # the C:\LeadsGhr\extensions copy is updated.
+  $localMode = (node -e "import('./scripts/local-mode.mjs').then((m) => process.stdout.write(String(m.readLocalMode(process.cwd()))))") -eq 'true'
+  if ($localMode) {
+    $archivePath = Join-Path ([System.IO.Path]::GetTempPath()) ([System.IO.Path]::GetFileName($archivePath))
+    Write-Warning 'LEADSGHR_LOCAL_MODE is on: this build skips the license check. The repository ZIP is left unchanged; only C:\LeadsGhr\extensions is updated.'
+  }
   if (-not (Test-Path -LiteralPath (Join-Path $distRoot 'manifest.json'))) { throw 'Built manifest is missing.' }
   if (Test-Path -LiteralPath $archivePath) { Remove-Item -LiteralPath $archivePath -Force }
   Compress-Archive -Path (Join-Path $distRoot '*') -DestinationPath $archivePath

@@ -8918,3 +8918,23 @@ a {
     max-width: none;
   }
 }
+
+/* Settings → License in local mode (LEADSGHR_LOCAL_MODE): a notice instead of the key card. */
+.la-license-local {
+  padding: var(--ui-space-5) var(--ui-space-6);
+  border: var(--ui-border-width) solid var(--ui-color-warning-border);
+  border-radius: var(--ui-radius-2xl);
+  background: var(--ui-color-warning-soft);
+  color: var(--ui-color-text);
+}
+.la-license-local strong {
+  display: block;
+  font-size: var(--ui-text-lg);
+}
+.la-license-local p {
+  margin: var(--ui-space-2) 0 0;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-md);
+  line-height: 1.5;
+}
+

@@ -250,6 +250,19 @@ export function LicenseSettingsPage({
       setChecking(false)
     }
   }
+  if (view?.state === 'active' && view.local)
+    return (
+      <section className="la-license-settings" aria-label="License">
+        <div className="la-license-local" role="status">
+          <strong>Local mode: license check is off</strong>
+          <p>
+            LEADSGHR_LOCAL_MODE is turned on in the .env file, so this development copy of LeadsGhr opens without a
+            license key. Installed copies always need a key. To turn the check back on, remove that line or set it to
+            false, then restart LeadsGhr.
+          </p>
+        </div>
+      </section>
+    )
   if (!view || view.state !== 'active')
     return (
       <section className="la-license-settings">

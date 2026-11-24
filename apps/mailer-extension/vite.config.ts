@@ -2,11 +2,19 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readLocalMode } from '../../scripts/local-mode.mjs'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 
+// Local mode (LEADSGHR_LOCAL_MODE=true in the repository's .env): build without the license check. The build
+// shows a LOCAL MODE strip, and the packaging script keeps such a build out of the committed ZIP.
+const localMode = readLocalMode(resolve(root, '../..'))
+if (localMode)
+  console.warn('LEADSGHR_LOCAL_MODE is on: this build skips the license check. Do not ship it.')
+
 export default defineConfig({
   plugins: [react()],
+  define: { __LEADSGHR_LOCAL_MODE__: JSON.stringify(localMode) },
   base: './',
   build: {
     modulePreload: false,
