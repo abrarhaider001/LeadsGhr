@@ -68,6 +68,7 @@ export function SearchResultsPage({
   const [phase, setPhase] = useState<RunPhase>('running')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
+  const [resultQuery, setResultQuery] = useState('')
   const [runId, setRunId] = useState<string | null>(null)
   const [crawlRunId, setCrawlRunId] = useState<string | null>(initialRun?.id ?? null)
   const [lastExport, setLastExport] = useState<CrawlExport | null>(null)
@@ -114,10 +115,22 @@ export function SearchResultsPage({
       ),
     )
   }, [criteria, preferences.useNicheKeywords, initialRun])
-  const pageCount = Math.max(1, Math.ceil(rows.length / perPage))
+  // The search box above the table filters the results by any shown detail (name, website, phone, place,
+  // address, source, or email); paging and counts follow the filtered list.
+  const filteredRows = useMemo(() => {
+    const words = resultQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
+    if (!words.length) return rows
+    return rows.filter((row) => {
+      const text = [row.name, row.website, row.phone, row.location, row.address, row.source, row.niche ?? '', ...row.emails]
+        .join(' ')
+        .toLocaleLowerCase()
+      return words.every((word) => text.includes(word))
+    })
+  }, [rows, resultQuery])
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / perPage))
   const currentPage = Math.min(page, pageCount)
   const pageStart = (currentPage - 1) * perPage
-  const visibleRows = rows.slice(pageStart, pageStart + perPage)
+  const visibleRows = filteredRows.slice(pageStart, pageStart + perPage)
   const firstPageButton = Math.max(1, Math.min(currentPage - 2, pageCount - 4))
   const pageButtons = Array.from(
     { length: Math.min(5, pageCount) },
@@ -792,12 +805,27 @@ export function SearchResultsPage({
             <>
               <div className="la-result-table-toolbar">
                 <span>
-                  {rows.length.toLocaleString()} {rows.length === 1 ? 'result' : 'results'}
+                  {resultQuery.trim()
+                    ? `${filteredRows.length.toLocaleString()} of ${rows.length.toLocaleString()} results match`
+                    : `${rows.length.toLocaleString()} ${rows.length === 1 ? 'result' : 'results'}`}
                 </span>
+                <label className="la-records-search la-result-search">
+                  <Icon name="search" size={16} />
+                  <input
+                    type="search"
+                    value={resultQuery}
+                    onChange={(event) => {
+                      setResultQuery(event.target.value)
+                      setPage(1)
+                    }}
+                    placeholder="Search results: name, website, phone, address..."
+                    aria-label="Search the results table"
+                  />
+                </label>
                 <nav className="la-result-pagination" aria-label="Search result pages">
                   <span>
-                    {rows.length
-                      ? `${pageStart + 1}-${Math.min(pageStart + perPage, rows.length)} of ${rows.length.toLocaleString()}`
+                    {filteredRows.length
+                      ? `${pageStart + 1}-${Math.min(pageStart + perPage, filteredRows.length)} of ${filteredRows.length.toLocaleString()}`
                       : '0 results'}
                   </span>
                   <button
@@ -855,6 +883,7 @@ export function SearchResultsPage({
                       {preferences.includePhone && <th>Phone</th>}
                       {preferences.includeLocation && <th>Location</th>}
                       {preferences.includeAddress && <th>Address</th>}
+                      <th>Source</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -902,10 +931,19 @@ export function SearchResultsPage({
                             </span>
                           </td>
                         )}
+                        <td>
+                          <span className="la-result-source">{row.source}</span>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {rows.length > 0 && !filteredRows.length && (
+                  <EmptyTable
+                    title="No matching results"
+                    description="No result matches this search. Clear the search box to see every result."
+                  />
+                )}
                 {!rows.length && (
                   <EmptyTable
                     title={isActive ? 'Searching for businesses' : 'No results found'}

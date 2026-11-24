@@ -6,6 +6,7 @@ import { basename, dirname, join, resolve } from 'node:path'
 import robotsParser from 'robots-parser'
 import { desktopHttp } from './adapters'
 import { discoverPage, extractContacts } from '@leadsghr/extract'
+import { combineSources, withWebsiteSource, type CrawlRowSource } from '@leadsghr/schemas'
 
 const AGENT = 'LeadsGhr/0.1 (public-data crawler)'
 const CHALLENGE =
@@ -18,7 +19,7 @@ export type MapsRow = {
   location: string
   address: string
   mapsUrl: string
-  source: 'Maps' | 'Website' | 'Maps + website'
+  source: CrawlRowSource
   emails: string[]
   emailsScanned: boolean
 }
@@ -193,8 +194,114 @@ const snapshot = `(() => {
     return { name, mapsUrl, website, phone, address, emails };
   }).filter(Boolean);
   const feed = document.querySelector('[role="feed"]');
-  return { url: location.href, text, cards, feed: Boolean(feed), scrollTop: feed?.scrollTop || 0, scrollHeight: feed?.scrollHeight || 0, clientHeight: feed?.clientHeight || 0 };
+  const end = /reached the end of the list/i.test(feed?.innerText || '');
+  return { url: location.href, text, cards, feed: Boolean(feed), end, scrollTop: feed?.scrollTop || 0, scrollHeight: feed?.scrollHeight || 0, clientHeight: feed?.clientHeight || 0 };
 })()`
+
+/** Where to aim mouse-wheel scrolling: inside the Maps result list. */
+const feedPoint = `(() => {
+  const feed = document.querySelector('[role="feed"]');
+  if (!feed) return null;
+  const box = feed.getBoundingClientRect();
+  return { x: box.left + box.width / 2, y: box.top + box.height * 0.7 };
+})()`
+
+/**
+ * Google Search's business list (the Places page behind "More businesses"). Each business is a card (div.VkpGBb)
+ * whose first heading is its name. Its Website button points to an encoded Google redirect, resolved afterwards.
+ */
+const placesSnapshot = `(() => {
+  const text = document.body?.innerText?.slice(0, 9000) ?? '';
+  const cards = [...document.querySelectorAll('div.VkpGBb')].map(card => {
+    const name = card.querySelector('.OSrXXb')?.innerText?.trim() || '';
+    if (!name) return null;
+    const body = card.innerText || '';
+    const link = [...card.querySelectorAll('a')].find(a => /^website$/i.test((a.innerText || '').trim()));
+    const phone = body.match(/(?:\\+1[\\s.-]*)?(?:\\(\\d{3}\\)|\\d{3})[\\s.-]*\\d{3}[\\s.-]*\\d{4}/)?.[0] || '';
+    const address = body.match(/\\b\\d{1,6}\\s+[A-Za-z0-9 .'-]+\\s(?:St|Street|Rd|Road|Ave|Avenue|Blvd|Boulevard|Dr|Drive|Ln|Lane|Way|Ct|Court)\\b/i)?.[0] || '';
+    return { name, websiteLink: link?.href || '', phone, address, sponsored: /^\\s*Sponsored/i.test(body) };
+  }).filter(Boolean);
+  return { url: location.href, text, cards, first: cards.map(card => card.name).join('|'), hasNext: Boolean(document.querySelector('a#pnnext')) };
+})()`
+
+/** The visible next-page arrow. The a#pnnext link itself has no height, so the click must aim at the arrow inside it. */
+const nextArrowPoint = `(() => {
+  const link = document.querySelector('a#pnnext');
+  if (!link) return null;
+  link.scrollIntoView({ block: 'center' });
+  const visible = [link, ...link.querySelectorAll('*')]
+    .map(element => element.getBoundingClientRect())
+    .filter(box => box.width > 0 && box.height > 0)
+    .sort((a, b) => b.width * b.height - a.width * a.height)[0];
+  return visible ? { x: visible.left + visible.width / 2, y: visible.top + visible.height / 2 } : null;
+})()`
+
+type PlacesCard = { name: string; websiteLink: string; phone: string; address: string; sponsored: boolean }
+
+const businessKey = (name: string) =>
+  name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]/g, '')
+const websiteKey = (url: string) => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '').toLowerCase()
+  } catch {
+    return ''
+  }
+}
+/** Drops Google's tracking parameters (utm_*) from a business website address. */
+function cleanWebsite(url: string) {
+  const address = new URL(url)
+  for (const key of [...address.searchParams.keys()])
+    if (/^utm_/i.test(key)) address.searchParams.delete(key)
+  return address.toString()
+}
+const isGoogleHost = (hostname: string) => /(^|\.)google\.[a-z.]+$/i.test(hostname)
+
+/*
+ * Polite pacing for Google Search (AGENTS.md, rule 5): at most GOOGLE_SEARCH_PAGES result pages per location, a
+ * pause of several seconds between pages, and at least GOOGLE_SEARCH_GAP_MS between two locations' Google Search
+ * reads, so LeadsGhr asks Google far less often than a fast script would. It does not hide that it is a browser
+ * controlled by LeadsGhr; when Google still shows its check page, the search stops.
+ */
+const GOOGLE_SEARCH_PAGES = 5
+const GOOGLE_SEARCH_GAP_MS = 45_000
+let lastGoogleSearchAt = 0
+const politePause = (signal: AbortSignal) => wait(4000 + Math.round(Math.random() * 3000), signal)
+
+/**
+ * Turns a Google Search Website link (an encoded /goto or /url redirect) into the business's own address by reading
+ * the redirect target, without opening the business site. Returns '' when it is not a public http(s) website.
+ */
+async function resolveWebsite(link: string, signal: AbortSignal): Promise<string> {
+  try {
+    const start = new URL(link)
+    if (!isGoogleHost(start.hostname))
+      return ['http:', 'https:'].includes(start.protocol) ? cleanWebsite(link) : ''
+    const direct = start.searchParams.get('adurl') || start.searchParams.get('q')
+    let target: URL | undefined
+    if (direct && /^https?:\/\//i.test(direct)) target = new URL(direct)
+    else {
+      const response = await fetch(start, {
+        redirect: 'manual',
+        signal,
+        headers: { 'user-agent': app.userAgentFallback || 'Mozilla/5.0' },
+      })
+      const location = response.headers.get('location')
+      await response.body?.cancel().catch(() => undefined)
+      if (location) target = new URL(location, start)
+    }
+    if (
+      !target ||
+      !['http:', 'https:'].includes(target.protocol) ||
+      target.username ||
+      target.password ||
+      isGoogleHost(target.hostname)
+    )
+      return ''
+    return cleanWebsite(target.toString())
+  } catch {
+    return ''
+  }
+}
 
 export async function scanMaps(
   query: string,
@@ -202,20 +309,51 @@ export async function scanMaps(
   emit: (event: MapsScanEvent) => void,
   signal: AbortSignal,
   showChrome = true,
-  sources: { maps: boolean; websites: boolean } = { maps: true, websites: false },
+  sources: { maps: boolean; googleSearch?: boolean; websites: boolean } = {
+    maps: true,
+    googleSearch: false,
+    websites: false,
+  },
 ) {
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
-  const url = mapsUrl
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}&hl=en`
+  // Google Search's business list (what "More businesses" opens). Google's robots.txt disallows /search; reading it
+  // is an owner-approved exception that runs only when the user turns it on (AGENTS.md, rule 5).
+  const placesUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&udm=local&hl=en`
+  const googleSearch = Boolean(sources.googleSearch)
+  const url = sources.maps || sources.websites ? mapsUrl : placesUrl
   const crawlTargets: MapsRow[] = []
   let child: ChildProcess | undefined
   let cdp: Cdp | undefined
   let profile: string | undefined
   const seen = new Set<string>()
+  // Every business shown so far, by name and by website, so a Google Search listing that is already on Maps updates
+  // that row ("Maps + Google Search") instead of appearing twice.
+  const found = new Map<string, MapsRow>()
+  const shown = new Set<string>()
+  const remember = (row: MapsRow) => {
+    shown.add(row.id)
+    const name = businessKey(row.name)
+    if (name) found.set(`name:${name}`, row)
+    const site = websiteKey(row.website)
+    if (site) found.set(`site:${site}`, row)
+  }
+  const addCrawlTarget = (row: MapsRow) => {
+    if (!sources.websites || !row.website || crawlTargets.length >= 15) return
+    try {
+      const website = new URL(row.website)
+      if (['http:', 'https:'].includes(website.protocol) && !website.username && !website.password)
+        crawlTargets.push(row)
+    } catch {
+      /* Ignore malformed website links. */
+    }
+  }
   try {
     emit({ type: 'status', text: 'Checking public access and robots.txt...' })
-    if (!sources.maps && !sources.websites)
-      throw new Error('Enable Maps listings in Profile preferences')
-    await checkRobots(url)
+    if (!sources.maps && !googleSearch && !sources.websites)
+      throw new Error(
+        'Turn on Google Maps or Google Search listings in Settings → Preferences → Search',
+      )
+    if (sources.maps || sources.websites) await checkRobots(url)
     if (signal.aborted) throw new Error('Search stopped')
     profile = await mkdtemp(join(app.getPath('temp'), 'leadsghr-maps-'))
     emit({
@@ -230,6 +368,11 @@ export async function scanMaps(
         ...(showChrome
           ? ['--new-window', '--start-maximized']
           : ['--headless=new', '--disable-gpu']),
+        // Keep the page working at full speed when the window is behind other windows or hidden, so result
+        // lists keep loading as they are scrolled.
+        '--disable-background-timer-throttling',
+        '--disable-renderer-backgrounding',
+        '--disable-backgrounding-occluded-windows',
         '--no-first-run',
         '--no-default-browser-check',
         '--remote-debugging-address=127.0.0.1',
@@ -259,96 +402,194 @@ export async function scanMaps(
     if (!port) throw new Error('Chrome did not start its local browser connection')
     cdp = await connect(port, signal)
     if (showChrome) await cdp.call('Page.bringToFront')
-    emit({ type: 'status', text: 'Reading public Maps results...' })
-    let quietRounds = 0
-    let loadingRounds = 0
-    let lastPageUrl = ''
-    let reopened = false
-    for (let step = 0; step < 45 && seen.size < 200; step++) {
+    if (sources.maps || sources.websites) {
+      emit({ type: 'status', text: 'Reading public Maps results...' })
+      let quietRounds = 0
+      let loadingRounds = 0
+      let lastPageUrl = ''
+      let reopened = false
+      for (let step = 0; step < 70 && seen.size < 200; step++) {
+        if (signal.aborted) throw new Error('Search stopped')
+        await wait(step === 0 ? 1700 : 1400, signal)
+        const page = await cdp.evaluate<{
+          url: string
+          text: string
+          cards: Pick<MapsRow, 'name' | 'website' | 'phone' | 'address' | 'mapsUrl' | 'emails'>[]
+          feed: boolean
+          end: boolean
+          scrollTop: number
+          scrollHeight: number
+          clientHeight: number
+        }>(snapshot)
+        lastPageUrl = page.url
+        // Chrome sometimes keeps the new tab on about:blank and never starts loading the Maps address it was
+        // started with. Open the address once in that case (Google was not reached yet, so this is not a repeat).
+        if (page.url === 'about:blank' && step >= 2 && !reopened) {
+          reopened = true
+          loadingRounds = 0
+          emit({
+            type: 'status',
+            text: 'Chrome opened an empty tab; opening the Maps search again...',
+          })
+          await cdp.call('Page.navigate', { url: mapsUrl })
+          continue
+        }
+        // Chrome shows its own error page when the connection drops: report it as a network problem, not as a broken search.
+        if (page.url.startsWith('chrome-error://'))
+          throw new Error('Chrome could not load Google Maps (network error)')
+        if (CHALLENGE.test(page.text)) throw new Error('Google presented a challenge; search paused')
+        if (!page.cards.length && !seen.size && loadingRounds < 12) {
+          loadingRounds++
+          if (loadingRounds === 1)
+            emit({ type: 'status', text: 'Waiting for Maps results to load...' })
+          continue
+        }
+        let added = 0
+        for (const card of page.cards) {
+          if (signal.aborted) throw new Error('Search stopped')
+          if (!card.name || !card.mapsUrl || seen.has(card.mapsUrl)) continue
+          seen.add(card.mapsUrl)
+          added++
+          const row: MapsRow = {
+            ...card,
+            id: card.mapsUrl,
+            location,
+            source: 'Maps',
+            emails: card.emails,
+            emailsScanned: false,
+          }
+          remember(row)
+          if (sources.maps) emit({ type: 'row', row })
+          addCrawlTarget(row)
+        }
+        quietRounds = added ? 0 : quietRounds + 1
+        // Stop at Maps' own "end of the list" message. Without it, keep scrolling a while longer: Maps can take
+        // several seconds to load its next batch, and stopping early silently loses listings.
+        if (
+          !page.feed ||
+          page.end ||
+          (quietRounds >= 6 && page.scrollTop + page.clientHeight >= page.scrollHeight - 20)
+        )
+          break
+        // Scroll the list with the mouse wheel, as a person would: Maps loads its next batch on real scrolling,
+        // which a script-set scroll position does not always trigger. The script scroll stays as a backup.
+        const point = await cdp.evaluate<{ x: number; y: number } | null>(feedPoint)
+        if (point)
+          for (let turn = 0; turn < 3; turn++)
+            await cdp.call('Input.dispatchMouseEvent', {
+              type: 'mouseWheel',
+              x: point.x,
+              y: point.y,
+              deltaX: 0,
+              deltaY: 900,
+            })
+        await cdp.evaluate(
+          `(() => { const feed = document.querySelector('[role="feed"]'); if (feed) feed.scrollBy(0, Math.max(500, feed.clientHeight * .85)); })()`,
+        )
+      }
+      if (!seen.size && !lastPageUrl.startsWith('https://www.google.com/maps/') && !googleSearch) {
+        let shownUrl = lastPageUrl
+        try {
+          const page = new URL(lastPageUrl)
+          shownUrl = `${page.hostname}${page.pathname}`.slice(0, 80)
+        } catch {
+          /* keep the raw value */
+        }
+        throw new Error(
+          `Google opened a different result view (${shownUrl || 'no page'}); Maps listings were not available for this search`,
+        )
+      }
+    }
+    if (googleSearch) {
       if (signal.aborted) throw new Error('Search stopped')
-      await wait(step === 0 ? 1700 : 1400, signal)
-      const page = await cdp.evaluate<{
-        url: string
-        text: string
-        cards: Pick<MapsRow, 'name' | 'website' | 'phone' | 'address' | 'mapsUrl' | 'emails'>[]
-        feed: boolean
-        scrollTop: number
-        scrollHeight: number
-        clientHeight: number
-      }>(snapshot)
-      lastPageUrl = page.url
-      // Chrome sometimes keeps the new tab on about:blank and never starts loading the Maps address it was
-      // started with. Open the address once in that case (Google was not reached yet, so this is not a repeat).
-      if (page.url === 'about:blank' && step >= 2 && !reopened) {
-        reopened = true
-        loadingRounds = 0
+      const sinceLast = Date.now() - lastGoogleSearchAt
+      if (lastGoogleSearchAt && sinceLast < GOOGLE_SEARCH_GAP_MS) {
         emit({
           type: 'status',
-          text: 'Chrome opened an empty tab; opening the Maps search again...',
+          text: `Waiting ${Math.ceil((GOOGLE_SEARCH_GAP_MS - sinceLast) / 1000)} s before the next Google Search, to keep requests polite...`,
         })
-        await cdp.call('Page.navigate', { url })
-        continue
+        await wait(GOOGLE_SEARCH_GAP_MS - sinceLast, signal)
       }
-      // Chrome shows its own error page when the connection drops: report it as a network problem, not as a broken search.
-      if (page.url.startsWith('chrome-error://'))
-        throw new Error('Chrome could not load Google Maps (network error)')
-      if (CHALLENGE.test(page.text)) throw new Error('Google presented a challenge; search paused')
-      if (!page.cards.length && !seen.size && loadingRounds < 12) {
-        loadingRounds++
-        if (loadingRounds === 1)
-          emit({ type: 'status', text: 'Waiting for Maps results to load...' })
-        continue
-      }
-      let added = 0
-      for (const card of page.cards) {
-        if (signal.aborted) throw new Error('Search stopped')
-        if (!card.name || !card.mapsUrl || seen.has(card.mapsUrl)) continue
-        seen.add(card.mapsUrl)
-        added++
-        const row: MapsRow = {
-          ...card,
-          id: card.mapsUrl,
-          location,
-          source: 'Maps',
-          emails: card.emails,
-          emailsScanned: false,
-        }
-        if (sources.maps) emit({ type: 'row', row })
-        if (sources.websites && row.website && crawlTargets.length < 15) {
-          try {
-            const website = new URL(row.website)
-            if (
-              ['http:', 'https:'].includes(website.protocol) &&
-              !website.username &&
-              !website.password
+      lastGoogleSearchAt = Date.now()
+      emit({ type: 'status', text: 'Reading Google Search business listings...' })
+      if (sources.maps || sources.websites) await cdp.call('Page.navigate', { url: placesUrl })
+      const placesSeen = new Set<string>()
+      let previousFirst = ''
+      for (let pageNumber = 1; pageNumber <= GOOGLE_SEARCH_PAGES && placesSeen.size < 200; pageNumber++) {
+        // Wait for this page's business cards; after a page change, wait until they are the new page's cards.
+        let page:
+          | { url: string; text: string; cards: PlacesCard[]; first: string; hasNext: boolean }
+          | undefined
+        for (let attempt = 0; attempt < 24; attempt++) {
+          await wait(attempt === 0 ? 1500 : 750, signal)
+          page = await cdp.evaluate<NonNullable<typeof page>>(placesSnapshot)
+          if (page!.url.startsWith('chrome-error://'))
+            throw new Error('Chrome could not load Google Search (network error)')
+          if (/\/sorry\//.test(page!.url))
+            throw new Error(
+              'Google showed its "unusual traffic" check page for Google Search; search paused. Try again later, or search with Google Maps only.',
             )
-              crawlTargets.push(row)
-          } catch {
-            /* Ignore malformed website links. */
-          }
+          // Wait until the browser has left the Maps page before judging this one.
+          if (!page!.url.startsWith('https://www.google.com/search')) continue
+          if (CHALLENGE.test(page!.text) || /\/sorry\//.test(page!.url))
+            throw new Error(
+              `Google presented a challenge on Google Search ("${page!.text.match(CHALLENGE)?.[0] ?? 'blocked page'}"); search paused`,
+            )
+          if (page!.cards.length && page!.first !== previousFirst) break
         }
+        if (!page || !page.cards.length || page.first === previousFirst) break
+        previousFirst = page.first
+        emit({
+          type: 'status',
+          text: `Reading Google Search business listings (page ${pageNumber})...`,
+        })
+        for (const card of page.cards) {
+          if (signal.aborted) throw new Error('Search stopped')
+          const key = businessKey(card.name)
+          if (card.sponsored || !key || placesSeen.has(key)) continue
+          placesSeen.add(key)
+          const website = card.websiteLink ? await resolveWebsite(card.websiteLink, signal) : ''
+          const match =
+            found.get(`name:${key}`) ??
+            (website ? found.get(`site:${websiteKey(website)}`) : undefined)
+          const row: MapsRow = match
+            ? {
+                ...match,
+                website: match.website || website,
+                phone: match.phone || card.phone,
+                address: match.address || card.address,
+                source: combineSources(match.source, 'Google Search'),
+              }
+            : {
+                id: '',
+                name: card.name,
+                website,
+                phone: card.phone,
+                address: card.address,
+                location,
+                mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${card.name} ${card.address || location}`)}`,
+                source: 'Google Search',
+                emails: [],
+                emailsScanned: false,
+              }
+          if (!match) row.id = row.mapsUrl
+          remember(row)
+          emit({ type: 'row', row })
+          if (!match) addCrawlTarget(row)
+        }
+        if (!page.hasNext) break
+        const arrow = await cdp.evaluate<{ x: number; y: number } | null>(nextArrowPoint)
+        if (!arrow) break
+        await politePause(signal)
+        for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased'])
+          await cdp.call('Input.dispatchMouseEvent', {
+            type,
+            x: arrow.x,
+            y: arrow.y,
+            button: 'left',
+            clickCount: 1,
+          })
       }
-      quietRounds = added ? 0 : quietRounds + 1
-      if (
-        !page.feed ||
-        (quietRounds >= 3 && page.scrollTop + page.clientHeight >= page.scrollHeight - 20)
-      )
-        break
-      await cdp.evaluate(
-        `(() => { const feed = document.querySelector('[role="feed"]'); if (feed) feed.scrollBy(0, Math.max(500, feed.clientHeight * .85)); })()`,
-      )
-    }
-    if (!seen.size && !lastPageUrl.startsWith('https://www.google.com/maps/')) {
-      let shown = lastPageUrl
-      try {
-        const page = new URL(lastPageUrl)
-        shown = `${page.hostname}${page.pathname}`.slice(0, 80)
-      } catch {
-        /* keep the raw value */
-      }
-      throw new Error(
-        `Google opened a different result view (${shown || 'no page'}); Maps listings were not available for this search`,
-      )
     }
     for (const row of crawlTargets) {
       if (signal.aborted) throw new Error('Search stopped')
@@ -362,7 +603,7 @@ export async function scanMaps(
           type: 'row',
           row: {
             ...row,
-            source: sources.maps ? 'Maps + website' : 'Website',
+            source: sources.maps || googleSearch ? withWebsiteSource(row.source) : 'Website',
             emails: [...new Set([...row.emails, ...result.emails])],
             emailsScanned: result.scanned,
           },
@@ -373,7 +614,7 @@ export async function scanMaps(
           type: 'row',
           row: {
             ...row,
-            source: sources.maps ? 'Maps + website' : 'Website',
+            source: sources.maps || googleSearch ? withWebsiteSource(row.source) : 'Website',
             emails: row.emails,
             emailsScanned: false,
           },
@@ -381,7 +622,10 @@ export async function scanMaps(
       }
       await wait(800, signal)
     }
-    emit({ type: 'done', count: sources.maps ? seen.size : crawlTargets.length })
+    emit({
+      type: 'done',
+      count: sources.maps || googleSearch ? shown.size : crawlTargets.length,
+    })
   } catch (error) {
     if (signal.aborted) emit({ type: 'status', text: 'Search stopped.' })
     else emit({ type: 'error', text: String(error) })

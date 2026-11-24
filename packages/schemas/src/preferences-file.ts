@@ -56,6 +56,7 @@ export const PREFERENCE_SECTIONS: readonly {
     settings: [
       { key: 'showChromeDuringSearch', label: 'Show Chrome while searching' },
       { key: 'searchGoogleMaps', label: 'Show Google Maps listings' },
+      { key: 'searchGooglePlaces', label: 'Show Google Search business listings' },
       { key: 'useNicheKeywords', label: 'Use Niche Library search terms' },
       { key: 'showListingsWithoutWebsite', label: 'Show businesses without a website' },
       { key: 'includeCompanyName', label: 'Result field: Company name' },

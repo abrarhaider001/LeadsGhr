@@ -518,12 +518,19 @@ const groups: {
   },
   {
     title: 'Search sources',
-    description: 'Choose whether public Maps business listings appear in Search Results.',
+    description:
+      'Choose where each search looks for businesses. With both on, Google Maps is searched first, then Google Search, and both appear in one results table.',
     options: [
       {
         key: 'searchGoogleMaps',
         title: 'Show Google Maps listings',
         detail: 'Show public business rows found in Maps.',
+      },
+      {
+        key: 'searchGooglePlaces',
+        title: 'Show Google Search business listings',
+        detail:
+          'Also read the business list behind "More businesses" in Google Search (all of its pages). It often finds businesses Maps misses. Slower, and Google may show a captcha sooner.',
       },
     ],
   },

@@ -260,7 +260,11 @@ Next: extract the ZIP to a folder named leadsghr-mailer, then open chrome://exte
         },
         controller.signal,
         preferences.showChromeDuringSearch,
-        { maps: preferences.searchGoogleMaps, websites: false },
+        {
+          maps: preferences.searchGoogleMaps,
+          googleSearch: preferences.searchGooglePlaces,
+          websites: false,
+        },
       ).finally(() => {
         if (activeMapsScan?.id === id) activeMapsScan = undefined
       })

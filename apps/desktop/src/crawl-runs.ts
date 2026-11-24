@@ -7,6 +7,7 @@ import { crawlRowsToCsv } from '@leadsghr/export'
 import { leadsGhrExportsDirectory } from './paths'
 import { filterEmails } from '@leadsghr/quality'
 import {
+  combineSources,
   createCrawlRunSchema,
   crawlRunIdSchema,
   crawlRunProgressSchema,
@@ -197,7 +198,7 @@ export function createCrawlRunStore(db: Database.Database) {
             ...row,
             emails: [...new Set([...previous.emails, ...row.emails])].slice(0, 1000),
             emailsScanned: previous.emailsScanned || row.emailsScanned,
-            source: previous.emailsScanned ? previous.source : row.source,
+            source: combineSources(previous.source, row.source),
           }
         : row
       db.prepare(

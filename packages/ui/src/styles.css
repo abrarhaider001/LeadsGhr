@@ -8919,3 +8919,14 @@ a {
   }
 }
 
+/* Search Results: the search box in the table toolbar (same look as the Leads search) and the Source column. */
+.la-result-table-toolbar .la-result-search {
+  flex: 0 1 360px;
+  min-height: var(--ui-control-height-md);
+  margin-right: auto;
+}
+.la-result-source {
+  white-space: nowrap;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}

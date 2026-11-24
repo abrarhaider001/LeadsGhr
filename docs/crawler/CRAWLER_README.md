@@ -15,7 +15,7 @@ This guide describes the **current desktop implementation**. The Crawler tab is 
 | Results | Per-page email counts and details | Per-page statuses and emails merged into the saved business row, then filtered |
 | Storage and export | No SQLite, Supabase, or CSV write | Local SQLite run data and CSV export |
 
-Business-listing search is a separate stage. Google Maps is currently the available automated Pipeline provider. The Crawler tab does not search Google Maps.
+Business-listing search is a separate stage. Google Maps is the main automated provider; Google Search's business list (the **More businesses** page, `udm=local`) can be added in Preferences → Search sources as an owner-approved exception to Google's robots.txt (AGENTS.md, rule 5). It is read after Maps for each location, at most 5 pages with polite pauses, skipping ads and resolving each Website button's Google redirect to the business's own address; it stops at Google's check page. Maps listings are read by mouse-wheel scrolling until Maps shows the end of the list (a scroll set from a script did not always make Maps load more). The Crawler tab does not search Google Maps or Google Search.
 
 ## Preferences
 

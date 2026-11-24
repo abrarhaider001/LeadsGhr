@@ -92,6 +92,8 @@ export const desktopPreferencesSchema = z.object({
   crawlerConcurrentPages: z.number().int().min(1).max(8).default(2),
   showChromeDuringSearch: z.boolean(),
   searchGoogleMaps: z.boolean().default(true),
+  /** Also read Google Search's business list (the Places page behind "More businesses"); see AGENTS.md rule 5. */
+  searchGooglePlaces: z.boolean().default(false),
   useNicheKeywords: z.boolean().default(false),
   showListingsWithoutWebsite: z.boolean().default(false),
   scanPublicWebsites: z.boolean().default(false),
@@ -126,6 +128,7 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   crawlerConcurrentPages: 2,
   showChromeDuringSearch: true,
   searchGoogleMaps: true,
+  searchGooglePlaces: false,
   useNicheKeywords: false,
   showListingsWithoutWebsite: false,
   scanPublicWebsites: false,
@@ -243,6 +246,32 @@ export const preparedCrawlSearchSchema = z.object({
   query: mapsQuerySchema,
 })
 export type PreparedCrawlSearch = z.infer<typeof preparedCrawlSearchSchema>
+/**
+ * Where a result row came from. "Google Search" is the business list behind Google Search's "More businesses"
+ * (the Places page); "+ website" is added once the business's own website has been checked for emails.
+ */
+export const CRAWL_ROW_SOURCES = [
+  'Maps',
+  'Website',
+  'Maps + website',
+  'Google Search',
+  'Google Search + website',
+  'Maps + Google Search',
+  'Maps + Google Search + website',
+] as const
+export type CrawlRowSource = (typeof CRAWL_ROW_SOURCES)[number]
+/** Combines sources (for example a Maps row also found in Google Search, then its website checked) into one value. */
+export function combineSources(...sources: CrawlRowSource[]): CrawlRowSource {
+  const maps = sources.some((source) => source.startsWith('Maps'))
+  const search = sources.some((source) => source.includes('Google Search'))
+  const website = sources.some((source) => /website$/i.test(source))
+  if (!maps && !search) return 'Website'
+  const parts = [maps && 'Maps', search && 'Google Search', website && 'website'].filter(Boolean)
+  return parts.join(' + ') as CrawlRowSource
+}
+/** The source after the business's website was checked: keeps where the listing came from and adds "website". */
+export const withWebsiteSource = (source: CrawlRowSource): CrawlRowSource =>
+  combineSources(source, 'Website')
 export const crawlRowSchema = z.object({
   id: z.string().min(1).max(500),
   niche: z.string().max(120).optional(),
@@ -252,7 +281,7 @@ export const crawlRowSchema = z.object({
   location: z.string().max(200),
   address: z.string().max(1000),
   mapsUrl: z.string().max(2000),
-  source: z.enum(['Maps', 'Website', 'Maps + website']),
+  source: z.enum(CRAWL_ROW_SOURCES),
   emails: z.array(z.string()).max(1000),
   emailsScanned: z.boolean(),
 })
