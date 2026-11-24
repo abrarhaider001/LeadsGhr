@@ -10,6 +10,7 @@ import {
   crawlRunProgressSchema,
   emailVerifyRequestSchema,
   emailVerifyJobIdSchema,
+  emailTemplateDraftSchema,
 } from '@leadsghr/schemas'
 
 contextBridge.exposeInMainWorld('leadsGhrDesktop', {
@@ -114,4 +115,8 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   },
   downloadTrackingExtension: () => ipcRenderer.invoke('leadsghr:tracking:download-extension'),
   downloadMailerExtension: () => ipcRenderer.invoke('leadsghr:mailer:download-extension'),
+  listEmailTemplates: () => ipcRenderer.invoke('leadsghr:email-templates:list'),
+  saveEmailTemplate: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:email-templates:save', emailTemplateDraftSchema.parse(input)),
+  deleteEmailTemplate: (id: unknown) => ipcRenderer.invoke('leadsghr:email-templates:delete', id),
 })

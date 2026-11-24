@@ -30,6 +30,9 @@ export type IconName =
   | 'pause'
   | 'resume'
   | 'stop'
+  | 'edit'
+  | 'eye'
+  | 'trash'
 const paths: Record<IconName, ReactNode> = {
   selectAll: (
     <>
@@ -167,6 +170,25 @@ const paths: Record<IconName, ReactNode> = {
     </>
   ),
   stop: <rect x="6" y="6" width="12" height="12" rx="1" />,
+  edit: (
+    <>
+      <path d="M12 20h8" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z" />
+    </>
+  ),
+  eye: (
+    <>
+      <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M9 7V5h6v2" />
+      <path d="M6.5 7l1 13h9l1-13" />
+    </>
+  ),
   library: (
     <>
       <path d="M4 4.5h6a3 3 0 0 1 3 3V20H7a3 3 0 0 0-3 1V4.5Z" />
