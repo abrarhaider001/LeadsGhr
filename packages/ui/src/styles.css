@@ -9100,16 +9100,18 @@ a {
   font-style: normal;
 }
 .la-timing-field input {
-  width: 84px;
+  /* Same as the other number fields in Preferences (.la-profile-concurrency-option input). */
+  width: 72px;
   height: var(--ui-control-height-md);
   padding: 0 var(--ui-space-2);
   border: 1px solid var(--ui-color-border);
   border-radius: var(--ui-field-radius);
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
-  font-family: var(--ui-font-mono);
   font-size: var(--ui-text-sm);
-  text-align: right;
+  font-weight: var(--ui-weight-semibold);
+  text-align: center;
+  cursor: text;
 }
 .la-timing-field input:focus {
   border-color: var(--ui-color-primary);
@@ -9119,13 +9121,13 @@ a {
   border-color: var(--ui-color-danger);
 }
 .la-timing-field em {
-  min-width: 62px;
   color: var(--ui-color-text-secondary);
   font-size: var(--ui-text-sm);
   font-style: normal;
 }
-.la-timing-range .la-timing-field em {
-  min-width: 0;
+/* Single fields line up: the unit column has one width ("locations" is the longest unit). */
+.la-profile-option > .la-timing-field em {
+  min-width: 40px;
 }
 .la-timing-note {
   display: flex;
