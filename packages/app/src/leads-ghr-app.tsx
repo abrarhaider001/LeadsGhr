@@ -45,6 +45,7 @@ import {
   syncProfileFromDisk,
 } from './account-data'
 import { EmailSendingPage } from './email-sending-page'
+import { EmailTemplatesPage } from './email-templates-page'
 import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
 import { LicenseScreen, LicenseSettingsPage, loadLicense } from './license-page'
 import type { LicenseView } from '@leadsghr/license'
@@ -60,6 +61,7 @@ const navigation: { label: string; icon: NavIconName }[] = [
   { label: 'Email Validation', icon: 'emailValidation' },
   { label: 'Email Spam Check', icon: 'emailSpamCheck' },
   { label: 'Email Sending', icon: 'emailSending' },
+  { label: 'Email Templates', icon: 'emailTemplates' },
   { label: 'Email Tracking', icon: 'emailTracking' },
   { label: 'Leads', icon: 'leads' },
   { label: 'Runs', icon: 'runs' },
@@ -81,6 +83,7 @@ const descriptions: Record<string, string> = {
   'Email Validation': 'Check mailbox acceptance with a local SMTP RCPT TO probe.',
   'Email Spam Check': 'Review email content for signals that may affect delivery.',
   'Email Sending': 'Prepare and send email campaigns from your workspace.',
+  'Email Templates': 'Write plain or HTML messages, preview them, and use them in LeadsGhr Mailer.',
   'Email Tracking': 'Review delivery and engagement for sent emails.',
   'Crawl Results': 'Review businesses found across the selected niche and locations.',
   Leads: 'Review businesses and contacts saved on this computer.',
@@ -486,6 +489,8 @@ export function LeadsGhrApp() {
             <EmailSpamEnginePage />
           ) : page === 'Email Sending' ? (
             <EmailSendingPage />
+          ) : page === 'Email Templates' ? (
+            <EmailTemplatesPage />
           ) : page === 'Email Tracking' ? (
             <EmailTrackingPage />
           ) : page === 'Niche Library' ? (

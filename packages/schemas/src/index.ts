@@ -377,3 +377,4 @@ export type EmailVerifyResult = z.infer<typeof emailVerifyResultSchema>
 export const emailVerifyJobIdSchema = z.string().uuid()
 
 export * from './preferences-file'
+export * from './email-templates'

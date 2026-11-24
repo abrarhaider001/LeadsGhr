@@ -33,6 +33,7 @@ import { scanMaps } from './maps-scan'
 import { createCrawlRunStore, registerCrawlRunIpc } from './crawl-runs'
 import { registerPipelinePages } from './pipeline-pages'
 import { abortActiveEmailVerify, registerEmailVerifyIpc } from './email-verify'
+import { registerEmailTemplateIpc } from './email-templates'
 
 let db: Database.Database | undefined
 let adapters: ReturnType<typeof createDesktopAdapters> | undefined
@@ -151,6 +152,7 @@ app.whenReady().then(async () => {
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
   registerEmailVerifyIpc(localStore().db)
+  registerEmailTemplateIpc()
   // Email Sending: save the LeadsGhr Mailer extension ZIP (in C:\LeadsGhr\extensions), then confirm with an information dialog.
   ipcMain.handle('leadsghr:mailer:download-extension', async (event) => {
     const source = app.isPackaged

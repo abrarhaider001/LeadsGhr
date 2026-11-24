@@ -8583,3 +8583,338 @@ a {
   background: color-mix(in srgb, var(--ui-color-accent) 25%, transparent);
   color: var(--ui-color-accent);
 }
+
+/* Email Templates: listing, right-side editor, and delete confirmation. */
+.la-templates {
+  display: grid;
+  gap: var(--ui-space-3-5);
+}
+.la-templates .la-section-heading {
+  align-items: center;
+  margin-top: 0;
+}
+.la-templates-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+.la-templates-search {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--ui-space-2);
+  max-width: 360px;
+  min-height: var(--ui-field-height);
+  padding: 0 var(--ui-space-3);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-field-radius-lg);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text-muted);
+}
+.la-templates-search:focus-within {
+  outline: 2px solid var(--ui-color-focus);
+  outline-offset: 2px;
+}
+.la-templates-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ui-color-text);
+  font: inherit;
+  font-size: var(--ui-text-md);
+}
+.la-templates-search input:focus {
+  outline: none;
+}
+.la-templates-count {
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+}
+.la-template-table {
+  min-width: 720px;
+}
+.la-template-table td {
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.la-template-table th:nth-child(3),
+.la-template-table td:nth-child(3) {
+  width: 96px;
+}
+.la-template-table th:nth-child(4),
+.la-template-table td:nth-child(4) {
+  width: 120px;
+}
+.la-template-table th:last-child,
+.la-template-table td:last-child {
+  width: 132px;
+  overflow: visible;
+  text-overflow: clip;
+}
+.la-template-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 var(--ui-space-2);
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-surface-muted);
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-template-pill--html {
+  background: var(--ui-color-primary-soft);
+  color: var(--ui-color-primary);
+}
+.la-template-actions {
+  display: flex;
+  gap: var(--ui-space-1-5);
+}
+.la-template-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: var(--ui-control-height-sm);
+  padding: 0;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-button-radius);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  cursor: pointer;
+}
+.la-template-actions button:hover {
+  border-color: var(--ui-color-primary);
+  background: var(--ui-color-primary-soft);
+  color: var(--ui-color-primary);
+}
+.la-template-actions button.danger:hover {
+  border-color: var(--ui-color-danger);
+  background: var(--ui-color-danger-soft);
+  color: var(--ui-color-danger);
+}
+.la-template-actions button:focus-visible {
+  outline: 2px solid var(--ui-color-primary);
+  outline-offset: 2px;
+}
+.la-template-drawer {
+  width: min(520px, 100vw);
+  overflow-y: auto;
+}
+.la-template-form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ui-space-3-5);
+  min-height: min-content;
+}
+.la-template-field {
+  display: grid;
+  gap: var(--ui-space-1-5);
+}
+.la-template-format {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.la-template-format legend {
+  margin-bottom: var(--ui-space-2);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-strong);
+}
+.la-template-format button {
+  padding: var(--ui-space-2-5) var(--ui-space-3);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.la-template-format button[aria-pressed='true'] {
+  border-color: var(--ui-color-primary);
+  background: var(--ui-color-primary-soft);
+}
+.la-template-format button strong {
+  display: block;
+  font-size: var(--ui-text-sm);
+}
+.la-template-format button small {
+  display: block;
+  margin-top: var(--ui-space-0-5);
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+}
+.la-template-format button:focus-visible,
+.la-template-switch button:focus-visible {
+  outline: 2px solid var(--ui-color-primary);
+  outline-offset: 2px;
+}
+.la-template-body-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+}
+.la-template-switch {
+  display: flex;
+  flex: none;
+  gap: var(--ui-space-0-5);
+  padding: var(--ui-space-0-5);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-surface-muted);
+}
+.la-template-switch button {
+  min-height: var(--ui-control-height-sm);
+  padding: 0 var(--ui-space-3);
+  border: 0;
+  border-radius: var(--ui-radius-md);
+  background: transparent;
+  color: var(--ui-color-text-muted);
+  font: inherit;
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
+  cursor: pointer;
+}
+.la-template-switch button[aria-selected='true'] {
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ui-color-shadow) 16%, transparent);
+}
+.la-template-body-field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--ui-space-1-5);
+  min-height: 220px;
+}
+.la-template-drawer textarea {
+  flex: 1;
+  min-height: 180px;
+}
+.la-template-preview-pane {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 220px;
+}
+.la-template-preview,
+.la-template-preview-frame {
+  flex: 1;
+  width: 100%;
+  min-height: 220px;
+  margin: 0;
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-field-radius-lg);
+  background: var(--ui-color-surface);
+}
+.la-template-preview {
+  overflow: auto;
+  padding: var(--ui-space-3-5);
+  color: var(--ui-color-text);
+  font-family: var(--ui-font-sans);
+  font-size: var(--ui-text-md);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.la-template-preview--empty {
+  display: grid;
+  place-items: center;
+  color: var(--ui-color-text-muted);
+}
+.la-template-note,
+.la-template-message {
+  margin: 0;
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-xs);
+  line-height: 1.5;
+}
+.la-template-warning {
+  margin: 0;
+  color: var(--ui-color-danger);
+  font-size: var(--ui-text-xs);
+  line-height: 1.5;
+}
+.la-template-drawer-actions {
+  display: flex;
+  gap: var(--ui-space-2);
+  margin-top: auto;
+}
+.la-template-drawer-actions .la-button {
+  flex: 1;
+}
+.la-confirm-dialog {
+  display: grid;
+  gap: var(--ui-space-3);
+  width: min(420px, 100%);
+  padding: var(--ui-space-5);
+  border-radius: var(--ui-radius-2xl);
+  background: var(--ui-color-surface);
+  box-shadow: 0 20px 50px color-mix(in srgb, var(--ui-color-shadow) 22%, transparent);
+}
+.la-confirm-dialog h2 {
+  margin: 0;
+  font-size: var(--ui-text-2xl);
+}
+.la-confirm-dialog p {
+  margin: 0;
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-sm);
+  line-height: 1.5;
+}
+.la-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ui-space-2);
+  margin-top: var(--ui-space-2);
+}
+.la-confirm-actions button {
+  min-height: var(--ui-control-height-md);
+  padding: 0 var(--ui-space-3-5);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-button-radius);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+  font-size: var(--ui-text-md);
+  font-weight: var(--ui-weight-semibold);
+  cursor: pointer;
+}
+.la-confirm-actions button:hover:not(:disabled) {
+  background: var(--ui-color-surface-muted);
+}
+.la-confirm-actions button.danger {
+  border-color: var(--ui-color-danger);
+  background: var(--ui-color-danger);
+  color: var(--ui-color-on-primary);
+}
+.la-confirm-actions button.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ui-color-danger) 88%, var(--ui-color-text));
+}
+.la-confirm-actions button:focus-visible {
+  outline: 2px solid var(--ui-color-primary);
+  outline-offset: 2px;
+}
+.la-confirm-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+@media (max-width: 720px) {
+  .la-templates .la-section-heading,
+  .la-templates-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .la-templates-search {
+    max-width: none;
+  }
+}

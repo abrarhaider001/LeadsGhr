@@ -6,7 +6,7 @@ LeadsGhr is a desktop application for discovering businesses by niche and locati
 
 A companion Gmail tracking extension, **LeadsGhr Tracker**, is available as a downloadable MV3 ZIP from the desktop Email Tracking page. It needs a separately deployed public HTTPS pixel endpoint to observe recipient-side image loads. Manual email extraction in the extension remains planned.
 
-**LeadsGhr Mailer** is a separate Chrome extension (`apps/mailer-extension`) for sending saved email templates to CSV or Excel recipient ranges through the user's Gmail session; the desktop **Email Sending** page downloads it.
+**LeadsGhr Mailer** is a separate Chrome extension (`apps/mailer-extension`) for sending saved email templates to CSV or Excel recipient ranges through the user's Gmail session; the desktop **Email Sending** page downloads it, and **Email Templates** saves those messages in `C:\LeadsGhr\extensions\leadsghr-mailer\data`.
 
 [Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
 
@@ -62,7 +62,7 @@ Legacy web, API, and worker folders remain inactive reference code. `apps/extens
 
 ## LeadsGhr Mailer (Gmail sending)
 
-Open **Email Sending** in the desktop app and select **Download extension ZIP**; an **Extension saved** dialog shows where `leadsghr-mailer.zip` was saved. Extract it to a `leadsghr-mailer` folder and load it with **Load unpacked** in `chrome://extensions`. Save templates on the Mailer's settings page (popup gear button), then click the toolbar icon in Gmail: pick a template, upload a CSV or Excel file, set Start, End, and a 5–120 second delay, and use Start, Pause, Resume, and Stop. Rebuild with `pnpm.cmd build:mailer-extension`. See [Email Sending](docs/EMAIL_SENDING_README.md).
+Open **Email Sending** in the desktop app and select **Download extension ZIP**; an **Extension saved** dialog shows where `leadsghr-mailer.zip` was saved. Extract it to a `leadsghr-mailer` folder and load it with **Load unpacked** in `chrome://extensions`. Save templates on the desktop **Email Templates** page, which writes `C:\LeadsGhr\extensions\leadsghr-mailer\data\templates.json`, or on the Mailer's settings page (popup gear button), then click the toolbar icon in Gmail: pick a template, upload a CSV or Excel file, set Start, End, and a 5–120 second delay, and use Start, Pause, Resume, and Stop. Rebuild with `pnpm.cmd build:mailer-extension`. See [Email Sending](docs/EMAIL_SENDING_README.md).
 
 ## Supabase deployment
 
