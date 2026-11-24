@@ -4,6 +4,7 @@ import {
   SCRAPER_PAGE_PAUSE_MS,
   SCRAPER_SEARCH_GAP_MS,
   scraperPlacesUrl,
+  scraperProgressFile,
   scraperResultFile,
   type ScraperBusiness,
   type ScraperJob,
@@ -11,6 +12,7 @@ import {
   type ScraperResult,
 } from '@leadsghr/schemas'
 import { writeDataFile } from './data-folder'
+import { DONE_KEY, JOB_PROGRESS_KEY, PROGRESS_KEY, readJobProgress } from './state'
 
 /*
  * Runs a job's searches one at a time (AGENTS.md, rule 5 exception). Each search opens in a new tab in the settings
@@ -23,8 +25,6 @@ import { writeDataFile } from './data-folder'
  */
 
 const CHALLENGE = /captcha|unusual traffic|verify you are human|not a robot|before you continue to google/i
-const DONE_KEY = (jobId: string) => `scraper.done.${jobId}`
-export const PROGRESS_KEY = 'scraper.progress'
 /** Scroll rounds per page before giving up on more cards, and the most businesses kept per search. */
 const MAX_SCROLL_ROUNDS = 12
 const MAX_BUSINESSES = 300
@@ -156,11 +156,9 @@ export async function runJob(
 ): Promise<ScraperProgress['state']> {
   const done = await finishedSearches(job.id)
   // Continue the counts of an earlier run of this job (after Resume), so the totals stay right.
-  const earlier = (await chrome.storage.local.get(PROGRESS_KEY))[PROGRESS_KEY] as
-    | { jobId?: string; counts?: Counts }
-    | undefined
+  const earlier = await readJobProgress(job.id)
   const counts: Counts =
-    earlier?.jobId === job.id && earlier.counts
+    earlier?.counts
       ? { ...earlier.counts, perSearch: { ...earlier.counts.perSearch } }
       : { businesses: 0, withWebsite: 0, adsSkipped: 0, perSearch: {} }
   const startedAt = Date.now()
@@ -179,8 +177,9 @@ export async function runJob(
       updatedAt: new Date().toISOString(),
     }
     onUpdate({ progress, counts, page })
-    await chrome.storage.local.set({ [PROGRESS_KEY]: { ...progress, counts, startedAt, page } })
-    await writeDataFile('progress.json', progress).catch(() => undefined)
+    const stored = { ...progress, counts, startedAt, page }
+    await chrome.storage.local.set({ [PROGRESS_KEY]: stored, [JOB_PROGRESS_KEY(job.id)]: stored })
+    await writeDataFile(scraperProgressFile(job.id), progress).catch(() => undefined)
   }
   const closeSearchTab = async () => {
     if (tabId !== undefined) await chrome.tabs.remove(tabId).catch(() => undefined)

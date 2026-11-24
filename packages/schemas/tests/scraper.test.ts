@@ -7,6 +7,8 @@ import {
   scraperProgressSchema,
   scraperResultFile,
   scraperResultSchema,
+  scraperJobTitle,
+  visibleScraperJobs,
 } from '../src/index'
 
 const job = {
@@ -55,4 +57,23 @@ test('places address and result file names', () => {
   )
   assert.equal(scraperResultFile(0), '0000.json')
   assert.equal(scraperResultFile(12), '0012.json')
+})
+
+test('the job list shows saved jobs newest first, adds an older job.json, and hides removed jobs', () => {
+  const older = { ...job, id: '11111111-aaaa-4aaa-8aaa-111111111111', createdAt: '2026-11-20T10:00:00.000Z' }
+  const newer = { ...job, id: '22222222-bbbb-4bbb-8bbb-222222222222', createdAt: '2026-11-25T10:00:00.000Z' }
+  const list = { version: SCRAPER_FORMAT_VERSION, jobs: [older, newer] }
+  assert.deepEqual(visibleScraperJobs(list, job, null).map((item) => item.id), [newer.id, job.id, older.id])
+  // A job.json already in the list is not shown twice.
+  assert.equal(visibleScraperJobs(list, newer, null).length, 2)
+  // Removed jobs are hidden; missing or broken files count as empty.
+  const removed = { version: SCRAPER_FORMAT_VERSION, ids: [newer.id] }
+  assert.deepEqual(visibleScraperJobs(list, null, removed).map((item) => item.id), [older.id])
+  assert.deepEqual(visibleScraperJobs(null, 'broken', { ids: 'x' }), [])
+})
+
+test('a job title names the niche, state, and number of locations', () => {
+  assert.equal(scraperJobTitle(job), 'General Contractors · Florida · 1 location')
+  const many = { ...job, niches: ['A', 'B', 'C'], states: ['Florida', 'Texas'], searches: [...job.searches, { ...job.searches[0], index: 1 }] }
+  assert.equal(scraperJobTitle(many), 'A, B +1 · Florida, Texas · 2 locations')
 })

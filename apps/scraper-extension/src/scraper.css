@@ -414,6 +414,122 @@ code {
 .sc-loc svg {
   color: var(--ui-color-primary);
 }
+/* Job picker (popup): a custom dropdown like LeadsGhr Mailer's template picker */
+.sc-select {
+  position: relative;
+}
+.sc-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  width: 100%;
+  height: var(--ui-control-height-md);
+  padding: 0 var(--ui-space-2-5);
+  border: var(--ui-border);
+  border-radius: var(--ui-field-radius);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  text-align: left;
+}
+.sc-select-btn:hover:not(:disabled) {
+  border-color: var(--ui-color-border-strong);
+}
+.sc-select-btn[aria-expanded='true'] {
+  border-color: var(--ui-color-primary);
+}
+.sc-select-btn:disabled {
+  background: var(--ui-color-surface-muted);
+}
+.sc-select-btn svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--ui-color-text-secondary);
+}
+.sc-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ui-text-sm);
+}
+.sc-select-placeholder {
+  color: var(--ui-color-text-tertiary);
+}
+.sc-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(var(--ui-control-height-md) + var(--ui-space-1));
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  margin: 0;
+  padding: var(--ui-space-1) 0;
+  overflow-y: auto;
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-color-surface);
+  box-shadow: var(--ui-shadow-lg);
+  list-style: none;
+}
+.sc-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ui-space-2) var(--ui-space-2-5);
+  cursor: pointer;
+  font-size: var(--ui-text-sm);
+}
+.sc-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sc-option small {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+.sc-option[aria-selected='true'] span {
+  color: var(--ui-color-primary);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-option-active {
+  background: var(--ui-color-primary-soft);
+}
+
+/* Jobs list (settings page) */
+.sc-jobs tbody tr {
+  cursor: pointer;
+}
+.sc-jobs tbody tr:hover {
+  background: var(--ui-color-surface-muted);
+}
+.sc-jobs tbody tr.sc-row-selected {
+  background: var(--ui-color-primary-soft);
+}
+.sc-jobs tbody tr.sc-row-locked {
+  cursor: default;
+  opacity: 0.55;
+}
+.sc-job-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  font-weight: var(--ui-weight-semibold);
+  cursor: inherit;
+}
+.sc-job-pick input {
+  accent-color: var(--ui-color-primary);
+}
+.sc-icon-button:disabled {
+  background: none;
+  color: var(--ui-color-border-strong);
+}
+.sc-subhead {
+  margin: var(--ui-space-4) 0 var(--ui-space-1);
+  font-size: var(--ui-text-md);
+  font-weight: var(--ui-weight-semibold);
+}
 @media (max-width: 700px) {
   .sc-panel-head {
     flex-direction: column;

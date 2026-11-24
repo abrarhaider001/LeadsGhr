@@ -6,7 +6,7 @@ import { prepareSearches, stateRange } from './search-results-page'
 
 type ScraperBridge = {
   sendScraperJob(input: unknown): Promise<{ jobId: string; runId: string }>
-  syncScraperJob(jobId: string): Promise<{ progress: ScraperProgress | null; run: { rows: CrawlRow[] } | null; replaced: boolean }>
+  syncScraperJob(jobId: string): Promise<{ progress: ScraperProgress | null; run: { rows: CrawlRow[] } | null; removed: boolean }>
   openScraperFolder(): Promise<void>
   openWebsite(url: string): Promise<void>
 }
@@ -34,7 +34,7 @@ export function ScraperResultsPage({
   const [progress, setProgress] = useState<ScraperProgress | null>(null)
   const [rows, setRows] = useState<CrawlRow[]>([])
   const [error, setError] = useState('')
-  const [replaced, setReplaced] = useState(false)
+  const [removed, setRemoved] = useState(false)
   const [query, setQuery] = useState('')
   const [exported, setExported] = useState<CrawlExport | null>(null)
   const sent = useRef(false)
@@ -67,9 +67,10 @@ export function ScraperResultsPage({
       try {
         const sync = await scraperBridge()?.syncScraperJob?.(job.jobId)
         if (!active || !sync) return
-        setReplaced(sync.replaced)
+        setRemoved(sync.removed)
         setProgress(sync.progress)
         if (sync.run) setRows(sync.run.rows)
+        if (sync.removed) return
         if (sync.progress?.state === 'finished') {
           onSaved?.()
           return
@@ -101,12 +102,12 @@ export function ScraperResultsPage({
   const state = progress?.state
   const status = error
     ? error
-    : replaced
-      ? 'A newer job was sent to LeadsGhr Scraper; this run no longer updates.'
+    : removed
+      ? "This job was removed from LeadsGhr Scraper's list; this run keeps what was saved but no longer updates."
       : !job
         ? 'Sending the searches to LeadsGhr Scraper...'
         : !progress
-          ? `Job sent (${total} ${total === 1 ? 'search' : 'searches'}). In Chrome, open LeadsGhr Scraper and select Start scraping; results appear here as they are saved.`
+          ? `Job added to LeadsGhr Scraper's job list (${total} ${total === 1 ? 'search' : 'searches'}). In Chrome, open LeadsGhr Scraper, pick this job, and select Start scraping; results appear here as they are saved.`
           : progress.message
 
   async function exportCsv() {

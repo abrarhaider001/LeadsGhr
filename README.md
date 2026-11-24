@@ -159,7 +159,7 @@ The desktop app has a light and a dark theme (Settings → Preferences → Appea
 
 ### LeadsGhr Scraper (Chrome extension)
 
-**LeadsGhr Scraper** (`apps/scraper-extension`) runs New Search's searches on Google Search's business list (the **More businesses** page) inside Chrome and saves the businesses for the desktop app. In **New Search** select **Send to LeadsGhr Scraper**, then in Chrome open the Scraper and select **Start scraping**; **Scraper Results** in the desktop app fills in as each page is saved, with a search box, a Source column, and **Export CSV**. It stops at Google's check page and resumes later. Download it from the **LeadsGhr Scraper** page in the sidebar (or build it with `pnpm build:scraper-extension`) and load `C:\LeadsGhr\extensions\leadsghr-scraper` in a separate Chrome profile that is not signed in to Google. See [LeadsGhr Scraper](docs/SCRAPER_README.md).
+**LeadsGhr Scraper** (`apps/scraper-extension`) runs New Search's searches on Google Search's business list (the **More businesses** page) inside Chrome and saves the businesses for the desktop app. In **New Search** select **Send to LeadsGhr Scraper** (each job is saved in the Scraper's job list), then in Chrome open the Scraper, pick the job, and select **Start scraping**; **Scraper Results** in the desktop app fills in as each page is saved, with a search box, a Source column, and **Export CSV**. It stops at Google's check page and resumes later. Download it from the **LeadsGhr Scraper** page in the sidebar (or build it with `pnpm build:scraper-extension`) and load `C:\LeadsGhr\extensions\leadsghr-scraper` in a separate Chrome profile that is not signed in to Google. See [LeadsGhr Scraper](docs/SCRAPER_README.md).
 
 ### Contractor search sources and emails
 

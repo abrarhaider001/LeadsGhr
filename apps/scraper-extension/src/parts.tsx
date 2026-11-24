@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 
 const glyph = (children: ReactNode) => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -28,4 +28,105 @@ export const icons = {
       <circle cx="12" cy="9.5" r="2.5" />
     </>,
   ),
+  trash: glyph(<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />),
+  chevron: glyph(<path d="m6 9 6 6 6-6" />),
+}
+
+export type JobOption = { id: string; name: string; detail?: string }
+
+/** The job picker: a custom dropdown like LeadsGhr Mailer's template picker (keyboard: arrows, Enter, Escape). */
+export function JobSelect({
+  options,
+  value,
+  disabled,
+  labelledBy,
+  onChange,
+}: {
+  options: JobOption[]
+  value: string
+  disabled?: boolean
+  labelledBy: string
+  onChange(id: string): void
+}) {
+  const [open, setOpen] = useState(false)
+  const [active, setActive] = useState(0)
+  const root = useRef<HTMLDivElement>(null)
+  const selected = options.find((item) => item.id === value)
+
+  useEffect(() => {
+    if (!open) return
+    const close = (event: MouseEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [open])
+
+  function toggle() {
+    if (disabled) return
+    setActive(Math.max(0, options.findIndex((item) => item.id === value)))
+    setOpen((current) => !current)
+  }
+
+  function onKeyDown(event: KeyboardEvent) {
+    if (disabled) return
+    if (!open && (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault()
+      toggle()
+      return
+    }
+    if (!open) return
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      setOpen(false)
+    } else if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      setActive((index) => Math.min(options.length - 1, index + 1))
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      setActive((index) => Math.max(0, index - 1))
+    } else if ((event.key === 'Enter' || event.key === ' ') && options[active]) {
+      event.preventDefault()
+      onChange(options[active].id)
+      setOpen(false)
+    }
+  }
+
+  return (
+    <div className="sc-select" ref={root}>
+      <button
+        type="button"
+        className="sc-select-btn"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-labelledby={labelledBy}
+        disabled={disabled}
+        onClick={toggle}
+        onKeyDown={onKeyDown}
+      >
+        <span className={selected ? 'sc-select-value' : 'sc-select-value sc-select-placeholder'}>{selected ? selected.name : 'Choose a job'}</span>
+        {icons.chevron}
+      </button>
+      {open && (
+        <ul className="sc-menu" role="listbox" aria-labelledby={labelledBy}>
+          {options.map((item, index) => (
+            <li
+              key={item.id}
+              role="option"
+              aria-selected={item.id === value}
+              className={`sc-option${index === active ? ' sc-option-active' : ''}`}
+              onMouseEnter={() => setActive(index)}
+              onClick={() => {
+                onChange(item.id)
+                setOpen(false)
+              }}
+            >
+              <span>{item.name}</span>
+              {item.detail && <small>{item.detail}</small>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
 }

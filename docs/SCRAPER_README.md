@@ -29,22 +29,28 @@ Use the Scraper when the in-app Google Search source keeps hitting Google's chec
 In **New Search**, choose the niche, state, and locations, then select **Send to LeadsGhr Scraper** (next to **Search contractors**). LeadsGhr:
 
 - creates a search run (source **Google Search**) in the local database,
-- writes `job.json` to the Scraper's data folder: one search per location, `<niche> in <place>`,
+- adds a job to `jobs.json` in the Scraper's data folder: one search per location, `<niche> in <place>`,
 - opens **Scraper Results** for that run.
 
-Sending a new job replaces the previous one; **Scraper Results** for the old job then says so.
+Every job you send is **saved in a list** (newest first, up to 50), so you can send several now and run them later, one at a time, in any order.
 
 ### 3. Run it in Chrome
 
 Click the Scraper's toolbar icon. The **popup** is a summary, styled like LeadsGhr Mailer's:
 
-- the job (niche, state, number of locations),
+- a **Job** dropdown (like the Mailer's template picker) listing the saved jobs by niche, state, and number of locations, with the date each was sent; pick the one to run,
 - **Search n of m** with a progress bar and the time taken,
 - businesses, with website, and ads skipped,
 - the current status line,
 - **Start scraping** (then **Pause**, or **Resume scraping** after a pause) and a square **Stop** button.
 
-The **settings page** (the gear) has the full detail: the **Data folder** card, the **Search job** card with the same controls, counts, and progress, and a **Locations** table with every selected location, its search, its status (Waiting, Reading page n, Done, Paused here, Stopped by Google), and the businesses found.
+The **settings page** (the gear) has the full detail:
+
+- the **Data folder** card,
+- a **Jobs** table with every saved job: when it was sent, searches done, status (Not started, Running, Paused, Stopped by Google, Finished), businesses found, and a remove button. Select a row to pick that job,
+- the picked job's card with the same controls, counts, and progress, and its **Locations** table with every location, its search, its status (Waiting, Reading page n, Done, Paused here, Stopped by Google), and the businesses found.
+
+Each job keeps its own progress, so you can pause one, run another, and resume the first later from where it stopped. Only one job runs at a time: while it runs, the picker shows that job and is locked. **Removing** a job only takes it off the Scraper's list; the desktop run keeps the businesses already saved (its **Scraper Results** then says it no longer updates).
 
 The run happens on the settings page, which must stay open while the Scraper works. **Start scraping** in the popup opens it in the background when needed; Pause and Stop in the popup control it.
 
@@ -79,15 +85,16 @@ The table has a search box and a Source column. **Show businesses without a webs
 
 | File | Written by | Contents |
 | --- | --- | --- |
-| `job.json` | Desktop app | The searches to run and the run they are saved into |
-| `progress.json` | Scraper | The search being read, and why it stopped (paused, stopped, blocked by Google, finished) |
+| `jobs.json` | Desktop app | The saved jobs, newest first: each job's searches and the run they are saved into |
+| `jobs-removed.json` | Scraper | Ids of jobs removed from the list in the Scraper |
+| `progress/<jobId>.json` | Scraper | That job's search being read, and why it stopped (paused, stopped, blocked by Google, finished) |
 | `results/<jobId>/<n>.json` | Scraper | The businesses found for search n, rewritten after every page |
 
-The formats and limits are in `packages/schemas/src/scraper.ts` (tested in `packages/schemas/tests/scraper.test.ts`). The desktop side is `apps/desktop/src/scraper-bridge.ts`; the screens are `packages/app/src/scraper-extension-page.tsx` (download) and `packages/app/src/scraper-results-page.tsx` (results). Nothing the Scraper finds is sent to Supabase; only the license check talks to it.
+Earlier versions kept a single `job.json` and `progress.json`; they are still read, and the next job sent moves the old job into `jobs.json`. The formats and limits are in `packages/schemas/src/scraper.ts` (tested in `packages/schemas/tests/scraper.test.ts`). The desktop side is `apps/desktop/src/scraper-bridge.ts`; the screens are `packages/app/src/scraper-extension-page.tsx` (download) and `packages/app/src/scraper-results-page.tsx` (results). Nothing the Scraper finds is sent to Supabase; only the license check talks to it.
 
 ## Limits
 
 - Google may still show its check page, especially for long jobs; split large jobs into smaller ones and run them at different times.
 - The Scraper runs while its settings tab stays open; closing that tab stops the run (resume later).
-- Only one job at a time: sending a new job from the desktop app replaces the current one.
+- One job runs at a time; the others wait in the list. The list keeps the 50 newest jobs.
 - The `scraper` license slot needs the updated `license` Edge Function (`supabase/functions/license`), deployed by pushing.

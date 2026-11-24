@@ -1,19 +1,27 @@
 import { BrowserWindow, ipcMain, shell } from 'electron'
 import { randomUUID } from 'node:crypto'
 import { existsSync } from 'node:fs'
-import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import {
   createCrawlRunSchema,
   crawlRunIdSchema,
   SCRAPER_FORMAT_VERSION,
+  SCRAPER_JOBS_FILE,
+  SCRAPER_LEGACY_JOB_FILE,
+  SCRAPER_LEGACY_PROGRESS_FILE,
+  SCRAPER_MAX_JOBS,
+  SCRAPER_REMOVED_FILE,
   scraperJobSchema,
+  scraperProgressFile,
   scraperProgressSchema,
   scraperResultSchema,
   type CrawlRow,
   type CrawlRunDetail,
   type ScraperJob,
+  type ScraperJobList,
   type ScraperProgress,
+  visibleScraperJobs,
 } from '@leadsghr/schemas'
 import type { createCrawlRunStore } from './crawl-runs'
 import { resolveWebsite } from './maps-scan'
@@ -21,7 +29,8 @@ import { leadsGhrExtensionsDirectory } from './paths'
 
 /*
  * The desktop side of LeadsGhr Scraper (packages/schemas/src/scraper.ts describes the files). Send: New Search's
- * searches become a search run (provider "google") and job.json in the Scraper's data folder. Sync: the Crawl Results
+ * searches become a search run (provider "google") and a new job added to jobs.json in the Scraper's data folder
+ * (the extension lists the saved jobs and the user picks which one to run). Sync: the Crawl Results
  * page asks every few seconds; new or updated results/<jobId>/<n>.json files are read, each Website link is resolved
  * to the business's own address (one request per link, cached), and the businesses are saved as rows of that run.
  */
@@ -37,7 +46,24 @@ async function readJson(path: string): Promise<unknown> {
   }
 }
 
-export type ScraperSync = { progress: ScraperProgress | null; run: CrawlRunDetail | null; replaced: boolean }
+/** Write then rename, so the extension never reads a half-written file. */
+async function writeJson(name: string, value: unknown) {
+  const temporary = join(dataFolder(), `${name}.tmp`)
+  await writeFile(temporary, JSON.stringify(value, null, 2), 'utf8')
+  await rename(temporary, join(dataFolder(), name))
+}
+
+/** The jobs the extension lists (jobs.json, an older job.json, minus the ones removed in the extension). */
+async function savedJobs(): Promise<ScraperJob[]> {
+  return visibleScraperJobs(
+    await readJson(join(dataFolder(), SCRAPER_JOBS_FILE)),
+    await readJson(join(dataFolder(), SCRAPER_LEGACY_JOB_FILE)),
+    await readJson(join(dataFolder(), SCRAPER_REMOVED_FILE)),
+  )
+}
+
+/** removed: the job is no longer in the Scraper's list (removed there), so its run stops updating. */
+export type ScraperSync = { progress: ScraperProgress | null; run: CrawlRunDetail | null; removed: boolean }
 
 export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>) {
   const owner = (event: Electron.IpcMainInvokeEvent) => {
@@ -67,17 +93,24 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
       searches: run.searches.map((search, index) => ({ index, ...search })),
     })
     await mkdir(dataFolder(), { recursive: true })
-    // Write then rename, so the extension never reads a half-written job.
-    const temporary = join(dataFolder(), 'job.json.tmp')
-    await writeFile(temporary, JSON.stringify(job, null, 2), 'utf8')
-    await rename(temporary, join(dataFolder(), 'job.json'))
+    // Add the job to the saved list (newest first). An older single job.json moves into the list.
+    const list: ScraperJobList = {
+      version: SCRAPER_FORMAT_VERSION,
+      jobs: [job, ...(await savedJobs())].slice(0, SCRAPER_MAX_JOBS),
+    }
+    await writeJson(SCRAPER_JOBS_FILE, list)
+    await rm(join(dataFolder(), SCRAPER_LEGACY_JOB_FILE), { force: true })
     return { jobId: job.id, runId: created.id }
   })
 
   async function sync(jobId: string): Promise<ScraperSync> {
-    const job = scraperJobSchema.safeParse(await readJson(join(dataFolder(), 'job.json')))
-    if (!job.success || job.data.id !== jobId) return { progress: null, run: null, replaced: true }
-    const progressFile = scraperProgressSchema.safeParse(await readJson(join(dataFolder(), 'progress.json')))
+    const found = (await savedJobs()).find((item) => item.id === jobId)
+    if (!found) return { progress: null, run: null, removed: true }
+    const job = { data: found }
+    // The job's own status file; earlier versions wrote a single progress.json.
+    let progressFile = scraperProgressSchema.safeParse(await readJson(join(dataFolder(), scraperProgressFile(jobId))))
+    if (!progressFile.success)
+      progressFile = scraperProgressSchema.safeParse(await readJson(join(dataFolder(), SCRAPER_LEGACY_PROGRESS_FILE)))
     const progress = progressFile.success && progressFile.data.jobId === jobId ? progressFile.data : null
     const folder = join(dataFolder(), 'results', jobId)
     const files = existsSync(folder) ? (await readdir(folder)).filter((name) => name.endsWith('.json')) : []
@@ -122,7 +155,7 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
       status: finished ? 'completed' : progress?.state === 'blocked' || progress?.state === 'stopped' ? 'stopped' : 'running',
       error: progress?.state === 'blocked' ? progress.message : undefined,
     })
-    return { progress, run: store.get(job.data.runId), replaced: false }
+    return { progress, run: store.get(job.data.runId), removed: false }
   }
 
   ipcMain.handle('leadsghr:scraper:sync', async (event, input: unknown) => {

@@ -3,53 +3,81 @@ import './scraper.css'
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { LicenseGate } from '@leadsghr/license/extension'
-import type { ScraperJob } from '@leadsghr/schemas'
+import { scraperJobTitle, type ScraperJob } from '@leadsghr/schemas'
 import { dataFolderState, type DataFolderState } from './data-folder'
-import { finishedSearches, PROGRESS_KEY } from './engine'
-import { icons } from './parts'
-import { elapsedClock, isLive, readJob, sendCommand, startRun, type StoredProgress } from './state'
+import { finishedSearches } from './engine'
+import { icons, JobSelect } from './parts'
+import {
+  elapsedClock,
+  isLive,
+  PROGRESS_KEY,
+  readJobProgress,
+  readJobs,
+  selectedJobId,
+  selectJob,
+  sendCommand,
+  startRun,
+  type StoredProgress,
+} from './state'
 
 /**
- * The toolbar popup: a summary only (job, progress, counts) with Start, Pause, and Stop, like LeadsGhr Mailer's popup.
- * The full list of locations and the data folder are on the settings page (the gear). The run itself happens on the
- * settings page, which the popup opens in the background when needed.
+ * The toolbar popup: pick one of the saved jobs (sent from LeadsGhr) and see its summary (progress and counts), with
+ * Start, Pause, and Stop, like LeadsGhr Mailer's popup. The full list of jobs and locations and the data folder are on
+ * the settings page (the gear). The run itself happens on the settings page, which the popup opens in the background
+ * when needed. While a job runs, the picker shows that job and is locked.
  */
 function Popup() {
   const [folder, setFolder] = useState<DataFolderState | null>(null)
-  const [job, setJob] = useState<ScraperJob | null | undefined>(undefined)
-  const [done, setDone] = useState(0)
+  const [jobs, setJobs] = useState<ScraperJob[] | undefined>(undefined)
+  const [selected, setSelected] = useState('')
+  const [live, setLive] = useState<StoredProgress | null>(null)
   const [progress, setProgress] = useState<StoredProgress | null>(null)
+  const [done, setDone] = useState(0)
   const [now, setNow] = useState(Date.now())
+
+  async function show(jobId: string) {
+    setSelected(jobId)
+    setProgress(jobId ? await readJobProgress(jobId) : null)
+    setDone(jobId ? (await finishedSearches(jobId)).size : 0)
+  }
 
   useEffect(() => {
     void (async () => {
       setFolder(await dataFolderState())
-      const loaded = await readJob()
-      setJob(loaded)
-      if (loaded) setDone((await finishedSearches(loaded.id)).size)
-      const saved = (await chrome.storage.local.get(PROGRESS_KEY))[PROGRESS_KEY] as StoredProgress | undefined
-      if (loaded && saved?.jobId === loaded.id) setProgress(saved)
+      const loaded = await readJobs()
+      setJobs(loaded)
+      const running = (await chrome.storage.local.get(PROGRESS_KEY))[PROGRESS_KEY] as StoredProgress | undefined
+      setLive(running ?? null)
+      // A running job is always the one shown.
+      await show(isLive(running) && loaded.some((job) => job.id === running!.jobId) ? running!.jobId : await selectedJobId(loaded))
     })()
-    const listener = (changes: Record<string, chrome.storage.StorageChange>) => {
-      const next = changes[PROGRESS_KEY]?.newValue as StoredProgress | undefined
-      if (next) setProgress(next)
-      if (next?.jobId) void finishedSearches(next.jobId).then((set) => setDone(set.size))
-    }
-    chrome.storage.onChanged.addListener(listener)
     const timer = setInterval(() => setNow(Date.now()), 1000)
-    return () => {
-      chrome.storage.onChanged.removeListener(listener)
-      clearInterval(timer)
-    }
+    return () => clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    const listener = (changes: Record<string, chrome.storage.StorageChange>) => {
+      const next = changes[PROGRESS_KEY]?.newValue as StoredProgress | undefined
+      if (!next) return
+      setLive(next)
+      if (next.jobId === selected) {
+        setProgress(next)
+        void finishedSearches(next.jobId).then((set) => setDone(set.size))
+      } else if (isLive(next)) void show(next.jobId)
+    }
+    chrome.storage.onChanged.addListener(listener)
+    return () => chrome.storage.onChanged.removeListener(listener)
+  }, [selected])
+
+  const job = jobs?.find((item) => item.id === selected) ?? null
+  const running = isLive(live)
+  const active = running && live?.jobId === selected
   const state = progress?.state
-  const active = isLive(progress)
   const total = job?.searches.length ?? 0
   const finished = !!job && done >= total
   const counts = progress?.counts ?? { businesses: 0, withWebsite: 0, adsSkipped: 0, perSearch: {} }
   const current = Math.min((active ? (progress?.current ?? done) : done) + 1, total)
-  const canStart = folder === 'connected' && !!job && !finished && !active
+  const canStart = folder === 'connected' && !!job && !finished && !running
 
   return (
     <div className="sc-popup">
@@ -69,46 +97,63 @@ function Popup() {
             </button>
           </div>
         )}
-        {job === undefined ? (
+        {jobs === undefined ? (
           <p className="sc-muted">Loading...</p>
-        ) : !job ? (
+        ) : !jobs.length ? (
           <div className="sc-empty-line">
-            <b>No search job yet</b>
+            <b>No saved jobs yet</b>
             <span>
               In LeadsGhr, open <b>New Search</b>, choose the niche, state, and locations, then select <b>Send to LeadsGhr Scraper</b>.
+              Each job you send is saved here.
             </span>
           </div>
         ) : (
           <>
             <section>
-              <h2 className="sc-section-title">Search job</h2>
+              <h2 className="sc-section-title" id="job-label">
+                Job
+              </h2>
+              <JobSelect
+                labelledBy="job-label"
+                options={jobs.map((item) => ({ id: item.id, name: scraperJobTitle(item), detail: new Date(item.createdAt).toLocaleString() }))}
+                value={selected}
+                disabled={running}
+                onChange={(id) => {
+                  void selectJob(id)
+                  void show(id)
+                }}
+              />
               <p className="sc-job-line">
-                {job.niches.join(', ')} · {job.states.join(', ')} · {total} {total === 1 ? 'location' : 'locations'}
+                {jobs.length} saved {jobs.length === 1 ? 'job' : 'jobs'}
+                {job ? ` · sent ${new Date(job.createdAt).toLocaleDateString()}` : ''}
+                {running && !active ? ' · another job is running' : ''}
               </p>
             </section>
-            <section className="sc-summary">
-              <div className="sc-pt">
-                <b>{finished ? `All ${total} searches finished` : `Search ${current} of ${total}`}</b>
-                <span>{progress?.startedAt && (active || finished) ? elapsedClock((finished ? Date.parse(progress.updatedAt) : now) - progress.startedAt) : ''}</span>
-              </div>
-              <div className="sc-bar">
-                <i style={{ width: `${total ? Math.round((done / total) * 100) : 0}%` }} />
-              </div>
-              <div className="sc-stats">
-                <div>
-                  <b>{counts.businesses}</b>
-                  <small>businesses</small>
+            {job && (
+              <section className="sc-summary">
+                <div className="sc-pt">
+                  <b>{finished ? `All ${total} searches finished` : `Search ${current} of ${total}`}</b>
+                  <span>{progress?.startedAt && (active || finished) ? elapsedClock((finished ? Date.parse(progress.updatedAt) : now) - progress.startedAt) : ''}</span>
                 </div>
-                <div>
-                  <b>{counts.withWebsite}</b>
-                  <small>with website</small>
+                <div className="sc-bar">
+                  <i style={{ width: `${total ? Math.round((done / total) * 100) : 0}%` }} />
                 </div>
-                <div>
-                  <b>{counts.adsSkipped}</b>
-                  <small>ads skipped</small>
+                <div className="sc-stats">
+                  <div>
+                    <b>{counts.businesses}</b>
+                    <small>businesses</small>
+                  </div>
+                  <div>
+                    <b>{counts.withWebsite}</b>
+                    <small>with website</small>
+                  </div>
+                  <div>
+                    <b>{counts.adsSkipped}</b>
+                    <small>ads skipped</small>
+                  </div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
             {progress?.message && (
               <p className={`sc-status${state === 'blocked' ? ' sc-status-warn' : ''}`}>
                 {active && <i className="sc-dot" />}
@@ -126,7 +171,7 @@ function Popup() {
             {icons.pause}Pause
           </button>
         ) : (
-          <button type="button" className="sc-primary" disabled={!canStart} onClick={() => void startRun()}>
+          <button type="button" className="sc-primary" disabled={!canStart} onClick={() => void startRun(selected)}>
             {icons.play}
             {done && !finished ? 'Resume scraping' : 'Start scraping'}
           </button>
