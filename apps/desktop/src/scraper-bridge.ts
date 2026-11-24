@@ -20,12 +20,14 @@ import {
   type CrawlRunDetail,
   type ScraperJob,
   type ScraperJobList,
+  type ScraperJobSummary,
   type ScraperProgress,
+  scraperJobTitle,
   searchTimingFrom,
   visibleScraperJobs,
 } from '@leadsghr/schemas'
 import type { createCrawlRunStore } from './crawl-runs'
-import { resolveWebsite } from './maps-scan'
+import { lookUpWebsite } from './maps-scan'
 import { leadsGhrExtensionsDirectory } from './paths'
 
 /*
@@ -47,6 +49,10 @@ async function readJson(path: string): Promise<unknown> {
   }
 }
 
+/** The row id of a business found by the Scraper (a Google Maps search link for its name and address or place). */
+const businessMapsUrl = (name: string, address: string, place: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${name} ${address || place}`)}`
+
 /** Write then rename, so the extension never reads a half-written file. */
 async function writeJson(name: string, value: unknown) {
   const temporary = join(dataFolder(), `${name}.tmp`)
@@ -63,8 +69,28 @@ async function savedJobs(): Promise<ScraperJob[]> {
   )
 }
 
-/** removed: the job is no longer in the Scraper's list (removed there), so its run stops updating. */
-export type ScraperSync = { progress: ScraperProgress | null; run: CrawlRunDetail | null; removed: boolean }
+/** removed: the job is no longer in the Scraper's list (removed there), so its run stops updating.
+ *  websitesPending: Website links not looked up yet (they are looked up a few at a time, see WEBSITE_LOOKUPS). */
+export type ScraperSync = {
+  progress: ScraperProgress | null
+  run: CrawlRunDetail | null
+  removed: boolean
+  websitesPending: number
+}
+
+/*
+ * Website links. Each Website button on Google's list is a google.com/goto redirect; the desktop app follows it to
+ * find the business's own address. Asking Google for many in a row gets refused (it answers with its check page), so
+ * lookups are paced: at most WEBSITE_LOOKUPS per sync, WEBSITE_GAP_MS apart, a pause of WEBSITE_BACKOFF_MS when
+ * Google refuses, and a refused link is tried again later instead of being saved as "no website".
+ */
+const WEBSITE_LOOKUPS = 12
+const WEBSITE_GAP_MS = 1200
+const WEBSITE_BACKOFF_MS = 90_000
+const WEBSITE_RETRY_MS = 30_000
+/** How often saved jobs are synced in the background, so results and websites arrive without the page open. */
+const BACKGROUND_SYNC_MS = 20_000
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>) {
   const owner = (event: Electron.IpcMainInvokeEvent) => {
@@ -72,8 +98,32 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
   }
   // result file path -> the updatedAt already imported, so a sync only reads what changed
   const imported = new Map<string, string>()
+  // Website link -> the business's own address ('' when it has none); links Google refused are not in here yet.
   const websites = new Map<string, string>()
+  const retryAt = new Map<string, number>()
+  let lookupsPausedUntil = 0
   const syncing = new Map<string, Promise<ScraperSync>>()
+
+  /** Looks up one Website link if the pacing allows; returns true when its address is now known. */
+  async function lookUp(link: string, budget: { left: number }): Promise<boolean> {
+    if (websites.has(link)) return true
+    const now = Date.now()
+    if (budget.left <= 0 || now < lookupsPausedUntil || (retryAt.get(link) ?? 0) > now) return false
+    budget.left--
+    const found = await lookUpWebsite(link, new AbortController().signal)
+    await sleep(WEBSITE_GAP_MS)
+    if ('website' in found) {
+      websites.set(link, found.website)
+      retryAt.delete(link)
+      return true
+    }
+    retryAt.set(link, Date.now() + WEBSITE_RETRY_MS)
+    if (found.blocked) {
+      lookupsPausedUntil = Date.now() + WEBSITE_BACKOFF_MS
+      budget.left = 0
+    }
+    return false
+  }
 
   ipcMain.handle('leadsghr:scraper:send-job', async (event, input: unknown) => {
     owner(event)
@@ -106,34 +156,98 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
     return { jobId: job.id, runId: created.id }
   })
 
-  async function sync(jobId: string): Promise<ScraperSync> {
-    const found = (await savedJobs()).find((item) => item.id === jobId)
-    if (!found) return { progress: null, run: null, removed: true }
-    const job = { data: found }
+  async function readProgress(jobId: string): Promise<ScraperProgress | null> {
     // The job's own status file; earlier versions wrote a single progress.json.
-    let progressFile = scraperProgressSchema.safeParse(await readJson(join(dataFolder(), scraperProgressFile(jobId))))
-    if (!progressFile.success)
-      progressFile = scraperProgressSchema.safeParse(await readJson(join(dataFolder(), SCRAPER_LEGACY_PROGRESS_FILE)))
-    const progress = progressFile.success && progressFile.data.jobId === jobId ? progressFile.data : null
+    let file = scraperProgressSchema.safeParse(await readJson(join(dataFolder(), scraperProgressFile(jobId))))
+    if (!file.success) file = scraperProgressSchema.safeParse(await readJson(join(dataFolder(), SCRAPER_LEGACY_PROGRESS_FILE)))
+    return file.success && file.data.jobId === jobId ? file.data : null
+  }
+
+  async function resultFiles(jobId: string): Promise<string[]> {
     const folder = join(dataFolder(), 'results', jobId)
-    const files = existsSync(folder) ? (await readdir(folder)).filter((name) => name.endsWith('.json')) : []
-    const never = new AbortController().signal
+    return existsSync(folder) ? (await readdir(folder)).filter((name) => name.endsWith('.json')) : []
+  }
+
+  /** A saved job's numbers for the LeadsGhr Scraper page (reads files and the run; never looks anything up). */
+  async function summarize(job: ScraperJob): Promise<ScraperJobSummary | null> {
+    const run = store.get(job.runId)
+    if (!run) return null
+    const progress = await readProgress(job.id)
+    const rows = new Map(run.rows.map((row) => [row.id, row]))
+    let searchesDone = 0
+    const links = new Set<string>()
+    let websitesPending = 0
+    let websitesFound = 0
+    for (const name of await resultFiles(job.id)) {
+      const result = scraperResultSchema.safeParse(await readJson(join(dataFolder(), 'results', job.id, name)))
+      if (!result.success || result.data.jobId !== job.id) continue
+      if (result.data.complete) searchesDone++
+      for (const business of result.data.businesses) {
+        if (!business.websiteLink || links.has(business.websiteLink)) continue
+        links.add(business.websiteLink)
+        const saved =
+          rows.get(businessMapsUrl(business.name, business.address, result.data.place))?.website ||
+          websites.get(business.websiteLink)
+        // Counted per Website link, so a business saved twice (a location read again after Resume) counts once.
+        if (saved) websitesFound++
+        else if (!websites.has(business.websiteLink)) websitesPending++
+      }
+    }
+    return {
+      jobId: job.id,
+      runId: job.runId,
+      title: scraperJobTitle(job),
+      createdAt: job.createdAt,
+      searches: job.searches.length,
+      searchesDone,
+      state: progress?.state ?? 'not-started',
+      message: progress?.message ?? '',
+      businesses: run.rows.length,
+      websiteLinks: links.size,
+      websitesFound,
+      websitesPending,
+    }
+  }
+
+  ipcMain.handle('leadsghr:scraper:list-jobs', async (event) => {
+    owner(event)
+    const summaries = await Promise.all((await savedJobs()).map((job) => summarize(job)))
+    return summaries.filter((item): item is ScraperJobSummary => item !== null)
+  })
+
+  /** withRun: return the run's rows (the page needs them; the background sync does not). */
+  async function sync(jobId: string, withRun = true): Promise<ScraperSync> {
+    const found = (await savedJobs()).find((item) => item.id === jobId)
+    const saved = found ? store.get(found.runId) : null
+    if (!found || !saved) return { progress: null, run: null, removed: true, websitesPending: 0 }
+    const job = { data: found }
+    // Websites already saved (for example before a restart) are not looked up again.
+    const savedRows = new Map(saved.rows.map((row) => [row.id, row]))
+    const progress = await readProgress(jobId)
+    const files = await resultFiles(jobId)
+    const folder = join(dataFolder(), 'results', jobId)
     let complete = 0
+    let websitesPending = 0
+    const budget = { left: WEBSITE_LOOKUPS }
     for (const name of files.sort()) {
       const path = join(folder, name)
       const result = scraperResultSchema.safeParse(await readJson(path))
       if (!result.success || result.data.jobId !== jobId) continue
       if (result.data.complete) complete++
-      if (imported.get(path) === result.data.updatedAt) continue
+      // A file already imported is read again only for its Website links still being looked up.
+      const changed = imported.get(path) !== result.data.updatedAt
       const search = job.data.searches.find((item) => item.index === result.data.index)
       for (const business of result.data.businesses) {
-        let website = ''
-        if (business.websiteLink) {
-          if (!websites.has(business.websiteLink))
-            websites.set(business.websiteLink, await resolveWebsite(business.websiteLink, never))
-          website = websites.get(business.websiteLink) ?? ''
-        }
-        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${business.name} ${business.address || result.data.place}`)}`
+        const link = business.websiteLink
+        const mapsUrl = businessMapsUrl(business.name, business.address, result.data.place)
+        const savedWebsite = savedRows.get(mapsUrl)?.website
+        if (link && savedWebsite && !websites.has(link)) websites.set(link, savedWebsite)
+        const known = !link || websites.has(link)
+        if (!changed && known) continue
+        const resolvedNow = !known && (await lookUp(link, budget))
+        if (link && !websites.has(link)) websitesPending++
+        if (!changed && !resolvedNow) continue
+        const website = link ? (websites.get(link) ?? '') : ''
         const row: CrawlRow = {
           id: mapsUrl,
           niche: search?.niche,
@@ -158,20 +272,36 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
       status: finished ? 'completed' : progress?.state === 'blocked' || progress?.state === 'stopped' ? 'stopped' : 'running',
       error: progress?.state === 'blocked' ? progress.message : undefined,
     })
-    return { progress, run: store.get(job.data.runId), removed: false }
+    return { progress, run: withRun ? store.get(job.data.runId) : null, removed: false, websitesPending }
+  }
+
+  // One sync per job at a time; a request during a sync waits for that one.
+  const syncOnce = (jobId: string, withRun = true) => {
+    let task = syncing.get(jobId)
+    if (!task) {
+      task = sync(jobId, withRun).finally(() => syncing.delete(jobId))
+      syncing.set(jobId, task)
+    }
+    return task
   }
 
   ipcMain.handle('leadsghr:scraper:sync', async (event, input: unknown) => {
     owner(event)
-    const jobId = crawlRunIdSchema.parse(input)
-    // One sync per job at a time; a request during a sync waits for that one.
-    let task = syncing.get(jobId)
-    if (!task) {
-      task = sync(jobId).finally(() => syncing.delete(jobId))
-      syncing.set(jobId, task)
-    }
-    return task
+    return syncOnce(crawlRunIdSchema.parse(input))
   })
+
+  // Background sync of every saved job, so new results and the remaining Website lookups are saved even when
+  // Scraper Results is not open (for example jobs sent earlier, or after a restart). Jobs run one after another.
+  let background = false
+  setInterval(() => {
+    if (background || !existsSync(dataFolder())) return
+    background = true
+    void (async () => {
+      for (const job of await savedJobs()) await syncOnce(job.id, false).catch(() => undefined)
+    })().finally(() => {
+      background = false
+    })
+  }, BACKGROUND_SYNC_MS)
 
   ipcMain.handle('leadsghr:scraper:open-folder', async (event) => {
     owner(event)

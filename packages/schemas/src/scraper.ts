@@ -125,6 +125,25 @@ export const scraperProgressSchema = z.object({
 })
 export type ScraperProgress = z.infer<typeof scraperProgressSchema>
 
+/** One saved job as listed on the desktop app's LeadsGhr Scraper page. */
+export type ScraperJobSummary = {
+  jobId: string
+  runId: string
+  title: string
+  createdAt: string
+  searches: number
+  searchesDone: number
+  /** The Scraper's last status for the job, or `not-started`. */
+  state: ScraperProgress['state'] | 'not-started'
+  message: string
+  /** Businesses saved in the desktop run. */
+  businesses: number
+  /** Businesses whose card had a Website button, those whose address is saved, and those still being looked up. */
+  websiteLinks: number
+  websitesFound: number
+  websitesPending: number
+}
+
 /** The Google Search business list (what "More businesses" opens) for one search. */
 export const scraperPlacesUrl = (query: string) =>
   `https://www.google.com/search?q=${encodeURIComponent(query)}&udm=local&hl=en`

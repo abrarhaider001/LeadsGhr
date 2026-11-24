@@ -274,19 +274,29 @@ const isGoogleHost = (hostname: string) => /(^|\.)google\.[a-z.]+$/i.test(hostna
 let lastGoogleSearchAt = 0
 let googleSearchReads = 0
 
+/** What a Website link lookup found: the business's address, no website, or "try again later" (Google refused or the
+ *  network failed), so a refused lookup is never mistaken for a business without a website. */
+export type WebsiteLookup = { website: string } | { retry: true; blocked: boolean }
+
 /**
  * Turns a Google Search Website link (an encoded /goto or /url redirect) into the business's own address by reading
- * the redirect target, without opening the business site. Returns '' when it is not a public http(s) website.
+ * the redirect target, without opening the business site. Returns '' when it is not a public http(s) website and
+ * { retry } when Google answered with its check page, a rate limit, or a server error, or the request failed.
  */
-export async function resolveWebsite(link: string, signal: AbortSignal): Promise<string> {
+export async function lookUpWebsite(link: string, signal: AbortSignal): Promise<WebsiteLookup> {
+  let start: URL
   try {
-    const start = new URL(link)
-    if (!isGoogleHost(start.hostname))
-      return ['http:', 'https:'].includes(start.protocol) ? cleanWebsite(link) : ''
-    const direct = start.searchParams.get('adurl') || start.searchParams.get('q')
-    let target: URL | undefined
-    if (direct && /^https?:\/\//i.test(direct)) target = new URL(direct)
-    else {
+    start = new URL(link)
+  } catch {
+    return { website: '' }
+  }
+  if (!isGoogleHost(start.hostname))
+    return { website: ['http:', 'https:'].includes(start.protocol) ? cleanWebsite(link) : '' }
+  const direct = start.searchParams.get('adurl') || start.searchParams.get('q')
+  let target: URL | undefined
+  if (direct && /^https?:\/\//i.test(direct)) target = new URL(direct)
+  else {
+    try {
       const response = await fetch(start, {
         redirect: 'manual',
         signal,
@@ -294,20 +304,23 @@ export async function resolveWebsite(link: string, signal: AbortSignal): Promise
       })
       const location = response.headers.get('location')
       await response.body?.cancel().catch(() => undefined)
+      if (response.status === 429 || response.status >= 500) return { retry: true, blocked: response.status === 429 }
       if (location) target = new URL(location, start)
+    } catch {
+      return { retry: true, blocked: false }
     }
-    if (
-      !target ||
-      !['http:', 'https:'].includes(target.protocol) ||
-      target.username ||
-      target.password ||
-      isGoogleHost(target.hostname)
-    )
-      return ''
-    return cleanWebsite(target.toString())
-  } catch {
-    return ''
   }
+  // Google sends refused requests to its own pages (the "unusual traffic" check): try again later.
+  if (target && isGoogleHost(target.hostname)) return { retry: true, blocked: true }
+  if (!target || !['http:', 'https:'].includes(target.protocol) || target.username || target.password)
+    return { website: '' }
+  return { website: cleanWebsite(target.toString()) }
+}
+
+/** lookUpWebsite with "try again later" treated as no website (for the in-app search, which reads each link once). */
+export async function resolveWebsite(link: string, signal: AbortSignal): Promise<string> {
+  const found = await lookUpWebsite(link, signal)
+  return 'website' in found ? found.website : ''
 }
 
 export async function scanMaps(

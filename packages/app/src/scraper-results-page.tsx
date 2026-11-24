@@ -6,7 +6,7 @@ import { prepareSearches, stateRange } from './search-results-page'
 
 type ScraperBridge = {
   sendScraperJob(input: unknown): Promise<{ jobId: string; runId: string }>
-  syncScraperJob(jobId: string): Promise<{ progress: ScraperProgress | null; run: { rows: CrawlRow[] } | null; removed: boolean }>
+  syncScraperJob(jobId: string): Promise<{ progress: ScraperProgress | null; run: { rows: CrawlRow[] } | null; removed: boolean; websitesPending?: number }>
   openScraperFolder(): Promise<void>
   openWebsite(url: string): Promise<void>
 }
@@ -15,34 +15,43 @@ const scraperBridge = () => (window as Window & { leadsGhrDesktop?: Partial<Scra
 const SYNC_MS = 3000
 
 /**
- * Crawl Results for a LeadsGhr Scraper run: sends New Search's searches to the Chrome extension as a job, then reads
- * the results it saves (every few seconds) into a search run, shown in the usual table with the search box and the
- * Source column. The extension does the searching; this page only sends the job and shows what has arrived.
+ * Crawl Results for a LeadsGhr Scraper run. From New Search (`criteria`) it sends the searches to the Chrome extension
+ * as a new job; from the job list on the LeadsGhr Scraper page (`existing`) it opens a job sent earlier. Either way it
+ * then reads the results the Scraper saves (every few seconds) into the job's search run, shown in the usual table
+ * with the search box and the Source column. The extension does the searching; this page only shows what arrived.
  */
 export function ScraperResultsPage({
   criteria,
+  existing,
   preferences,
   onBack,
+  backLabel = 'New Search',
   onSaved,
 }: {
-  criteria: SearchCriteria
+  criteria?: SearchCriteria
+  existing?: { jobId: string; runId: string; searches: number }
   preferences: DesktopPreferences
   onBack(): void
+  backLabel?: string
   onSaved?(): void
 }) {
-  const [job, setJob] = useState<{ jobId: string; runId: string } | null>(null)
+  const [job, setJob] = useState<{ jobId: string; runId: string } | null>(existing ?? null)
   const [progress, setProgress] = useState<ScraperProgress | null>(null)
   const [rows, setRows] = useState<CrawlRow[]>([])
   const [error, setError] = useState('')
   const [removed, setRemoved] = useState(false)
+  const [websitesPending, setWebsitesPending] = useState(0)
   const [query, setQuery] = useState('')
   const [exported, setExported] = useState<CrawlExport | null>(null)
   const sent = useRef(false)
-  const searches = useMemo(() => prepareSearches(criteria, preferences.useNicheKeywords), [criteria, preferences.useNicheKeywords])
+  const searches = useMemo(
+    () => (criteria ? prepareSearches(criteria, preferences.useNicheKeywords) : []),
+    [criteria, preferences.useNicheKeywords],
+  )
 
-  // Send the job once.
+  // Send the job once (a job opened from the list was sent before).
   useEffect(() => {
-    if (sent.current) return
+    if (sent.current || existing || !criteria) return
     sent.current = true
     const bridge = scraperBridge()
     if (typeof bridge?.sendScraperJob !== 'function') {
@@ -56,7 +65,7 @@ export function ScraperResultsPage({
         onSaved?.()
       })
       .catch((failure) => setError(String(failure).replace(/^Error:\s*(Error invoking remote method '[^']+': )?(Error: )?/, '')))
-  }, [criteria, preferences, searches, onSaved])
+  }, [criteria, existing, preferences, searches, onSaved])
 
   // Then read the Scraper's results every few seconds until the job is finished.
   useEffect(() => {
@@ -70,8 +79,10 @@ export function ScraperResultsPage({
         setRemoved(sync.removed)
         setProgress(sync.progress)
         if (sync.run) setRows(sync.run.rows)
+        setWebsitesPending(sync.websitesPending ?? 0)
         if (sync.removed) return
-        if (sync.progress?.state === 'finished') {
+        // Keep reading after the Scraper finishes while Website links are still being looked up.
+        if (sync.progress?.state === 'finished' && !sync.websitesPending) {
           onSaved?.()
           return
         }
@@ -98,7 +109,7 @@ export function ScraperResultsPage({
       })
   }, [rows, query, preferences.showListingsWithoutWebsite])
 
-  const total = searches.length
+  const total = existing?.searches ?? searches.length
   const state = progress?.state
   const status = error
     ? error
@@ -109,6 +120,9 @@ export function ScraperResultsPage({
         : !progress
           ? `Job added to LeadsGhr Scraper's job list (${total} ${total === 1 ? 'search' : 'searches'}). In Chrome, open LeadsGhr Scraper, pick this job, and select Start scraping; results appear here as they are saved.`
           : progress.message
+  const websitesNote = websitesPending
+    ? ` Looking up ${websitesPending.toLocaleString()} more ${websitesPending === 1 ? 'website' : 'websites'} (a few at a time, so Google does not refuse them); they appear here as they are found.`
+    : ''
 
   async function exportCsv() {
     if (!job) return
@@ -123,7 +137,7 @@ export function ScraperResultsPage({
     <section className="la-maps-results la-scraper-results">
       <div className="la-scraper-head">
         <button type="button" className="la-scraper-back" onClick={onBack}>
-          <Icon name="chevron" size={14} /> New Search
+          <Icon name="chevron" size={14} /> {backLabel}
         </button>
         <span className={`la-scraper-state${state === 'blocked' ? ' is-warning' : state === 'finished' ? ' is-done' : ''}`}>
           <NavIcon name="scraper" size={16} />
@@ -139,8 +153,9 @@ export function ScraperResultsPage({
         </span>
       </div>
       <p className={`la-maps-scan-status${error ? ' la-scraper-error' : ''}`} aria-live="polite">
-        {!error && state !== 'finished' && <span className="la-crawler-dot" />}
+        {!error && (state !== 'finished' || websitesPending > 0) && <span className="la-crawler-dot" />}
         {status}
+        {!error && !removed && websitesNote}
       </p>
       {exported && (
         <div className="la-crawl-export-note">

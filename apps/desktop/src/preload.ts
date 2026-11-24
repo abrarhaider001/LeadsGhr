@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   syncScraperJob: (jobId: unknown) =>
     ipcRenderer.invoke('leadsghr:scraper:sync', crawlRunIdSchema.parse(jobId)),
   openScraperFolder: () => ipcRenderer.invoke('leadsghr:scraper:open-folder'),
+  listScraperJobs: () => ipcRenderer.invoke('leadsghr:scraper:list-jobs'),
   onDisplaySizeChanged: (callback: (size: number) => void) => {
     const listener = (_event: unknown, size: unknown) => {
       if (typeof size === 'number') callback(size)

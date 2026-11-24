@@ -4464,7 +4464,8 @@ body {
 }
 .la-maps-table th:first-child,
 .la-maps-table td:first-child {
-  width: 45px;
+  /* Room for four-digit row numbers (1000+ results) after the cell padding. */
+  width: 64px;
 }
 .la-maps-table th,
 .la-maps-table td {
@@ -8925,6 +8926,11 @@ a {
   min-height: var(--ui-control-height-md);
   margin-right: auto;
 }
+/* Scraper Results: the search box sits right before Open data folder and Export CSV. */
+.la-scraper-results .la-result-table-toolbar .la-result-search {
+  margin-right: 0;
+  margin-left: auto;
+}
 .la-result-source {
   white-space: nowrap;
   color: var(--ui-color-text-secondary);
@@ -8988,6 +8994,10 @@ a {
 .la-scraper-state.is-done {
   background: var(--ui-color-success-soft);
   color: var(--ui-color-success);
+}
+.la-scraper-state.is-idle {
+  background: var(--ui-color-surface-muted);
+  color: var(--ui-color-text-secondary);
 }
 .la-scraper-error {
   color: var(--ui-color-danger);
@@ -9168,4 +9178,31 @@ a {
   .la-profile-option.la-timing-row {
     flex-wrap: wrap;
   }
+}
+
+/* LeadsGhr Scraper page: the job list under the setup steps. */
+.la-scraper-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+.la-scraper-jobs-table td {
+  vertical-align: middle;
+}
+.la-scraper-jobs-table td strong {
+  display: block;
+  max-width: 360px;
+}
+.la-scraper-jobs-date,
+.la-scraper-jobs-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  margin-top: var(--ui-space-1);
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+.la-scraper-jobs-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
 }

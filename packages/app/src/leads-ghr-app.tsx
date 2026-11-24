@@ -129,6 +129,8 @@ export function LeadsGhrApp() {
   const navSearchRef = useRef<HTMLInputElement>(null)
   const [filter, setFilter] = useState('all')
   const [searchCriteria, setSearchCriteria] = useState<SearchCriteria | null>(null)
+  // A Scraper job opened from the job list on the LeadsGhr Scraper page (Scraper Results then shows it without sending).
+  const [openScraperJob, setOpenScraperJob] = useState<{ jobId: string; runId: string; searches: number } | null>(null)
   const [pipelineDetails, setPipelineDetails] = useState<{
     name: string
     provider: PipelineProvider
@@ -382,7 +384,9 @@ export function LeadsGhrApp() {
                       ((page === 'Crawl Results' ||
                         page === 'New Pipeline' ||
                         page === 'Pipeline Export') &&
-                        label === searchOrigin))
+                        label === searchOrigin) ||
+                      (page === 'Scraper Results' &&
+                        label === (openScraperJob ? 'LeadsGhr Scraper' : 'New Search')))
                       ? 'page'
                       : undefined
                   }
@@ -503,7 +507,12 @@ export function LeadsGhrApp() {
           ) : page === 'Email Sending' ? (
             <EmailSendingPage />
           ) : page === 'LeadsGhr Scraper' ? (
-            <ScraperExtensionPage />
+            <ScraperExtensionPage
+              onOpenJob={(job) => {
+                setOpenScraperJob(job)
+                setPage('Scraper Results')
+              }}
+            />
           ) : page === 'Email Templates' ? (
             <EmailTemplatesPage />
           ) : page === 'Email Tracking' ? (
@@ -542,11 +551,21 @@ export function LeadsGhrApp() {
               onSendToScraper={
                 page === 'New Search'
                   ? (criteria) => {
+                      setOpenScraperJob(null)
                       setSearchCriteria(criteria)
                       setPage('Scraper Results')
                     }
                   : undefined
               }
+            />
+          ) : page === 'Scraper Results' && openScraperJob ? (
+            <ScraperResultsPage
+              key={openScraperJob.jobId}
+              existing={openScraperJob}
+              preferences={preferences}
+              backLabel="LeadsGhr Scraper"
+              onBack={() => void showPage('LeadsGhr Scraper')}
+              onSaved={refreshScraperHistory}
             />
           ) : page === 'Scraper Results' && searchCriteria ? (
             <ScraperResultsPage

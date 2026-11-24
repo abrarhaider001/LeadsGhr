@@ -197,6 +197,10 @@ export function createCrawlRunStore(db: Database.Database) {
       const merged: CrawlRow = previous
         ? {
             ...row,
+            // A later save without a website (or phone or address) never erases one already known.
+            website: row.website || previous.website,
+            phone: row.phone || previous.phone,
+            address: row.address || previous.address,
             emails: [...new Set([...previous.emails, ...row.emails])].slice(0, 1000),
             emailsScanned: previous.emailsScanned || row.emailsScanned,
             source: combineSources(previous.source, row.source),

@@ -9,6 +9,10 @@ type ExtensionInstallPageProps = {
   eyebrow?: string
   finalStep?: ReactNode
   requirement?: ReactNode
+  /** false hides the three setup cards and the note under them (LeadsGhr Scraper shows its job list instead). */
+  showSetup?: boolean
+  /** Shown after the setup note (for example LeadsGhr Scraper's job list). */
+  children?: ReactNode
 }
 
 function StepIcon({ kind }: { kind: 'download' | 'chrome' | 'mail' }) {
@@ -55,6 +59,8 @@ export function ExtensionInstallPage({
       installing.
     </>
   ),
+  showSetup = true,
+  children,
 }: ExtensionInstallPageProps) {
   const steps = [
     {
@@ -128,43 +134,48 @@ export function ExtensionInstallPage({
           </button>
         </div>
       </div>
-      <div className="la-extension-steps-heading">
-        <div>
-          <h3>Set up in three steps</h3>
-          <p>Keep the extracted folder on your computer after installing.</p>
-        </div>
-        <span>About 2 minutes</span>
-      </div>
-      <div className="la-extension-steps">
-        {steps.map((step) => (
-          <article className="la-extension-step" key={step.number}>
-            <div className="la-extension-step-top">
-              <span className="la-extension-step-icon">
-                <StepIcon kind={step.kind} />
-              </span>
-              <span className="la-extension-step-number">{step.number}</span>
+      {showSetup && (
+        <>
+          <div className="la-extension-steps-heading">
+            <div>
+              <h3>Set up in three steps</h3>
+              <p>Keep the extracted folder on your computer after installing.</p>
             </div>
-            <h4>{step.title}</h4>
-            <p>{step.details}</p>
-          </article>
-        ))}
-      </div>
-      <div className="la-extension-requirement">
-        <svg
-          width="21"
-          height="21"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 11v5m0-8h.01" />
-        </svg>
-        <p>{requirement}</p>
-      </div>
+            <span>About 2 minutes</span>
+          </div>
+          <div className="la-extension-steps">
+            {steps.map((step) => (
+              <article className="la-extension-step" key={step.number}>
+                <div className="la-extension-step-top">
+                  <span className="la-extension-step-icon">
+                    <StepIcon kind={step.kind} />
+                  </span>
+                  <span className="la-extension-step-number">{step.number}</span>
+                </div>
+                <h4>{step.title}</h4>
+                <p>{step.details}</p>
+              </article>
+            ))}
+          </div>
+          <div className="la-extension-requirement">
+            <svg
+              width="21"
+              height="21"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5m0-8h.01" />
+            </svg>
+            <p>{requirement}</p>
+          </div>
+        </>
+      )}
+      {children}
     </section>
   )
 }

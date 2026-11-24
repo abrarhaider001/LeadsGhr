@@ -71,13 +71,17 @@ If Google shows a captcha, consent, or "unusual traffic" page, the Scraper saves
 
 ### 5. See the results in the desktop app
 
-**Scraper Results** checks the data folder every 3 seconds and imports only the files that changed:
+The **LeadsGhr Scraper** page in the sidebar lists every job sent to the Scraper with its status, searches done, businesses, and websites found (and how many are still being looked up), refreshed every 5 seconds. **Open results** opens a job's Scraper Results at any time, also for jobs sent earlier.
 
-- each Website link (a Google redirect) is turned into the business's own address,
+
+**Scraper Results** checks the data folder every 3 seconds, and the desktop app also checks every saved job in the background every 20 seconds (so results and websites arrive even when the page is closed, and after a restart). Only files that changed are imported:
+
 - businesses are saved as rows of the run, with the source **Google Search**,
+- each Website link (a `google.com/goto` redirect) is turned into the business's own address. Google refuses many lookups in a row, so they are paced: at most 12 per check, 1.2 seconds apart, a 90-second pause when Google refuses, and a refused link is tried again later instead of being saved as "no website". The page says how many websites are still being looked up and keeps updating until they are done (a few minutes for a few hundred businesses),
+- a later save never erases a website, phone, or address already known,
 - the page shows the Scraper's status and progress while it runs.
 
-The table has a search box and a Source column. **Show businesses without a website** in Preferences decides whether businesses with no website are listed. **Export CSV** saves the results like any other run, and the run appears with the others in the app.
+The toolbar has the result count on the left and, on the right, the search box, **Open data folder**, and **Export CSV**. The table has a Source column. **Show businesses without a website** in Preferences decides whether businesses with no website are listed; while websites are still being looked up, those businesses count as "without a website" for a moment. **Export CSV** saves the results like any other run, and the run appears with the others in the app.
 
 ## Files (the data folder)
 
