@@ -419,13 +419,16 @@ export function LeadsGhrApp() {
                         >
                           Preferences
                         </button>
-                        <button
-                          type="button"
-                          aria-current={page === 'License' ? 'page' : undefined}
-                          onClick={() => void showPage('License')}
-                        >
-                          License
-                        </button>
+                        {/* Local mode (LEADSGHR_MODE=local) has no license, so there is no License page. */}
+                        {!(license.state === 'active' && license.local) && (
+                          <button
+                            type="button"
+                            aria-current={page === 'License' ? 'page' : undefined}
+                            onClick={() => void showPage('License')}
+                          >
+                            License
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
