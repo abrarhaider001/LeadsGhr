@@ -216,8 +216,9 @@ function Runner() {
                 </div>
               )}
               <p className="sc-note">
-                Runs one search at a time in its own Chrome window, up to 5 pages each, with pauses of several seconds
-                between pages and 45 seconds between searches. Keep this tab open while it runs.
+                Opens each search in a new tab in this window, scrolls through all its results, closes the tab,
+                then moves to the next search. Pauses of several seconds between pages and 45 seconds between searches
+                keep it polite. Keep this Scraper tab open while it runs.
               </p>
             </>
           )}

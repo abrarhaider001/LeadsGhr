@@ -13,50 +13,107 @@ import {
 import { writeDataFile } from './data-folder'
 
 /*
- * Runs a job's searches one at a time in a visible Chrome window (AGENTS.md, rule 5 exception): opens Google Search's business
- * list for the search, reads every business card, follows the next-page link (at most SCRAPER_PAGES_PER_SEARCH
- * pages), and saves results/<jobId>/<n>.json after every page. It pauses several seconds between pages and at least
- * SCRAPER_SEARCH_GAP_MS between searches. It does not hide that it is automated: when Google shows its check page,
- * it saves what it has and stops. Searches already finished are remembered, so a later run resumes after them.
+ * Runs a job's searches one at a time (AGENTS.md, rule 5 exception). Each search opens in a new tab in the Scraper's
+ * own window: Google Search's business list for the search, read card by card. The list is scrolled to the bottom
+ * (and "More places" pressed when Google shows it) until no new businesses appear, then the next-page arrow is
+ * followed, up to SCRAPER_PAGES_PER_SEARCH pages. When the search is finished its tab closes and the next search gets
+ * a new tab. results/<jobId>/<n>.json is saved after every step. Pauses keep requests polite (several seconds between
+ * pages, at least SCRAPER_SEARCH_GAP_MS between searches). It does not hide that it is automated: at Google's check
+ * page it saves what it has and stops. Finished searches are remembered, so a later run resumes after them.
  */
 
 const CHALLENGE = /captcha|unusual traffic|verify you are human|not a robot|before you continue to google/i
 const DONE_KEY = (jobId: string) => `scraper.done.${jobId}`
 export const PROGRESS_KEY = 'scraper.progress'
+/** Scroll rounds per page before giving up on more cards, and the most businesses kept per search. */
+const MAX_SCROLL_ROUNDS = 12
+const MAX_BUSINESSES = 300
 
 export type Control = { action: 'run' | 'pause' | 'stop' }
 export type Counts = { businesses: number; withWebsite: number; adsSkipped: number; perSearch: Record<number, number> }
 export type EngineUpdate = { progress: ScraperProgress; counts: Counts; page: number }
 
-type PageRead = {
-  url: string
-  text: string
-  cards: (Omit<ScraperBusiness, 'page'> & { sponsored: boolean })[]
-  first: string
-  next: string
-}
+type Card = Omit<ScraperBusiness, 'page'> & { sponsored: boolean }
+type PageRead = { url: string; text: string; cards: Card[]; next: string }
 
-/** Runs inside the Google tab (chrome.scripting.executeScript): reads the business cards on the Places page. */
+/**
+ * Runs inside the Google tab: reads every business card on the Places page. Google shows two layouts: the compact
+ * list (div.VkpGBb cards, name in .OSrXXb) and the larger cards with photos and Directions/Website buttons. The
+ * second is read by its headings: each business name is a heading, and its card is the largest box around that
+ * heading that holds no other business heading.
+ */
 function readPlacesPage(): PageRead {
   const text = document.body?.innerText?.slice(0, 9000) ?? ''
-  const cards: PageRead['cards'] = []
-  for (const card of Array.from(document.querySelectorAll<HTMLElement>('div.VkpGBb'))) {
-    const name = card.querySelector<HTMLElement>('.OSrXXb')?.innerText?.trim() ?? ''
-    if (!name) continue
+  const PHONE = /(?:\+1[\s.-]*)?(?:\(\d{3}\)|\d{3})[\s.-]*\d{3}[\s.-]*\d{4}/
+  const ADDRESS = /\b\d{1,6}\s+[A-Za-z0-9 .'-]+\s(?:St|Street|Rd|Road|Ave|Avenue|Blvd|Boulevard|Dr|Drive|Ln|Lane|Way|Ct|Court|Pl|Place|Hwy|Highway)\b/i
+  const cards: Card[] = []
+  const describe = (card: HTMLElement, name: string) => {
     const body = card.innerText || ''
-    const link = Array.from(card.querySelectorAll<HTMLAnchorElement>('a')).find((anchor) =>
-      /^website$/i.test((anchor.innerText || '').trim()),
+    const link = Array.from(card.querySelectorAll<HTMLAnchorElement>('a')).find(
+      (anchor) =>
+        /^website$/i.test((anchor.innerText || '').trim()) ||
+        /\bwebsite\b/i.test(anchor.getAttribute('aria-label') || ''),
     )
-    const phone =
-      body.match(/(?:\+1[\s.-]*)?(?:\(\d{3}\)|\d{3})[\s.-]*\d{3}[\s.-]*\d{4}/)?.[0] ?? ''
-    const address =
-      body.match(
-        /\b\d{1,6}\s+[A-Za-z0-9 .'-]+\s(?:St|Street|Rd|Road|Ave|Avenue|Blvd|Boulevard|Dr|Drive|Ln|Lane|Way|Ct|Court)\b/i,
-      )?.[0] ?? ''
-    cards.push({ name, websiteLink: link?.href ?? '', phone, address, sponsored: /^\s*Sponsored/i.test(body) })
+    cards.push({
+      name,
+      websiteLink: link?.href ?? '',
+      phone: body.match(PHONE)?.[0] ?? '',
+      address: body.match(ADDRESS)?.[0] ?? '',
+      sponsored: /(^|\n)\s*Sponsored\b/i.test(body),
+    })
+  }
+  const compact = Array.from(document.querySelectorAll<HTMLElement>('div.VkpGBb'))
+  if (compact.length) {
+    for (const card of compact) {
+      const name = card.querySelector<HTMLElement>('.OSrXXb')?.innerText?.trim() ?? ''
+      if (name) describe(card, name)
+    }
+  } else {
+    const root = document.querySelector<HTMLElement>('#search') ?? document.querySelector<HTMLElement>('[role="main"]') ?? document.body
+    const isBusinessHeading = (element: Element) => {
+      const name = (element as HTMLElement).innerText?.trim() ?? ''
+      return name.length > 1 && name.length < 120 && !/^["“]|^Provides:|^Sponsored$/i.test(name)
+    }
+    const headings = Array.from(root.querySelectorAll<HTMLElement>('[role="heading"]')).filter(isBusinessHeading)
+    const seen = new Set<HTMLElement>()
+    for (const heading of headings) {
+      let card: HTMLElement = heading
+      while (
+        card.parentElement &&
+        card.parentElement !== root &&
+        Array.from(card.parentElement.querySelectorAll('[role="heading"]')).filter(isBusinessHeading).length === 1
+      )
+        card = card.parentElement
+      if (seen.has(card)) continue
+      seen.add(card)
+      const body = card.innerText || ''
+      // A business card shows a rating, category, opening hours, phone, or Directions/Website buttons.
+      if (!/Directions|Website|\d\.\d\s*★|\(\d+\)|Open|Closed|·/.test(body) && !PHONE.test(body)) continue
+      describe(card, heading.innerText.trim())
+    }
   }
   const next = document.querySelector<HTMLAnchorElement>('a#pnnext')?.href ?? ''
-  return { url: location.href, text, cards, first: cards.map((card) => card.name).join('|'), next }
+  return { url: location.href, text, cards, next }
+}
+
+/** Runs inside the Google tab: scrolls the page (and any scrolling list) to the bottom and presses "More places"
+ *  or a similar button when Google shows one. Returns true when it pressed such a button. */
+function scrollForMore(): boolean {
+  window.scrollTo(0, document.documentElement.scrollHeight)
+  for (const element of Array.from(document.querySelectorAll<HTMLElement>('div, section'))) {
+    if (element.scrollHeight > element.clientHeight + 40 && /(auto|scroll)/.test(getComputedStyle(element).overflowY))
+      element.scrollTop = element.scrollHeight
+  }
+  const more = Array.from(document.querySelectorAll<HTMLElement>('a, button, [role="button"]')).find(
+    (element) =>
+      element.offsetParent !== null &&
+      /^(more places|more businesses|more results|show more)$/i.test((element.innerText || '').trim()),
+  )
+  if (more) {
+    more.click()
+    return true
+  }
+  return false
 }
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
@@ -82,6 +139,11 @@ function waitForTab(tabId: number, timeoutMs = 30_000): Promise<void> {
   })
 }
 
+async function inject<T>(tabId: number, func: () => T): Promise<T | undefined> {
+  const [injection] = await chrome.scripting.executeScript({ target: { tabId }, func })
+  return injection?.result as T | undefined
+}
+
 export async function finishedSearches(jobId: string): Promise<Set<number>> {
   const saved = (await chrome.storage.local.get(DONE_KEY(jobId)))[DONE_KEY(jobId)]
   return new Set(Array.isArray(saved) ? (saved as number[]) : [])
@@ -94,6 +156,7 @@ export async function runJob(
 ): Promise<ScraperProgress['state']> {
   const done = await finishedSearches(job.id)
   const counts: Counts = { businesses: 0, withWebsite: 0, adsSkipped: 0, perSearch: {} }
+  const scraperTab = await chrome.tabs.getCurrent()
   let tabId: number | undefined
   let lastSearchAt = 0
   let page = 0
@@ -111,11 +174,14 @@ export async function runJob(
     await chrome.storage.local.set({ [PROGRESS_KEY]: { ...progress, counts } })
     await writeDataFile('progress.json', progress).catch(() => undefined)
   }
+  const closeSearchTab = async () => {
+    if (tabId !== undefined) await chrome.tabs.remove(tabId).catch(() => undefined)
+    tabId = undefined
+  }
   try {
     for (const search of job.searches) {
       if (done.has(search.index)) continue
-      if (control.action !== 'run')
-        return await stopped(control, search.index)
+      if (control.action !== 'run') return await stopped(control, search.index)
       const since = Date.now() - lastSearchAt
       if (lastSearchAt && since < SCRAPER_SEARCH_GAP_MS) {
         await report('waiting', search.index, `Waiting before ${search.place}, to keep requests polite...`)
@@ -135,28 +201,55 @@ export async function runJob(
         businesses: [],
       }
       const seen = new Set<string>()
-      let url = scraperPlacesUrl(search.query)
-      let previousFirst = ''
+      const save = () => {
+        result.updatedAt = new Date().toISOString()
+        return writeDataFile(`results/${job.id}/${scraperResultFile(search.index)}`, result)
+      }
+      // Adds the cards not seen yet; returns how many were new.
+      const take = (cards: Card[]) => {
+        let added = 0
+        for (const card of cards) {
+          if (card.sponsored) {
+            const adKey = `ad:${card.name}`
+            if (!seen.has(adKey)) {
+              seen.add(adKey)
+              counts.adsSkipped++
+            }
+            continue
+          }
+          const key = card.name.toLowerCase().replace(/[^a-z0-9]/g, '')
+          if (!key || seen.has(key) || result.businesses.length >= MAX_BUSINESSES) continue
+          seen.add(key)
+          result.businesses.push({ name: card.name, websiteLink: card.websiteLink, phone: card.phone, address: card.address, page })
+          counts.businesses++
+          if (card.websiteLink) counts.withWebsite++
+          added++
+        }
+        counts.perSearch[search.index] = result.businesses.length
+        return added
+      }
+
+      // A new tab in the Scraper's own window for this search.
+      await closeSearchTab()
+      const created = await chrome.tabs.create({
+        url: scraperPlacesUrl(search.query),
+        windowId: scraperTab?.windowId,
+        active: true,
+      })
+      tabId = created.id
+      if (tabId === undefined) throw new Error('Chrome did not open a tab for the search.')
       for (page = 1; page <= SCRAPER_PAGES_PER_SEARCH; page++) {
         await report('running', search.index, `Reading ${search.place}, page ${page}...`)
-        // The searches run in their own visible Chrome window (not a hidden tab), so you can watch what the
-        // Scraper does; the Scraper page keeps running in its own window.
-        if (tabId === undefined) {
-          const window = await chrome.windows.create({ url, focused: false, type: 'normal', width: 1100, height: 900 })
-          tabId = window?.tabs?.[0]?.id
-        } else await chrome.tabs.update(tabId, { url })
-        if (tabId === undefined) throw new Error('Chrome did not open a tab for the search.')
         await waitForTab(tabId)
         let read: PageRead | undefined
+        // Wait for the cards to appear (or for Google's check page).
         for (let attempt = 0; attempt < 12; attempt++) {
           await sleep(attempt === 0 ? 1500 : 750)
-          const [injection] = await chrome.scripting.executeScript({ target: { tabId }, func: readPlacesPage })
-          read = injection?.result as PageRead | undefined
+          read = await inject(tabId, readPlacesPage)
           if (!read) continue
           if (/\/sorry\//.test(read.url) || CHALLENGE.test(read.text)) {
             result.stoppedReason = 'Google showed its check page'
-            result.updatedAt = new Date().toISOString()
-            await writeDataFile(`results/${job.id}/${scraperResultFile(search.index)}`, result)
+            await save()
             await report(
               'blocked',
               search.index,
@@ -164,42 +257,50 @@ export async function runJob(
             )
             return 'blocked'
           }
-          if (read.cards.length && read.first !== previousFirst) break
+          if (read.cards.length) break
         }
-        if (!read || !read.cards.length || read.first === previousFirst) break
-        previousFirst = read.first
-        for (const card of read.cards) {
-          if (card.sponsored) {
-            counts.adsSkipped++
-            continue
+        if (!read || !read.cards.length) break
+        take(read.cards)
+        await save()
+        // Scroll to the bottom until no new businesses load (pressing "More places" when it is shown).
+        let quiet = 0
+        for (let round = 0; round < MAX_SCROLL_ROUNDS && quiet < 2 && control.action === 'run'; round++) {
+          await report('running', search.index, `Reading ${search.place}, page ${page}: scrolling for more...`)
+          const pressed = await inject(tabId, scrollForMore)
+          await pause(pressed ? 3000 : 2200, control)
+          const more = await inject(tabId, readPlacesPage)
+          if (!more) break
+          if (/\/sorry\//.test(more.url) || CHALLENGE.test(more.text)) {
+            result.stoppedReason = 'Google showed its check page'
+            await save()
+            await report('blocked', search.index, `Google showed its check page during ${search.place}. Stopped; resume later.`)
+            return 'blocked'
           }
-          const key = card.name.toLowerCase().replace(/[^a-z0-9]/g, '')
-          if (!key || seen.has(key)) continue
-          seen.add(key)
-          result.businesses.push({ name: card.name, websiteLink: card.websiteLink, phone: card.phone, address: card.address, page })
-          counts.businesses++
-          if (card.websiteLink) counts.withWebsite++
+          read = more
+          quiet = take(more.cards) ? 0 : quiet + 1
+          await save()
         }
-        counts.perSearch[search.index] = result.businesses.length
         result.pages = page
-        result.updatedAt = new Date().toISOString()
-        await writeDataFile(`results/${job.id}/${scraperResultFile(search.index)}`, result)
-        if (!read.next) break
-        url = read.next
+        await save()
+        if (control.action !== 'run') return await stopped(control, search.index)
+        if (!read.next || result.businesses.length >= MAX_BUSINESSES) break
         const { min, max } = SCRAPER_PAGE_PAUSE_MS
         await pause(min + Math.round(Math.random() * (max - min)), control)
         if (control.action !== 'run') return await stopped(control, search.index)
+        await chrome.tabs.update(tabId, { url: read.next })
       }
       result.complete = true
-      result.updatedAt = new Date().toISOString()
-      await writeDataFile(`results/${job.id}/${scraperResultFile(search.index)}`, result)
+      await save()
       done.add(search.index)
       await chrome.storage.local.set({ [DONE_KEY(job.id)]: [...done] })
+      // Finished with this location: close its tab; the next search opens a new one.
+      await closeSearchTab()
     }
     await report('finished', job.searches.length, `All ${job.searches.length} searches finished.`)
     return 'finished'
   } finally {
-    if (tabId !== undefined) await chrome.tabs.remove(tabId).catch(() => undefined) // closes its window too
+    await closeSearchTab()
+    if (scraperTab?.id !== undefined) await chrome.tabs.update(scraperTab.id, { active: true }).catch(() => undefined)
   }
 
   async function stopped(state: Control, current: number): Promise<ScraperProgress['state']> {

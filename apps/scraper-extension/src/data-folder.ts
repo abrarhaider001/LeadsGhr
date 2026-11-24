@@ -117,26 +117,15 @@ export async function writableFolder(): Promise<DirectoryHandle> {
   return handle
 }
 
-/** Writes a JSON file (path may contain folders, created as needed). Writes a temporary file first, then renames it,
- *  so the desktop app never reads a half-written file. */
+/** Writes a JSON file (path may contain folders, created as needed). Chrome writes to a temporary copy and replaces
+ *  the file only when the write is closed, so the desktop app never reads a half-written file. */
 export async function writeDataFile(path: string, value: unknown): Promise<void> {
   let folder: FileSystemDirectoryHandle = await writableFolder()
   const parts = path.split('/')
   const name = parts.pop()!
   for (const part of parts) folder = await folder.getDirectoryHandle(part, { create: true })
-  const temporary = await folder.getFileHandle(`${name}.tmp`, { create: true })
-  const writer = await temporary.createWritable()
+  const file = await folder.getFileHandle(name, { create: true })
+  const writer = await file.createWritable()
   await writer.write(JSON.stringify(value, null, 2))
   await writer.close()
-  const movable = temporary as FileSystemFileHandle & { move?(name: string): Promise<void> }
-  if (typeof movable.move === 'function') {
-    await folder.removeEntry(name).catch(() => undefined)
-    await movable.move(name)
-  } else {
-    const file = await folder.getFileHandle(name, { create: true })
-    const direct = await file.createWritable()
-    await direct.write(JSON.stringify(value, null, 2))
-    await direct.close()
-    await folder.removeEntry(`${name}.tmp`).catch(() => undefined)
-  }
 }
