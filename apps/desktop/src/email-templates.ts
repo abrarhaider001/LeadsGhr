@@ -1,6 +1,6 @@
 import { BrowserWindow, ipcMain } from 'electron'
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
 import {
   EMAIL_TEMPLATE_LIMIT,
   emailTemplateDraftSchema,
@@ -14,20 +14,15 @@ import { leadsGhrDataFile } from './data-folder'
 import { leadsGhrExtensionsDirectory } from './paths'
 
 /**
- * Email templates live in C:\LeadsGhr\data\email-templates.json. Each save also writes
- * C:\LeadsGhr\extensions\leadsghr-mailer\data\templates.json, which LeadsGhr Mailer reads.
- * When the two files differ, the one saved more recently is kept and copied over the other.
+ * Email templates are saved only in the LeadsGhr Mailer data folder:
+ * C:\LeadsGhr\extensions\leadsghr-mailer\data\templates.json.
+ * The Mailer popup and settings page read that file. An older desktop copy at
+ * C:\LeadsGhr\data\email-templates.json is imported once, and only when the Mailer file is missing.
  */
 
 export type EmailTemplateStoreResult = {
   templates: EmailTemplate[]
   synced: boolean
-}
-
-type StoredFile = {
-  list: EmailTemplate[]
-  mtime: number
-  invalid: boolean
 }
 
 const desktopPath = () => leadsGhrDataFile('email-templates.json')
@@ -49,10 +44,9 @@ function requireOwner(event: Electron.IpcMainInvokeEvent) {
   if (!BrowserWindow.fromWebContents(event.sender)) throw new Error('Unexpected caller')
 }
 
-async function readOptional(path: string): Promise<{ text: string; mtime: number } | null> {
+async function readOptional(path: string): Promise<string | null> {
   try {
-    const [text, info] = await Promise.all([readFile(path, 'utf8'), stat(path)])
-    return { text, mtime: info.mtimeMs }
+    return await readFile(path, 'utf8')
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null
     throw error
@@ -75,70 +69,51 @@ function parseDesktop(text: string): { list: EmailTemplate[]; invalid: boolean }
   }
 }
 
-async function readDesktop(): Promise<StoredFile | null> {
-  const file = await readOptional(desktopPath())
-  if (!file) return null
-  const parsed = parseDesktop(file.text)
-  return { ...parsed, mtime: file.mtime }
-}
-
-async function readMailer(): Promise<StoredFile | null> {
-  const file = await readOptional(mailerPath())
-  if (!file) return null
+async function readMailer(): Promise<{ list: EmailTemplate[]; invalid: boolean } | null> {
+  const text = await readOptional(mailerPath())
+  if (text === null) return null
   try {
-    const list = emailTemplatesFromMailerFile(JSON.parse(file.text) as unknown)
-    if (!list) return { list: [], mtime: file.mtime, invalid: true }
-    return { list, mtime: file.mtime, invalid: false }
+    const list = emailTemplatesFromMailerFile(JSON.parse(text) as unknown)
+    if (!list) return { list: [], invalid: true }
+    return { list, invalid: false }
   } catch {
-    return { list: [], mtime: file.mtime, invalid: true }
+    return { list: [], invalid: true }
   }
 }
 
-function sameList(left: EmailTemplate[], right: EmailTemplate[]): boolean {
-  return JSON.stringify(left) === JSON.stringify(right)
-}
-
-async function writeBoth(list: EmailTemplate[]): Promise<EmailTemplateStoreResult> {
+async function writeMailer(list: EmailTemplate[]): Promise<EmailTemplateStoreResult> {
   const templates = uniqueEmailTemplates(list)
-  await writeFile(desktopPath(), JSON.stringify(templates, null, 2) + '\n', 'utf8')
+  const path = mailerPath()
   try {
-    const path = mailerPath()
-    await mkdir(join(path, '..'), { recursive: true })
+    await mkdir(dirname(path), { recursive: true })
     await writeFile(
       path,
       JSON.stringify(templates.map(emailTemplateToMailer), null, 2) + '\n',
       'utf8',
     )
-    return { templates, synced: true }
   } catch (error) {
     console.warn(
-      '[LeadsGhr] Could not update LeadsGhr Mailer templates',
+      '[LeadsGhr] Could not save LeadsGhr Mailer templates',
       error instanceof Error ? error.message : error,
     )
-    return { templates, synced: false }
+    throw new Error('Templates could not be saved for LeadsGhr Mailer.')
   }
+  return { templates, synced: true }
 }
 
 async function loadTemplates(): Promise<EmailTemplateStoreResult> {
-  const [desktop, mailer] = await Promise.all([readDesktop(), readMailer()])
-  const desktopOk = desktop && !desktop.invalid ? desktop : null
-  const mailerOk = mailer && !mailer.invalid ? mailer : null
-  if (!desktopOk && !mailerOk) {
-    if (desktop?.invalid || mailer?.invalid) {
-      throw new Error('Saved templates could not be read.')
-    }
-    return { templates: [], synced: true }
+  const mailer = await readMailer()
+  if (mailer) {
+    if (mailer.invalid) throw new Error('Saved templates could not be read.')
+    return { templates: mailer.list, synced: true }
   }
-  if (desktopOk && mailerOk && sameList(desktopOk.list, mailerOk.list)) {
-    return { templates: desktopOk.list, synced: true }
+  const legacy = await readOptional(desktopPath())
+  if (legacy !== null) {
+    const parsed = parseDesktop(legacy)
+    if (parsed.invalid) throw new Error('Saved templates could not be read.')
+    return writeMailer(parsed.list)
   }
-  const chosen =
-    desktopOk && mailerOk
-      ? mailerOk.mtime > desktopOk.mtime
-        ? mailerOk.list
-        : desktopOk.list
-      : (desktopOk?.list ?? mailerOk?.list ?? [])
-  return writeBoth(chosen)
+  return writeMailer([])
 }
 
 function rejectDuplicate(list: EmailTemplate[], draft: EmailTemplate) {
@@ -160,7 +135,7 @@ async function saveTemplate(input: unknown): Promise<EmailTemplateStoreResult> {
   rejectDuplicate(templates, draft)
   const next = templates.filter((item) => item.id !== draft.id)
   next.push(draft)
-  return writeBoth(next)
+  return writeMailer(next)
 }
 
 async function deleteTemplate(id: unknown): Promise<EmailTemplateStoreResult> {
@@ -171,7 +146,7 @@ async function deleteTemplate(id: unknown): Promise<EmailTemplateStoreResult> {
   if (!templates.some((item) => item.id === id)) {
     throw new Error('That template could not be found.')
   }
-  return writeBoth(templates.filter((item) => item.id !== id))
+  return writeMailer(templates.filter((item) => item.id !== id))
 }
 
 export function registerEmailTemplateIpc() {

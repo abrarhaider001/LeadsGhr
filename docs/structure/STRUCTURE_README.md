@@ -10,7 +10,7 @@ apps/desktop/
   src/preload.ts    Narrow renderer bridge
   src/adapters.ts   SQLite, public HTTP, local queue and disk adapters
   src/email-verify.ts Email Validation IPC and job control
-  src/email-templates.ts Saved email templates, shared with the Mailer data file
+  src/email-templates.ts Saved email templates, written to the Mailer data file
   src/email-verify/ Pipeline, DNS, SMTP client, and Valid/Invalid SQLite cache
   src/renderer.tsx  Shared React app
 apps/extension/     LeadsGhr Tracker: MV3 Gmail open-tracking extension

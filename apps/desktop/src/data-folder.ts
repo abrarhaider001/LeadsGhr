@@ -10,7 +10,6 @@ const DATA_FILES = [
   'leadsghr.sqlite-shm',
   'preferences.json',
   'search-criteria.json',
-  'email-templates.json',
 ] as const
 
 let dataDirectory: string | undefined

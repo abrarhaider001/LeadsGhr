@@ -14,8 +14,7 @@ export function leadsGhrRoot(): string {
 export const leadsGhrExportsDirectory = (): string => join(leadsGhrRoot(), 'exports')
 export const leadsGhrExtensionsDirectory = (): string => join(leadsGhrRoot(), 'extensions')
 /**
- * LeadsGhr's data: the SQLite database, preferences.json, search-criteria.json, profile.json,
- * and email-templates.json.
+ * LeadsGhr's data: the SQLite database, preferences.json, search-criteria.json, and profile.json.
  * LEADSGHR_DATA_DIR points it elsewhere, for example a separate folder for performance tests.
  */
 export const leadsGhrDataDirectory = (): string =>
