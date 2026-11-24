@@ -1,0 +1,39 @@
+# LeadsGhr Scraper
+
+A Chrome extension (`apps/scraper-extension`) that runs the searches you set up in LeadsGhr on Google Search's business list (the **More businesses** page) and saves the results for the desktop app. It is separate from LeadsGhr Mailer and LeadsGhr Tracker and has its own license slot (`scraper`).
+
+## How it works
+
+1. **Desktop app:** in **New Search**, choose the niche, state, and locations, then select **Send to LeadsGhr Scraper** (next to **Search contractors**). LeadsGhr creates a search run and writes `job.json` to the Scraper's data folder, then opens **Scraper Results**.
+2. **Chrome:** open LeadsGhr Scraper from the toolbar and select **Open Scraper**. The Scraper page shows the job (niche, state, searches). Select **Start scraping**.
+3. **The Scraper runs one search at a time** in its own Chrome window: it opens Google Search's business list for `<niche> in <place>`, reads every business card (name, phone, address, Website button), skips ads, and follows the next-page link, at most 5 pages per search. It pauses 4 to 7 seconds between pages and at least 45 seconds between searches, and saves `results/<jobId>/<n>.json` after every page.
+4. **Desktop app:** **Scraper Results** reads the result files every few seconds, turns each Website link (a Google redirect) into the business's own address, and saves the businesses as rows of the run, with the source **Google Search**. The table has a search box and a Source column; **Export CSV** saves it like any run.
+
+If Google shows its "unusual traffic" check page, the Scraper saves what it has and stops; it does not try to get past the check. **Resume** later continues from the search where it stopped (finished searches are not repeated). This is the owner-approved exception to Google's robots.txt described in AGENTS.md (rule 5).
+
+## Files (the data folder)
+
+`C:\LeadsGhr\extensions\leadsghr-scraper\data\` (kept by every rebuild):
+
+| File | Written by | Contents |
+| --- | --- | --- |
+| `job.json` | Desktop app | The searches to run and the run they are saved into |
+| `progress.json` | Scraper | The search being read, and why it stopped (paused, stopped, blocked by Google, finished) |
+| `results/<jobId>/<n>.json` | Scraper | The businesses found for search n, rewritten after every page |
+
+The formats and limits are in `packages/schemas/src/scraper.ts` (tested in `packages/schemas/tests/scraper.test.ts`). The desktop side is `apps/desktop/src/scraper-bridge.ts`; the screen is `packages/app/src/scraper-results-page.tsx`.
+
+## Install and first run
+
+1. Build it: `pnpm build:scraper-extension` (creates `C:\LeadsGhr\extensions\leadsghr-scraper.zip` and the ready-to-load folder beside it).
+2. **Use a separate Chrome profile that is not signed in to Google** (recommended), so a block by Google can never affect your own Google account.
+3. In that profile open `chrome://extensions`, turn on **Developer mode**, select **Load unpacked**, and choose `C:\LeadsGhr\extensions\leadsghr-scraper`. After later rebuilds, select **Reload**.
+4. Open the Scraper, select **Choose data folder**, and choose `C:\LeadsGhr\extensions\leadsghr-scraper\data`; then **Allow on every visit**.
+5. Enter a license key with a free Scraper slot, or build with `LEADSGHR_MODE=local` while testing.
+
+## Limits
+
+- Google may still show its check page, especially for long jobs; split large jobs into smaller ones and run them at different times.
+- The Scraper runs while its page stays open; closing that tab stops the run (resume later).
+- It is not bundled in the desktop installer yet and has no download button in the app.
+- The `scraper` license slot needs the updated `license` Edge Function (`supabase/functions/license`), deployed by pushing.

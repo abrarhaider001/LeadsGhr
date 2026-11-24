@@ -18,6 +18,8 @@ Crawl Results saves each filtered row to a dedicated local SQLite run, advances 
 
 ## Pipeline and Crawl Results
 
+**LeadsGhr Scraper** (`docs/SCRAPER_README.md`): New Search has a second button, **Send to LeadsGhr Scraper**, beside **Search contractors** (New Search only, not Pipeline). It opens **Scraper Results** (`packages/app/src/scraper-results-page.tsx`): a back button, a status badge (waiting, running with search n of m, stopped by Google's check page, finished), a live status line, the results table (Business, Website URL, Phone, Location, Source) with the search box, **Open data folder**, and **Export CSV**. The extension's popup and Scraper page (`apps/scraper-extension/src/popup.tsx`, `runner.tsx`) follow the approved design: first run (connect the data folder), job ready, running (progress, counts, per-location status, Pause and Stop), stopped by Google (resume later), and finished.
+
 The Pipeline overview uses a responsive five-card stage grid. Its Filter emails card appears between Crawl public pages and Export results, matching the automatic Pipeline flow. The cards wrap to two columns and then one column on narrower windows.
 
 The Pipeline page lists saved pipelines with a resume action for unfinished runs and a trash icon for deletion. Deletion asks for confirmation and removes the local run, its results, URL queue, and export records. Active runs must be stopped first. Existing CSV files on disk are retained.

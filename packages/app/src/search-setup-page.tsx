@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { PipelineProvider, SearchCriteria } from '@leadsghr/schemas'
-import { cn, Icon, Input } from '@leadsghr/ui'
+import { cn, Icon, Input, NavIcon } from '@leadsghr/ui'
 import { CustomSelect } from './custom-select'
 import nicheData from '../data/niches.json'
 import locationData from '../data/us-states-locations.json'
@@ -332,11 +332,14 @@ function ChoiceCard({
 
 export function SearchSetupPage({
   onSearch,
+  onSendToScraper,
   iconActions = false,
   pipelineMode = false,
   pipelineDraft,
 }: {
   onSearch(criteria: SearchCriteria, details?: { name: string; provider: PipelineProvider }): void
+  /** New Search only: send the searches to the LeadsGhr Scraper Chrome extension instead of searching here. */
+  onSendToScraper?(criteria: SearchCriteria): void
   iconActions?: boolean
   pipelineMode?: boolean
   pipelineDraft?: PipelineDraft | null
@@ -1193,6 +1196,18 @@ export function SearchSetupPage({
           >
             {pipelineMode ? 'Start crawl' : 'Search contractors'}
           </button>
+          {!pipelineMode && onSendToScraper && (
+            <button
+              type="button"
+              className="la-search-scraper"
+              disabled={!criteria.selectedLocations.length}
+              onClick={() => onSendToScraper(criteria)}
+              title="Run these searches on Google Search's business list with the LeadsGhr Scraper Chrome extension"
+            >
+              <NavIcon name="scraper" size={16} />
+              Send to LeadsGhr Scraper
+            </button>
+          )}
         </div>
       ) : null}
       {nichePanelOpen && (

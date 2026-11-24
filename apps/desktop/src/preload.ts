@@ -58,6 +58,12 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
     return () => ipcRenderer.removeListener('leadsghr:maps-scan:event', listener)
   },
   loadPreferences: () => ipcRenderer.invoke('leadsghr:preferences:load'),
+  // LeadsGhr Scraper: send New Search's searches as a job, then sync its result files into the run.
+  sendScraperJob: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:scraper:send-job', createCrawlRunSchema.parse(input)),
+  syncScraperJob: (jobId: unknown) =>
+    ipcRenderer.invoke('leadsghr:scraper:sync', crawlRunIdSchema.parse(jobId)),
+  openScraperFolder: () => ipcRenderer.invoke('leadsghr:scraper:open-folder'),
   onDisplaySizeChanged: (callback: (size: number) => void) => {
     const listener = (_event: unknown, size: unknown) => {
       if (typeof size === 'number') callback(size)

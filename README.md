@@ -157,6 +157,10 @@ The current scan flow can crawl a user-supplied public site through the Electron
 
 The desktop app has a light and a dark theme (Settings → Preferences → Appearance: Light, Dark, or Match Windows). Light uses white cards on a soft grey canvas with charcoal text and green actions; dark uses charcoal surfaces with bright green actions. Both come from the design tokens in `packages/ui/src/tokens.css`. It keeps compact type, four icon-and-copy metric cards, a trend chart, quick actions, and a Latest pipelines table. Its metrics, chart, and table read saved local crawl runs and CSV history. The [theme](docs/theme/THEME_README.md), [components](docs/components/COMPONENTS_README.md), and [icons](docs/icons/ICONS_README.md) guides describe the design and brand assets.
 
+### LeadsGhr Scraper (Chrome extension)
+
+**LeadsGhr Scraper** (`apps/scraper-extension`) runs New Search's searches on Google Search's business list (the **More businesses** page) inside Chrome and saves the businesses for the desktop app. In **New Search** select **Send to LeadsGhr Scraper**, then in Chrome open the Scraper and select **Start scraping**; **Scraper Results** in the desktop app fills in as each page is saved, with a search box, a Source column, and **Export CSV**. It stops at Google's check page and resumes later. Build it with `pnpm build:scraper-extension` and load `C:\LeadsGhr\extensions\leadsghr-scraper` in a separate Chrome profile that is not signed in to Google. See [LeadsGhr Scraper](docs/SCRAPER_README.md).
+
 ### Contractor search sources and emails
 
 Profile > Preferences controls whether Crawl Results shows public Google Maps business listings and whether it uses expanded Niche Library terms. Expanded terms are off by default: each selected niche name is searched once per location. Turn them on for broader searches that take longer. The saved run table shows the selected business fields and hides listings without a website URL by default. Profile > Preferences > Search result filters can turn those rows back on. Pipeline crawls linked public websites for emails after the Maps searches; New Search remains search-only.

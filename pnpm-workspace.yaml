@@ -2,6 +2,7 @@ packages:
   - apps/desktop
   - apps/extension
   - apps/mailer-extension
+  - apps/scraper-extension
   - packages/*
 onlyBuiltDependencies:
   - better-sqlite3

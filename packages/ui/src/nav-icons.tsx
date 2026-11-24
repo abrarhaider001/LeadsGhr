@@ -45,6 +45,20 @@ const ICONS = {
     accent: ['M9 18h4.5'],
   },
   emailTracking: { base: ['M1.8 12.6l4.6 4.6L15.2 7'], accent: ['M11 16l1.2 1.2L22.2 7'] },
+  // LeadsGhr Scraper (owner-chosen R1, 2026-11-24): robot head, antenna, ears and mouth in outline; green eyes.
+  scraper: {
+    base: [
+      'M7.5 8h9a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 16.5v-6A2.5 2.5 0 0 1 7.5 8z',
+      'M12 8V5',
+      'M2.8 12.5v2.5',
+      'M21.2 12.5v2.5',
+      'M9.5 16h5',
+    ],
+    accent: [
+      'F:M9.4 10.9a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z',
+      'F:M14.6 10.9a1.3 1.3 0 1 0 0 2.6a1.3 1.3 0 1 0 0-2.6z',
+    ],
+  },
   leads: {
     base: ['M9 5a3 3 0 1 0 0 6a3 3 0 1 0 0-6z', 'M3.5 20a5.5 5.5 0 0 1 11 0'],
     accent: ['M16 5.5a2.8 2.8 0 0 1 0 5.4', 'M17.5 14a5 5 0 0 1 3 5.5'],

@@ -3,10 +3,11 @@
 //   node scripts/regenerate-extension-icons.mjs
 // Writes:
 //   apps/mailer-extension/public/icon.svg and icon.png (128 px)  - LeadsGhr Mailer toolbar and popup icon
+//   apps/scraper-extension/public/icon.svg and icon.png (128 px) - LeadsGhr Scraper toolbar and popup icon
 //   apps/extension/public/icon.svg and icon.png (128 px)         - LeadsGhr Tracker toolbar and popup icon
 //   apps/mailer-extension/email-assets/leadsghr-mailer-logo.png - image used in outgoing emails (upload it to the
 //     Supabase `assets` bucket under email-assets/ yourself; uploading is a live service change)
-import { writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { join } from 'node:path'
 import { Resvg } from '@resvg/resvg-js'
@@ -42,4 +43,19 @@ const tracker = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128
 `
 writeFileSync('apps/extension/public/icon.svg', tracker)
 writeFileSync('apps/extension/public/icon.png', png(tracker, 128))
+// LeadsGhr Scraper: the robot head from the sidebar's duotone line icons (R1) on the charcoal tile: the head,
+// antenna, ears and mouth in white, the two eyes in green. Drawn on the 24 px icon grid, scaled into the tile.
+const scraper = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 1024 1024" role="img" aria-label="LeadsGhr Scraper logo">
+  <rect x="96" y="96" width="832" height="832" rx="190" fill="${t.get('brand-ink')}"/>
+  <g transform="translate(179 179) scale(27.73)" fill="none" stroke="${t.get('on-primary')}" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7.5 8h9a2.5 2.5 0 0 1 2.5 2.5v6a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 5 16.5v-6A2.5 2.5 0 0 1 7.5 8z"/>
+    <path d="M12 8V5"/><path d="M2.8 12.5v2.5"/><path d="M21.2 12.5v2.5"/><path d="M9.5 16h5"/>
+    <circle cx="9.4" cy="12.2" r="1.3" fill="${t.get('brand-accent')}" stroke="none"/>
+    <circle cx="14.6" cy="12.2" r="1.3" fill="${t.get('brand-accent')}" stroke="none"/>
+  </g>
+</svg>
+`
+mkdirSync('apps/scraper-extension/public', { recursive: true })
+writeFileSync('apps/scraper-extension/public/icon.svg', scraper)
+writeFileSync('apps/scraper-extension/public/icon.png', png(scraper, 128))
 console.log('Extension icons regenerated.')

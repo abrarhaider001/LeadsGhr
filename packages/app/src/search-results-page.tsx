@@ -32,7 +32,40 @@ type MapsBridge = {
 }
 const mapsBridge = () => (window as Window & { leadsGhrDesktop?: MapsBridge }).leadsGhrDesktop
 
-type PreparedSearch = { niche: string; term: string; place: string; query: string }
+export type PreparedSearch = { niche: string; term: string; place: string; query: string }
+
+/** One search per niche term and place: `<term> in <place>` (niche names, or every Niche Library term when on). */
+export function prepareSearches(criteria: SearchCriteria, useNicheKeywords: boolean): PreparedSearch[] {
+  const locationsByState = new Map(
+    criteria.selectedStates.map((state) => [state, [] as string[]]),
+  )
+  for (const place of criteria.selectedLocations) {
+    const state = place.slice(place.lastIndexOf(', ') + 2)
+    locationsByState.get(state)?.push(place)
+  }
+  const seen = new Set<string>()
+  return criteria.selectedNiches.flatMap((niche) =>
+    (useNicheKeywords ? getNichePack(niche, criteria).searchTerms : [niche]).flatMap(
+      (term) =>
+        criteria.selectedStates.flatMap((state) =>
+          (locationsByState.get(state) ?? []).flatMap((place) => {
+            const key = `${term.toLocaleLowerCase()}|${place.toLocaleLowerCase()}`
+            if (seen.has(key)) return []
+            seen.add(key)
+            return [{ niche, term, place, query: `${term} in ${place}` }]
+          }),
+        ),
+    ),
+  )
+}
+
+/** The first and last selected state's position in the location list (stored with every run). */
+export function stateRange(criteria: SearchCriteria): { stateStartNumber: number; stateEndNumber: number } {
+  const numbers = criteria.selectedStates
+    .map((state) => locationData.states.findIndex((item) => item.name === state) + 1)
+    .filter((number) => number > 0)
+  return { stateStartNumber: Math.min(...numbers), stateEndNumber: Math.max(...numbers) }
+}
 type RunPhase = 'running' | 'pausing' | 'paused' | 'stopped' | 'completed' | 'error'
 
 /** Maps errors that affect every search, so the run stops (with its reason) instead of skipping the location. */
@@ -91,30 +124,10 @@ export function SearchResultsPage({
   onSavedRef.current = onSaved
   const onFinishedRef = useRef(onFinished)
   onFinishedRef.current = onFinished
-  const searches = useMemo<PreparedSearch[]>(() => {
-    if (initialRun) return initialRun.searches
-    const locationsByState = new Map(
-      criteria.selectedStates.map((state) => [state, [] as string[]]),
-    )
-    for (const place of criteria.selectedLocations) {
-      const state = place.slice(place.lastIndexOf(', ') + 2)
-      locationsByState.get(state)?.push(place)
-    }
-    const seen = new Set<string>()
-    return criteria.selectedNiches.flatMap((niche) =>
-      (preferences.useNicheKeywords ? getNichePack(niche, criteria).searchTerms : [niche]).flatMap(
-        (term) =>
-          criteria.selectedStates.flatMap((state) =>
-            (locationsByState.get(state) ?? []).flatMap((place) => {
-              const key = `${term.toLocaleLowerCase()}|${place.toLocaleLowerCase()}`
-              if (seen.has(key)) return []
-              seen.add(key)
-              return [{ niche, term, place, query: `${term} in ${place}` }]
-            }),
-          ),
-      ),
-    )
-  }, [criteria, preferences.useNicheKeywords, initialRun])
+  const searches = useMemo<PreparedSearch[]>(
+    () => initialRun?.searches ?? prepareSearches(criteria, preferences.useNicheKeywords),
+    [criteria, preferences.useNicheKeywords, initialRun],
+  )
   // The search box above the table filters the results by any shown detail (name, website, phone, place,
   // address, source, or email); paging and counts follow the filtered list.
   const filteredRows = useMemo(() => {

@@ -74,3 +74,6 @@ apps/desktop/electron.vite.config.*.mjs
 
 # Supabase CLI local state (linked project, pooler URL)
 supabase/.temp/
+
+# LeadsGhr Scraper build ZIP (built by pnpm build:scraper-extension; not bundled in the installer yet)
+apps/scraper-extension/leadsghr-scraper.zip

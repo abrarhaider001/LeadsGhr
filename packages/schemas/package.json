@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "lint": "tsc --noEmit",
-    "test": "tsx --test tests/preferences-file.test.ts tests/email-templates.test.ts tests/row-sources.test.ts"
+    "test": "tsx --test tests/preferences-file.test.ts tests/email-templates.test.ts tests/row-sources.test.ts tests/scraper.test.ts"
   },
   "dependencies": {
     "zod": "^4.1.12"

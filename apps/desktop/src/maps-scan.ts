@@ -271,7 +271,7 @@ const politePause = (signal: AbortSignal) => wait(4000 + Math.round(Math.random(
  * Turns a Google Search Website link (an encoded /goto or /url redirect) into the business's own address by reading
  * the redirect target, without opening the business site. Returns '' when it is not a public http(s) website.
  */
-async function resolveWebsite(link: string, signal: AbortSignal): Promise<string> {
+export async function resolveWebsite(link: string, signal: AbortSignal): Promise<string> {
   try {
     const start = new URL(link)
     if (!isGoogleHost(start.hostname))

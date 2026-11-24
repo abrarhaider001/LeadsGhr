@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { SplashScreen } from './splash-screen'
 import { CrawlerPage } from './crawler-page'
 import { EmailFilteringPage } from './email-filtering-page'
@@ -9,6 +9,7 @@ import { DashboardPage } from './dashboard-page'
 import { NicheLibraryPage } from './niche-library-page'
 import { PageHeader } from './page-header'
 import { SearchSetupPage } from './search-setup-page'
+import { ScraperResultsPage } from './scraper-results-page'
 import { SearchResultsPage } from './search-results-page'
 import { ProfilePage } from './profile-page'
 import {
@@ -86,6 +87,7 @@ const descriptions: Record<string, string> = {
   'Email Templates': 'Write plain or HTML messages, preview them, and use them in LeadsGhr Mailer.',
   'Email Tracking': 'Review delivery and engagement for sent emails.',
   'Crawl Results': 'Review businesses found across the selected niche and locations.',
+  'Scraper Results': 'Businesses found by LeadsGhr Scraper on Google Search, saved as they arrive.',
   Leads: 'Review businesses and contacts saved on this computer.',
   Runs: 'Review crawl progress, saved results, and selected state ranges.',
   Profiles: 'Organize reusable search settings and extraction rules.',
@@ -203,6 +205,11 @@ export function LeadsGhrApp() {
       active = false
     }
   }, [])
+
+  // Stable, so the Scraper results page does not resend its job or restart its sync when the app re-renders.
+  // refreshCrawlHistory only uses state setters, so the first version stays correct.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const refreshScraperHistory = useCallback(() => void refreshCrawlHistory(), [])
 
   async function refreshCrawlHistory() {
     const desktop = crawlRunBridge()
@@ -527,6 +534,21 @@ export function LeadsGhrApp() {
                 setSearchCriteria(criteria)
                 setPage('Crawl Results')
               }}
+              onSendToScraper={
+                page === 'New Search'
+                  ? (criteria) => {
+                      setSearchCriteria(criteria)
+                      setPage('Scraper Results')
+                    }
+                  : undefined
+              }
+            />
+          ) : page === 'Scraper Results' && searchCriteria ? (
+            <ScraperResultsPage
+              criteria={searchCriteria}
+              preferences={preferences}
+              onBack={() => void showPage('New Search')}
+              onSaved={refreshScraperHistory}
             />
           ) : page === 'Crawl Results' && searchCriteria ? (
             <SearchResultsPage

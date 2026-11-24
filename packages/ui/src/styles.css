@@ -8930,3 +8930,88 @@ a {
   color: var(--ui-color-text-secondary);
   font-size: var(--ui-text-xs);
 }
+
+/* New Search: "Send to LeadsGhr Scraper" beside "Search contractors". */
+.la-search-start .la-search-scraper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  border: var(--ui-border);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+}
+.la-search-start .la-search-scraper:hover:not(:disabled) {
+  background: var(--ui-color-surface-muted);
+  border-color: var(--ui-color-border-strong);
+  color: var(--ui-color-text);
+}
+
+/* Scraper Results: the run filled by LeadsGhr Scraper's result files. */
+.la-scraper-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  margin-bottom: var(--ui-space-3);
+}
+.la-scraper-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  padding: var(--ui-space-1-5) var(--ui-space-2-5);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+  font-size: var(--ui-text-sm);
+  cursor: pointer;
+}
+.la-scraper-back svg {
+  transform: rotate(180deg);
+}
+.la-scraper-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-primary-soft);
+  color: var(--ui-color-primary);
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-scraper-state.is-warning {
+  background: var(--ui-color-warning-soft);
+  color: var(--ui-color-warning);
+}
+.la-scraper-state.is-done {
+  background: var(--ui-color-success-soft);
+  color: var(--ui-color-success);
+}
+.la-scraper-error {
+  color: var(--ui-color-danger);
+}
+.la-scraper-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  min-height: var(--ui-control-height-sm);
+  padding: 0 var(--ui-space-3);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+  cursor: pointer;
+}
+.la-scraper-action:hover:not(:disabled) {
+  background: var(--ui-color-surface-muted);
+}
+.la-scraper-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+

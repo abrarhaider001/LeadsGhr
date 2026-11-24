@@ -31,6 +31,7 @@ import { registerCrawlerTest } from './crawler-test'
 import { autoUpdater } from 'electron-updater'
 import { scanMaps } from './maps-scan'
 import { createCrawlRunStore, registerCrawlRunIpc } from './crawl-runs'
+import { registerScraperIpc } from './scraper-bridge'
 import { registerPipelinePages } from './pipeline-pages'
 import { abortActiveEmailVerify, registerEmailVerifyIpc } from './email-verify'
 import { registerEmailTemplateIpc } from './email-templates'
@@ -151,6 +152,7 @@ app.whenReady().then(async () => {
   prepareDataFolder()
   const crawlStore = createCrawlRunStore(localStore().db)
   registerCrawlRunIpc(crawlStore)
+  registerScraperIpc(crawlStore)
   registerEmailVerifyIpc(localStore().db)
   registerEmailTemplateIpc()
   // Email Sending: save the LeadsGhr Mailer extension ZIP (in C:\LeadsGhr\extensions), then confirm with an information dialog.
