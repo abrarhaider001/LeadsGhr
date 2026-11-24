@@ -38,7 +38,7 @@ export type Counts = {
   /** Businesses with a website per search, so a search read again after Resume is not counted twice. */
   websitesPerSearch?: Record<number, number>
 }
-export type EngineUpdate = { progress: ScraperProgress; counts: Counts; page: number }
+export type EngineUpdate = { progress: ScraperProgress; counts: Counts; page: number; startedAt: number }
 
 type Card = Omit<ScraperBusiness, 'page'> & { sponsored: boolean }
 type PageRead = { url: string; text: string; cards: Card[]; next: string }
@@ -183,7 +183,7 @@ export async function runJob(
       message,
       updatedAt: new Date().toISOString(),
     }
-    onUpdate({ progress, counts, page })
+    onUpdate({ progress, counts, page, startedAt })
     const stored = { ...progress, counts, startedAt, page }
     await chrome.storage.local.set({ [PROGRESS_KEY]: stored, [JOB_PROGRESS_KEY(job.id)]: stored })
     await writeDataFile(scraperProgressFile(job.id), progress).catch(() => undefined)

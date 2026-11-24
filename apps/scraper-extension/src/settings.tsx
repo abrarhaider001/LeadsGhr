@@ -74,7 +74,7 @@ function Settings() {
     setRunning(true)
     try {
       await runJob(current, control.current, (update) => {
-        const progress = { ...update.progress, counts: { ...update.counts }, page: update.page }
+        const progress = { ...update.progress, counts: { ...update.counts }, page: update.page, startedAt: update.startedAt }
         setSummaries((all) => ({ ...all, [current.id]: { progress, done: all[current.id]?.done ?? new Set() } }))
         // Finished locations are recorded by the engine; read them back so the Done marks and counts follow.
         void finishedSearches(current.id).then((done) =>
