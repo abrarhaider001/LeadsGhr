@@ -45,15 +45,21 @@ const ICONS = {
     accent: ['M9 18h4.5'],
   },
   emailTracking: { base: ['M1.8 12.6l4.6 4.6L15.2 7'], accent: ['M11 16l1.2 1.2L22.2 7'] },
-  // LeadsGhr Scraper (owner-chosen W1, 2026-11-24): gear and globe in outline, the cursor filled in green.
+  // LeadsGhr Scraper (owner-chosen R2, 2026-11-24): the robot head of the extension icon in outline, with green eyes
+  // and antenna light (outline, not solid, so the green eyes still show when the open item turns the icon green).
   scraper: {
     base: [
-      'M8.18 3.61 L9.17 3.34 L9.52 1.26 L11.68 1.26 L12.03 3.34 L13.84 3.95 L14.72 4.45 L16.44 3.23 L17.97 4.76 L16.75 6.48 L17.59 8.18 L17.86 9.17 L19.94 9.52 L19.94 11.68 L17.86 12.03 L17.25 13.84 L16.75 14.72 L17.97 16.44 L16.44 17.97 L14.72 16.75 L13.02 17.59 L12.03 17.86 L11.68 19.94 L9.52 19.94 L9.17 17.86 L7.36 17.25 L6.48 16.75 L4.76 17.97 L3.23 16.44 L4.45 14.72 L3.61 13.02 L3.34 12.03 L1.26 11.68 L1.26 9.52 L3.34 9.17 L3.95 7.36 L4.45 6.48 L3.23 4.76 L4.76 3.23 L6.48 4.45 Z',
-      'M10.6 6.2a4.4 4.4 0 1 0 0 8.8a4.4 4.4 0 1 0 0-8.8z',
-      'M6.2 10.6h8.8',
-      'M10.6 6.2c-1.6 1.6-1.6 7.2 0 8.8',
+      'M7 9h10a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3z',
+      'M12 9V6.4',
+      'M1.8 13v3',
+      'M22.2 13v3',
+      'M10 17h4',
     ],
-    accent: ['F:M12.20 11.80 L12.20 22.20 L14.90 19.70 L16.78 23.45 L18.44 22.62 L16.57 18.87 L20.10 18.87 Z'],
+    accent: [
+      'F:M12 2.6a1.7 1.7 0 1 0 0 3.4a1.7 1.7 0 1 0 0-3.4z',
+      'F:M9 11.9a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z',
+      'F:M15 11.9a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z',
+    ],
   },
   leads: {
     base: ['M9 5a3 3 0 1 0 0 6a3 3 0 1 0 0-6z', 'M3.5 20a5.5 5.5 0 0 1 11 0'],

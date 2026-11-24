@@ -1,6 +1,6 @@
 export { Icon, type IconName } from './primitives'
 export { EmptyTable } from './empty-table'
-export { BrandLogo, BrandMark, MailerMark, TrackerMark } from './brand-logo'
+export { BrandLogo, BrandMark, MailerMark, ScraperMark, TrackerMark } from './brand-logo'
 export { NavIcon, type NavIconName } from './nav-icons'
 export { LicenseKeyArt } from './license-key-art'
 export { cn } from './lib/utils'
