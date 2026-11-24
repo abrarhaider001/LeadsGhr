@@ -92,6 +92,10 @@ The table has a search box and a Source column. **Show businesses without a webs
 
 Earlier versions kept a single `job.json` and `progress.json`; they are still read, and the next job sent moves the old job into `jobs.json`. The formats and limits are in `packages/schemas/src/scraper.ts` (tested in `packages/schemas/tests/scraper.test.ts`). The desktop side is `apps/desktop/src/scraper-bridge.ts`; the screens are `packages/app/src/scraper-extension-page.tsx` (download) and `packages/app/src/scraper-results-page.tsx` (results). Nothing the Scraper finds is sent to Supabase; only the license check talks to it.
 
+## Saving to the data folder
+
+Each save replaces the whole file. On Windows that replace can fail for a moment while another program has the file open (the desktop app reading it, antivirus, or the search indexer); Chrome then reports an error such as `InvalidStateError`. The Scraper retries such a save a few times, and a failed save in the middle of a location does not stop it, because the next save writes the complete file again. Only if the last save of a location keeps failing does the run stop, with the reason shown (*Stopped: could not save to the data folder ...*); **Resume** then reads that location again from its first page, without counting its businesses twice.
+
 ## Limits
 
 - Google may still show its check page, especially for long jobs; split large jobs into smaller ones and run them at different times.

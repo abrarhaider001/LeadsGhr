@@ -30,7 +30,14 @@ const MAX_SCROLL_ROUNDS = 12
 const MAX_BUSINESSES = 300
 
 export type Control = { action: 'run' | 'pause' | 'stop' }
-export type Counts = { businesses: number; withWebsite: number; adsSkipped: number; perSearch: Record<number, number> }
+export type Counts = {
+  businesses: number
+  withWebsite: number
+  adsSkipped: number
+  perSearch: Record<number, number>
+  /** Businesses with a website per search, so a search read again after Resume is not counted twice. */
+  websitesPerSearch?: Record<number, number>
+}
 export type EngineUpdate = { progress: ScraperProgress; counts: Counts; page: number }
 
 type Card = Omit<ScraperBusiness, 'page'> & { sponsored: boolean }
@@ -159,7 +166,7 @@ export async function runJob(
   const earlier = await readJobProgress(job.id)
   const counts: Counts =
     earlier?.counts
-      ? { ...earlier.counts, perSearch: { ...earlier.counts.perSearch } }
+      ? { ...earlier.counts, perSearch: { ...earlier.counts.perSearch }, websitesPerSearch: { ...earlier.counts.websitesPerSearch } }
       : { businesses: 0, withWebsite: 0, adsSkipped: 0, perSearch: {} }
   const startedAt = Date.now()
   const scraperTab = await chrome.tabs.getCurrent()
@@ -185,8 +192,10 @@ export async function runJob(
     if (tabId !== undefined) await chrome.tabs.remove(tabId).catch(() => undefined)
     tabId = undefined
   }
+  let currentIndex = 0
   try {
     for (const search of job.searches) {
+      currentIndex = search.index
       if (done.has(search.index)) continue
       if (control.action !== 'run') return await stopped(control, search.index)
       const since = Date.now() - lastSearchAt
@@ -211,10 +220,19 @@ export async function runJob(
       const earlierCount = counts.perSearch[search.index] ?? 0
       counts.businesses = Math.max(0, counts.businesses - earlierCount)
       counts.perSearch[search.index] = 0
+      counts.websitesPerSearch ??= {}
+      counts.withWebsite = Math.max(0, counts.withWebsite - (counts.websitesPerSearch[search.index] ?? 0))
+      counts.websitesPerSearch[search.index] = 0
       const seen = new Set<string>()
-      const save = () => {
+      // Saves the whole result so far. A failed save does not stop the search: the next save rewrites the complete
+      // file anyway. Only the last save of a location must succeed (otherwise the run stops with the reason).
+      const save = async (final = false) => {
         result.updatedAt = new Date().toISOString()
-        return writeDataFile(`results/${job.id}/${scraperResultFile(search.index)}`, result)
+        try {
+          await writeDataFile(`results/${job.id}/${scraperResultFile(search.index)}`, result)
+        } catch (failure) {
+          if (final) throw failure
+        }
       }
       // Adds the cards not seen yet; returns how many were new.
       const take = (cards: Card[]) => {
@@ -233,7 +251,10 @@ export async function runJob(
           seen.add(key)
           result.businesses.push({ name: card.name, websiteLink: card.websiteLink, phone: card.phone, address: card.address, page })
           counts.businesses++
-          if (card.websiteLink) counts.withWebsite++
+          if (card.websiteLink) {
+            counts.withWebsite++
+            counts.websitesPerSearch![search.index] = (counts.websitesPerSearch![search.index] ?? 0) + 1
+          }
           added++
         }
         counts.perSearch[search.index] = result.businesses.length
@@ -301,7 +322,7 @@ export async function runJob(
         await chrome.tabs.update(tabId, { url: read.next })
       }
       result.complete = true
-      await save()
+      await save(true)
       done.add(search.index)
       await chrome.storage.local.set({ [DONE_KEY(job.id)]: [...done] })
       // Finished with this location: close its tab; the next search opens a new one.
@@ -309,6 +330,13 @@ export async function runJob(
     }
     await report('finished', job.searches.length, `All ${job.searches.length} searches finished.`)
     return 'finished'
+  } catch (failure) {
+    // Leave a clear reason instead of a run that looks interrupted; what was saved stays, and Resume continues here.
+    const reason = String(failure).replace(/^\w*Error:\s*/, '')
+    await report('stopped', currentIndex, `Stopped: could not save to the data folder (${reason}). Resume to continue from this search.`).catch(
+      () => undefined,
+    )
+    throw failure
   } finally {
     await closeSearchTab()
     if (scraperTab?.id !== undefined) await chrome.tabs.update(scraperTab.id, { active: true }).catch(() => undefined)

@@ -118,14 +118,35 @@ export async function writableFolder(): Promise<DirectoryHandle> {
 }
 
 /** Writes a JSON file (path may contain folders, created as needed). Chrome writes to a temporary copy and replaces
- *  the file only when the write is closed, so the desktop app never reads a half-written file. */
+ *  the file only when the write is closed, so the desktop app never reads a half-written file. On Windows that
+ *  replace can fail for a moment while another program has the file open (the desktop app reading it, antivirus, or
+ *  the search indexer); Chrome then reports InvalidStateError or NoModificationAllowedError. Such a write is retried
+ *  a few times with fresh folder and file handles before the error is passed on. */
 export async function writeDataFile(path: string, value: unknown): Promise<void> {
-  let folder: FileSystemDirectoryHandle = await writableFolder()
-  const parts = path.split('/')
-  const name = parts.pop()!
-  for (const part of parts) folder = await folder.getDirectoryHandle(part, { create: true })
-  const file = await folder.getFileHandle(name, { create: true })
-  const writer = await file.createWritable()
-  await writer.write(JSON.stringify(value, null, 2))
-  await writer.close()
+  const text = JSON.stringify(value, null, 2)
+  for (let attempt = 1; ; attempt++) {
+    try {
+      let folder: FileSystemDirectoryHandle = await writableFolder()
+      const parts = path.split('/')
+      const name = parts.pop()!
+      for (const part of parts) folder = await folder.getDirectoryHandle(part, { create: true })
+      const file = await folder.getFileHandle(name, { create: true })
+      const writer = await file.createWritable()
+      try {
+        await writer.write(text)
+        await writer.close()
+      } catch (failure) {
+        await writer.abort().catch(() => undefined)
+        throw failure
+      }
+      return
+    } catch (failure) {
+      const name = (failure as DOMException | undefined)?.name
+      const passing = name === 'InvalidStateError' || name === 'NoModificationAllowedError' || name === 'NotReadableError' || name === 'AbortError'
+      if (!passing || attempt >= WRITE_ATTEMPTS) throw failure
+      await new Promise((resolve) => setTimeout(resolve, 400 * attempt))
+    }
+  }
 }
+
+const WRITE_ATTEMPTS = 6
