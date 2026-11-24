@@ -25,7 +25,7 @@ The formats and limits are in `packages/schemas/src/scraper.ts` (tested in `pack
 
 ## Install and first run
 
-1. Build it: `pnpm build:scraper-extension` (creates `C:\LeadsGhr\extensions\leadsghr-scraper.zip` and the ready-to-load folder beside it).
+1. Get it: open **LeadsGhr Scraper** in the desktop sidebar and select **Download extension ZIP**, then extract it to a `leadsghr-scraper` folder. From source, `pnpm build:scraper-extension` creates `C:\LeadsGhr\extensions\leadsghr-scraper.zip` and the ready-to-load folder beside it.
 2. **Use a separate Chrome profile that is not signed in to Google** (recommended), so a block by Google can never affect your own Google account.
 3. In that profile open `chrome://extensions`, turn on **Developer mode**, select **Load unpacked**, and choose `C:\LeadsGhr\extensions\leadsghr-scraper`. After later rebuilds, select **Reload**.
 4. Open the Scraper's settings (the gear, or **Set up** in the popup), select **Choose folder**, and choose `C:\LeadsGhr\extensions\leadsghr-scraper\data`; then **Allow on every visit**.
@@ -35,5 +35,4 @@ The formats and limits are in `packages/schemas/src/scraper.ts` (tested in `pack
 
 - Google may still show its check page, especially for long jobs; split large jobs into smaller ones and run them at different times.
 - The Scraper runs while its settings tab stays open; closing that tab stops the run, and the popup then shows it as interrupted (resume later).
-- It is not bundled in the desktop installer yet and has no download button in the app.
 - The `scraper` license slot needs the updated `license` Edge Function (`supabase/functions/license`), deployed by pushing.

@@ -14,6 +14,8 @@ extraResources:
     to: leadsghr-tracker.zip
   - from: ../mailer-extension/leadsghr-mailer.zip
     to: leadsghr-mailer.zip
+  - from: ../scraper-extension/leadsghr-scraper.zip
+    to: leadsghr-scraper.zip
   # The branded uninstall window (setup/LeadsGhrUninstall.cs, built by `pnpm build:uninstall` before packaging).
   - from: setup/out/LeadsGhr-Uninstall.exe
     to: LeadsGhr-Uninstall.exe

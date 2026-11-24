@@ -46,6 +46,7 @@ import {
   syncProfileFromDisk,
 } from './account-data'
 import { EmailSendingPage } from './email-sending-page'
+import { ScraperExtensionPage } from './scraper-extension-page'
 import { EmailTemplatesPage } from './email-templates-page'
 import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
 import { LicenseScreen, LicenseSettingsPage, loadLicense } from './license-page'
@@ -58,6 +59,7 @@ const navigation: { label: string; icon: NavIconName }[] = [
   { label: 'Crawler', icon: 'crawler' },
   { label: 'New Search', icon: 'newSearch' },
   { label: 'Niche Library', icon: 'nicheLibrary' },
+  { label: 'LeadsGhr Scraper', icon: 'scraper' },
   { label: 'Email Filtering', icon: 'emailFiltering' },
   { label: 'Email Validation', icon: 'emailValidation' },
   { label: 'Email Spam Check', icon: 'emailSpamCheck' },
@@ -87,6 +89,7 @@ const descriptions: Record<string, string> = {
   'Email Templates': 'Write plain or HTML messages, preview them, and use them in LeadsGhr Mailer.',
   'Email Tracking': 'Review delivery and engagement for sent emails.',
   'Crawl Results': 'Review businesses found across the selected niche and locations.',
+  'LeadsGhr Scraper': 'Download the Chrome extension that searches Google Search business listings for you.',
   'Scraper Results': 'Businesses found by LeadsGhr Scraper on Google Search, saved as they arrive.',
   Leads: 'Review businesses and contacts saved on this computer.',
   Runs: 'Review crawl progress, saved results, and selected state ranges.',
@@ -499,6 +502,8 @@ export function LeadsGhrApp() {
             <EmailSpamEnginePage />
           ) : page === 'Email Sending' ? (
             <EmailSendingPage />
+          ) : page === 'LeadsGhr Scraper' ? (
+            <ScraperExtensionPage />
           ) : page === 'Email Templates' ? (
             <EmailTemplatesPage />
           ) : page === 'Email Tracking' ? (

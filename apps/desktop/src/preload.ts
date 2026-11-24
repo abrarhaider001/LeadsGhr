@@ -121,6 +121,7 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   },
   downloadTrackingExtension: () => ipcRenderer.invoke('leadsghr:tracking:download-extension'),
   downloadMailerExtension: () => ipcRenderer.invoke('leadsghr:mailer:download-extension'),
+  downloadScraperExtension: () => ipcRenderer.invoke('leadsghr:scraper:download-extension'),
   listEmailTemplates: () => ipcRenderer.invoke('leadsghr:email-templates:list'),
   saveEmailTemplate: (input: unknown) =>
     ipcRenderer.invoke('leadsghr:email-templates:save', emailTemplateDraftSchema.parse(input)),
