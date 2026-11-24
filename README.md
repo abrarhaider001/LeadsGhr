@@ -18,6 +18,62 @@ The **Discovery tools** sidebar also includes **Email Validation** and **Email S
 
 **License keys:** LeadsGhr has no sign-up. The desktop app and each Chrome extension open with a license-key screen (desktop: after the splash screen; extensions: when the popup, Mailer settings page, or Tracker side panel opens). The owner creates keys in the Supabase SQL editor (`select public.create_license_key('Name', 'email@example.com', '2026-12-31');`, which returns a 32-character key with capital and small letters, digits, and special characters such as `6fN$YM7xQ7!3RP2!JtqYHAWzT3QYN!Mx`, made from the name, email, the current time, and a random value with SHA-256; keys are case-sensitive) and gives each person their own. A key activates once on each product (desktop app, LeadsGhr Mailer, LeadsGhr Tracker) and is then bound to that installation, so it cannot be shared; `reset_license_product` frees a product again (for example after reinstalling Windows) and `revoke_license_key` turns a key off. Every start re-checks the key with the `license` Edge Function; an expired, revoked, or reused key removes the local license and shows the key screen again ("ask your admin for a new key"). Without internet a product keeps working for 7 days after its last check. The key is stored encrypted (desktop: `C:\LeadsGhr\data\license.bin` with Windows encryption; extensions: encrypted in Chrome storage) and never shown in full; **Settings → License** shows the status, masked key, expiry date, and which products the key is used on. Supabase holds only the keys with the name and email they were made for, expiry dates, and activation records (`supabase/migrations/0005_license_keys.sql`). Deleting LeadsGhr's data at uninstall also removes this computer's installation ID, so that key needs `reset_license_product` before it can activate the desktop app again.
 
+**App mode (`local` or `production`):** set `LEADSGHR_MODE` in the `.env` file in the repository root (copy `.env.example`, which lists every setting the project uses with what it is for, to `.env` to start). `production` (the default, also used when the line is missing or has any other value) requires license keys. `LEADSGHR_MODE=local` lets you work without them: `pnpm dev` opens the desktop app straight after the splash screen (the **License** entry under **Settings** is hidden), and `pnpm build:extension` / `pnpm build:mailer-extension` build extensions without the license screen. Switch back with `LEADSGHR_MODE=production` and restart (or rebuild the extensions). Installed copies of the desktop app always require a key, and a `local` extension build never replaces the ZIPs committed in the repository; only the copy in `C:\LeadsGhr\extensions` is updated.
+
+**Run locally without license keys** (`local`). Set this line in `.env` in the repository root:
+
+```
+LEADSGHR_MODE=local
+```
+
+Then start the desktop app from the repository root:
+
+```
+pnpm run dev
+```
+
+For the Chrome extensions without a key, also build them, then press **Reload** in `chrome://extensions`:
+
+```
+pnpm run build:extension
+pnpm run build:mailer-extension
+```
+
+**Run locally with license keys** (`production`). Change the line in `.env` to:
+
+```
+LEADSGHR_MODE=production
+```
+
+Then:
+
+```
+pnpm run dev
+```
+
+For the Chrome extensions with a key, also build them, then press **Reload**:
+
+```
+pnpm run build:extension
+pnpm run build:mailer-extension
+```
+
+In `production`, the license screen appears after the splash only when this computer has no active license yet. Once a key is activated (stored in `C:\LeadsGhr\data\license.bin`), LeadsGhr opens straight into the workspace, and **Settings → License** shows the key.
+
+**One-off without editing `.env` (PowerShell).** A variable set in the terminal overrides `.env` for that terminal only:
+
+```
+$env:LEADSGHR_MODE = 'production'; pnpm run dev
+```
+
+```
+$env:LEADSGHR_MODE = 'local'; pnpm run dev
+```
+
+To go back to whatever `.env` says, run `Remove-Item Env:LEADSGHR_MODE`, or open a new terminal.
+
+Always restart `pnpm run dev` after changing the mode. The extensions keep the mode they were built with until you rebuild them.
+
 **Where LeadsGhr keeps your data:** everything LeadsGhr saves is in `C:\LeadsGhr` (on the system drive): `data\` holds the database (`leadsghr.sqlite`: runs, results, pipeline queues, email-validation cache, export history), `preferences.json`, `search-criteria.json`, and `profile.json` (name, email, avatar); `exports\` holds CSV exports, `extensions\` the Chrome extensions, and `settings\` exported settings files. Back up or move LeadsGhr's data by copying that one folder. It is not removed when LeadsGhr is uninstalled, so a reinstall shows the same runs, results, and settings. The first start of a version with the data folder copies the database and settings from the old location (`%APPDATA%\@leadsghr\desktop`) into `C:\LeadsGhr\data` (only files the data folder does not have yet) and leaves the old files there as a backup; the profile moves from the window's storage into `profile.json`. If `C:\LeadsGhr\data` cannot be created, LeadsGhr keeps using the old location. `LEADSGHR_DATA_DIR` points the data folder elsewhere, for example a separate folder for tests. Electron's own caches stay in `%APPDATA%\@leadsghr\desktop`.
 
 **Uninstalling LeadsGhr:** Windows **Settings → Apps → LeadsGhr → Uninstall** opens LeadsGhr's own window (same look as LeadsGhr Setup): **Uninstall LeadsGhr?** with an **Also delete my LeadsGhr data** card that is **unchecked by default**. Left unchecked, **Uninstall** removes only the app and keeps everything in `C:\LeadsGhr`, so a later install shows the same runs, results, and settings. Ticked, the card turns red and the button becomes **Uninstall and delete data**, which also deletes `C:\LeadsGhr` (data, exports, extensions, settings), the old `%APPDATA%\@leadsghr\desktop` folder, and the updater cache. **Cancel** (or closing the window) removes nothing. While the app is removed, a small window shows **Removing LeadsGhr…** and then **LeadsGhr was removed.** Automatic updates never show this window and never delete data. How it works: the installer sets the Windows uninstall command to `"Uninstall LeadsGhr.exe" /currentuser /S --ask` (`apps/desktop/setup/installer.nsh`, included through `nsisWeb.include`); `/S` skips electron-builder's plain confirmation and `--ask` runs `resources\LeadsGhr-Uninstall.exe` (`apps/desktop/setup/LeadsGhrUninstall.cs` with the shared drawing in `setup/Brand.cs`; exit code 0 keep data, 2 delete data, 1 cancel). Updates run the old uninstaller with `/S --updated` and no `--ask`. If the window file is missing, the uninstaller asks with a plain box instead. `pnpm build` builds the window first (`build:uninstall`, into the ignored `apps/desktop/setup/out/`) so electron-builder packs it. It applies to versions installed with this change; older installs keep the plain uninstaller until they update.

@@ -4,9 +4,12 @@ import {
   activateLicense,
   applyMaskedKeyEdit,
   checkStoredLicense,
+  localLicenseView,
   maskKeyForDisplay,
   maskLicenseKey,
   normalizeLicenseKey,
+  isLocalMode,
+  modeFromEnvFile,
   type LicenseResponse,
   type StoredLicense,
 } from '../src/index.ts'
@@ -115,3 +118,24 @@ test('the key field shows only the character just typed', () => {
   assert.equal(maskKeyForDisplay(key, reveal), '•'.repeat(32))
   assert.equal(normalizeLicenseKey(key), KEY)
 })
+
+test('only LEADSGHR_MODE=local turns license keys off; everything else is production', () => {
+  for (const value of ['local', 'LOCAL', ' local ']) assert.equal(isLocalMode(value), true, value)
+  for (const value of [undefined, null, '', 'production', 'prod', 'true', 'locall', 'dev'])
+    assert.equal(isLocalMode(value), false, String(value))
+})
+
+test('the mode is read from a .env file line', () => {
+  assert.equal(modeFromEnvFile('A=1\nLEADSGHR_MODE=local\nB=2'), 'local')
+  assert.equal(modeFromEnvFile('LEADSGHR_MODE = "local"  # dev only'), 'local')
+  assert.equal(modeFromEnvFile("LEADSGHR_MODE='production'"), 'production')
+  assert.equal(modeFromEnvFile('# LEADSGHR_MODE=local\nOTHER=1'), undefined)
+  assert.equal(modeFromEnvFile('LEADSGHR_LOCAL_MODE=true'), undefined)
+})
+
+test('the local mode view is active and never expires', () => {
+  const view = localLicenseView(new Date('2026-11-24T00:00:00Z'))
+  assert.equal(view.state, 'active')
+  assert.ok(view.state === 'active' && view.local && new Date(view.expiresAt).getFullYear() === 9999)
+})
+

@@ -8,6 +8,37 @@
  * revoked, or used elsewhere. Only the key, product, installation ID, and dates ever reach Supabase.
  */
 
+/**
+ * The app mode, set with LEADSGHR_MODE in the repository's .env file (or the environment): `local` turns license
+ * keys off for development and testing; `production` (the default) requires them. Anything other than `local`,
+ * including a missing value or a typo, counts as production. The desktop app honours `local` only when it is not
+ * installed (`pnpm dev`); the extensions read it when they are built.
+ */
+export function isLocalMode(value: string | undefined | null): boolean {
+  return (value ?? '').trim().toLowerCase() === 'local'
+}
+
+/** The LEADSGHR_MODE value written in a .env file's text, or undefined when the file does not set it. */
+export function modeFromEnvFile(text: string): string | undefined {
+  const line = text.match(/^\s*LEADSGHR_MODE\s*=\s*(.*)$/m)
+  return line?.[1].replace(/\s+#.*$/, '').trim().replace(/^(["'])(.*)\1$/, '$2')
+}
+
+/** The license view used in local mode: active, with nothing to check, copy, or renew. */
+export function localLicenseView(now = new Date()): LicenseView {
+  return {
+    state: 'active',
+    local: true,
+    expiresAt: '9999-12-31T00:00:00.000Z',
+    keyEnd: '',
+    keyLength: 0,
+    products: {},
+    activatedAt: now.toISOString(),
+    lastCheckedAt: now.toISOString(),
+    offline: false,
+  }
+}
+
 /** The Supabase Edge Function that activates and checks keys (`supabase/functions/license`). */
 export const LICENSE_ENDPOINT = 'https://ihooxhqcoycumpvgogle.supabase.co/functions/v1/license'
 
@@ -65,6 +96,8 @@ export type LicenseView =
       activatedAt: string
       lastCheckedAt: string
       offline: boolean
+      /** Local mode (LEADSGHR_MODE=local): no key is needed or checked. */
+      local?: boolean
     }
   | {
       state: 'locked'

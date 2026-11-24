@@ -5,6 +5,7 @@ import {
   checkStoredLicense,
   LICENSE_KEY_LENGTH,
   LICENSE_PRODUCTS,
+  localLicenseView,
   type LicenseProduct,
   type LicenseView,
   type StoredLicense,
@@ -28,6 +29,12 @@ declare const chrome: {
   storage: { local: ChromeStorageArea }
   runtime: { getURL(path: string): string }
 }
+
+/** Set by each extension's vite.config.ts from LEADSGHR_MODE (the repository's .env) when it is built: true for `local`. */
+declare const __LEADSGHR_LOCAL_MODE__: boolean | undefined
+/** True in an extension built in local mode: no license key is needed or checked. */
+export const EXTENSION_LOCAL_MODE =
+  typeof __LEADSGHR_LOCAL_MODE__ !== 'undefined' && __LEADSGHR_LOCAL_MODE__ === true
 
 const LICENSE_RECORD = 'leadsghr.license'
 const CIPHER_KEY = 'leadsghr.licenseCipher'
@@ -100,6 +107,11 @@ export async function checkExtensionLicense(
   product: LicenseProduct,
   options: { force?: boolean } = {},
 ): Promise<LicenseView> {
+  if (EXTENSION_LOCAL_MODE) {
+    // Local mode: content scripts may act without a key.
+    await chrome.storage.local.set({ [LICENSE_ACTIVE_FLAG]: true })
+    return localLicenseView()
+  }
   const stored = await readLicense()
   if (
     stored &&
@@ -130,6 +142,7 @@ export async function activateExtensionLicense(
   product: LicenseProduct,
   key: string,
 ): Promise<LicenseView> {
+  if (EXTENSION_LOCAL_MODE) return localLicenseView()
   try {
     const result = await activateLicense(key, product, await installationId())
     if (result.stored) await saveLicense(result.stored)
