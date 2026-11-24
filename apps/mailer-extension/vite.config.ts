@@ -6,11 +6,11 @@ import { readLocalMode } from '../../scripts/local-mode.mjs'
 
 const root = fileURLToPath(new URL('.', import.meta.url))
 
-// Local mode (LEADSGHR_LOCAL_MODE=true in the repository's .env): build without the license check. The build
+// Local mode (LEADSGHR_MODE=local in the repository's .env): build without the license check. The build
 // shows a LOCAL MODE strip, and the packaging script keeps such a build out of the committed ZIP.
 const localMode = readLocalMode(resolve(root, '../..'))
 if (localMode)
-  console.warn('LEADSGHR_LOCAL_MODE is on: this build skips the license check. Do not ship it.')
+  console.warn('LEADSGHR_MODE is local: this build skips the license check. Do not ship it.')
 
 export default defineConfig({
   plugins: [react()],

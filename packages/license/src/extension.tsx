@@ -30,7 +30,7 @@ declare const chrome: {
   runtime: { getURL(path: string): string }
 }
 
-/** Set by each extension's vite.config.ts from LEADSGHR_LOCAL_MODE (the repository's .env) when it is built. */
+/** Set by each extension's vite.config.ts from LEADSGHR_MODE (the repository's .env) when it is built: true for `local`. */
 declare const __LEADSGHR_LOCAL_MODE__: boolean | undefined
 /** True in an extension built in local mode: no license key is needed or checked. */
 export const EXTENSION_LOCAL_MODE =

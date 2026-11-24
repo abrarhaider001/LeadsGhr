@@ -256,9 +256,9 @@ export function LicenseSettingsPage({
         <div className="la-license-local" role="status">
           <strong>Local mode: license check is off</strong>
           <p>
-            LEADSGHR_LOCAL_MODE is turned on in the .env file, so this development copy of LeadsGhr opens without a
-            license key. Installed copies always need a key. To turn the check back on, remove that line or set it to
-            false, then restart LeadsGhr.
+            LEADSGHR_MODE is set to local in the .env file, so this development copy of LeadsGhr opens without a
+            license key. Installed copies always need a key. To turn the check back on, set LEADSGHR_MODE=production
+            (or remove the line), then restart LeadsGhr.
           </p>
         </div>
       </section>

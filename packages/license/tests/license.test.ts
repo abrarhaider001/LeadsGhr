@@ -5,11 +5,11 @@ import {
   applyMaskedKeyEdit,
   checkStoredLicense,
   localLicenseView,
-  localModeFromEnvFile,
   maskKeyForDisplay,
   maskLicenseKey,
   normalizeLicenseKey,
-  parseLocalMode,
+  isLocalMode,
+  modeFromEnvFile,
   type LicenseResponse,
   type StoredLicense,
 } from '../src/index.ts'
@@ -119,18 +119,18 @@ test('the key field shows only the character just typed', () => {
   assert.equal(normalizeLicenseKey(key), KEY)
 })
 
-test('local mode is on only for a clear yes', () => {
-  for (const value of ['true', 'TRUE', ' 1 ', 'yes', 'on']) assert.equal(parseLocalMode(value), true, value)
-  for (const value of [undefined, null, '', 'false', '0', 'no', 'off', 'maybe'])
-    assert.equal(parseLocalMode(value), false, String(value))
+test('only LEADSGHR_MODE=local turns license keys off; everything else is production', () => {
+  for (const value of ['local', 'LOCAL', ' local ']) assert.equal(isLocalMode(value), true, value)
+  for (const value of [undefined, null, '', 'production', 'prod', 'true', 'locall', 'dev'])
+    assert.equal(isLocalMode(value), false, String(value))
 })
 
-test('local mode is read from a .env file line', () => {
-  assert.equal(localModeFromEnvFile('A=1\nLEADSGHR_LOCAL_MODE=true\nB=2'), 'true')
-  assert.equal(localModeFromEnvFile('LEADSGHR_LOCAL_MODE = "true"  # dev only'), 'true')
-  assert.equal(localModeFromEnvFile("LEADSGHR_LOCAL_MODE='false'"), 'false')
-  assert.equal(localModeFromEnvFile('# LEADSGHR_LOCAL_MODE=true\nOTHER=1'), undefined)
-  assert.equal(localModeFromEnvFile('OTHER=1'), undefined)
+test('the mode is read from a .env file line', () => {
+  assert.equal(modeFromEnvFile('A=1\nLEADSGHR_MODE=local\nB=2'), 'local')
+  assert.equal(modeFromEnvFile('LEADSGHR_MODE = "local"  # dev only'), 'local')
+  assert.equal(modeFromEnvFile("LEADSGHR_MODE='production'"), 'production')
+  assert.equal(modeFromEnvFile('# LEADSGHR_MODE=local\nOTHER=1'), undefined)
+  assert.equal(modeFromEnvFile('LEADSGHR_LOCAL_MODE=true'), undefined)
 })
 
 test('the local mode view is active and never expires', () => {

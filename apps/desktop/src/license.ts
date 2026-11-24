@@ -7,8 +7,8 @@ import {
   activateLicense,
   checkStoredLicense,
   localLicenseView,
-  localModeFromEnvFile,
-  parseLocalMode,
+  isLocalMode,
+  modeFromEnvFile,
   type LicenseView,
   type StoredLicense,
 } from '@leadsghr/license'
@@ -65,21 +65,21 @@ async function saveLicense(stored: StoredLicense | null): Promise<void> {
 let current: LicenseView | null = null
 
 /**
- * Local mode (LEADSGHR_LOCAL_MODE=true): no license key is needed. It works only while developing (`pnpm dev`, not an
+ * Local mode (LEADSGHR_MODE=local): no license key is needed. It works only while developing (`pnpm dev`, not an
  * installed app), so a release can never start without licensing. The value comes from the environment, or else
  * from the repository's .env file (two folders above apps/desktop).
  */
 export function localMode(): boolean {
   if (app.isPackaged) return false
-  let value = process.env.LEADSGHR_LOCAL_MODE
+  let value = process.env.LEADSGHR_MODE
   if (value === undefined) {
     try {
-      value = localModeFromEnvFile(readFileSync(resolve(app.getAppPath(), '../../.env'), 'utf8'))
+      value = modeFromEnvFile(readFileSync(resolve(app.getAppPath(), '../../.env'), 'utf8'))
     } catch {
-      /* No .env file: local mode stays off. */
+      /* No .env file: production mode. */
     }
   }
-  return parseLocalMode(value)
+  return isLocalMode(value)
 }
 
 /** The start-up check: re-validate the stored key; remove it when it is expired, revoked, or used elsewhere. */

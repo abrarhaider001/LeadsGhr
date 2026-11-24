@@ -9,17 +9,18 @@
  */
 
 /**
- * Local mode: turns license keys off for development and testing, set with LEADSGHR_LOCAL_MODE=true in the
- * repository's .env file (or the environment). The desktop app honours it only when it is not installed
- * (`pnpm dev`); the extensions read it when they are built. Accepts true/1/yes/on; anything else means off.
+ * The app mode, set with LEADSGHR_MODE in the repository's .env file (or the environment): `local` turns license
+ * keys off for development and testing; `production` (the default) requires them. Anything other than `local`,
+ * including a missing value or a typo, counts as production. The desktop app honours `local` only when it is not
+ * installed (`pnpm dev`); the extensions read it when they are built.
  */
-export function parseLocalMode(value: string | undefined | null): boolean {
-  return /^(?:1|true|yes|on)$/i.test((value ?? '').trim())
+export function isLocalMode(value: string | undefined | null): boolean {
+  return (value ?? '').trim().toLowerCase() === 'local'
 }
 
-/** The LEADSGHR_LOCAL_MODE value written in a .env file's text, or undefined when the file does not set it. */
-export function localModeFromEnvFile(text: string): string | undefined {
-  const line = text.match(/^\s*LEADSGHR_LOCAL_MODE\s*=\s*(.*)$/m)
+/** The LEADSGHR_MODE value written in a .env file's text, or undefined when the file does not set it. */
+export function modeFromEnvFile(text: string): string | undefined {
+  const line = text.match(/^\s*LEADSGHR_MODE\s*=\s*(.*)$/m)
   return line?.[1].replace(/\s+#.*$/, '').trim().replace(/^(["'])(.*)\1$/, '$2')
 }
 
@@ -95,7 +96,7 @@ export type LicenseView =
       activatedAt: string
       lastCheckedAt: string
       offline: boolean
-      /** Local mode (LEADSGHR_LOCAL_MODE): no key is needed or checked. */
+      /** Local mode (LEADSGHR_MODE=local): no key is needed or checked. */
       local?: boolean
     }
   | {
