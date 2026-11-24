@@ -3,7 +3,7 @@ import './scraper.css'
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { LicenseGate } from '@leadsghr/license/extension'
-import { scraperJobTitle, type ScraperJob } from '@leadsghr/schemas'
+import { clampSearchTiming, SEARCH_TIMING_PRESETS, scraperJobTitle, type ScraperJob } from '@leadsghr/schemas'
 import { connectDataFolder, dataFolderState, DATA_FOLDER_PATH, type DataFolderState } from './data-folder'
 import { finishedSearches, runJob, type Control, type Counts } from './engine'
 import { icons } from './parts'
@@ -409,9 +409,10 @@ function Settings() {
             </table>
           </div>
           <p className="sc-muted sc-small">
-            Up to 5 pages per location; pauses of several seconds between pages and 45 seconds between locations keep it
-            polite. If Google shows its check page the Scraper stops and keeps what it saved. Tip: run it in a Chrome profile
-            that is not signed in to Google.
+            {(() => {
+              const t = clampSearchTiming(job.pacing ?? SEARCH_TIMING_PRESETS.normal)
+              return `Up to ${t.pagesPerLocation} ${t.pagesPerLocation === 1 ? 'page' : 'pages'} per location; ${t.pagePauseMinSec} to ${t.pagePauseMaxSec} seconds between pages and ${t.locationPauseSec} seconds between locations${t.breakEvery ? `, with a ${t.breakMinutes}-minute break every ${t.breakEvery} locations` : ''} (from LeadsGhr's Search timing when this job was sent). If Google shows its check page the Scraper stops and keeps what it saved. Tip: run it in a Chrome profile that is not signed in to Google.`
+            })()}
           </p>
         </section>
       )}

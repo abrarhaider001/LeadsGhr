@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SEARCH_SPEEDS, SEARCH_TIMING_LIMITS, SEARCH_TIMING_PRESETS } from './search-timing'
 
 export const leadSchema = z.object({
   id: z.string().optional(),
@@ -78,6 +79,8 @@ export const clampFontSize = (value: number) =>
     Math.max(FONT_SIZE_MIN, Math.round(value / FONT_SIZE_STEP) * FONT_SIZE_STEP),
   )
 
+const L = SEARCH_TIMING_LIMITS
+const N = SEARCH_TIMING_PRESETS.normal
 export const desktopPreferencesSchema = z.object({
   /** Light or dark look; `system` follows the Windows setting (Settings → Preferences → Appearance). */
   theme: z.enum(['light', 'dark', 'system']).default('light'),
@@ -102,6 +105,17 @@ export const desktopPreferencesSchema = z.object({
   includePhone: z.boolean(),
   includeAddress: z.boolean(),
   includeLocation: z.boolean(),
+  /** Search timing (Preferences → Search): a preset or `custom`, and the pauses it sets (packages/schemas/src/search-timing.ts). */
+  searchSpeed: z.enum(SEARCH_SPEEDS).default('normal'),
+  searchScrollPauseSec: z.number().min(L.scrollPauseSec[0]).max(L.scrollPauseSec[1]).default(N.scrollPauseSec),
+  searchMorePlacesPauseSec: z.number().min(L.morePlacesPauseSec[0]).max(L.morePlacesPauseSec[1]).default(N.morePlacesPauseSec),
+  searchScrollRounds: z.number().int().min(L.scrollRounds[0]).max(L.scrollRounds[1]).default(N.scrollRounds),
+  searchPagePauseMinSec: z.number().min(L.pagePauseMinSec[0]).max(L.pagePauseMinSec[1]).default(N.pagePauseMinSec),
+  searchPagePauseMaxSec: z.number().min(L.pagePauseMaxSec[0]).max(L.pagePauseMaxSec[1]).default(N.pagePauseMaxSec),
+  searchPagesPerLocation: z.number().int().min(L.pagesPerLocation[0]).max(L.pagesPerLocation[1]).default(N.pagesPerLocation),
+  searchLocationPauseSec: z.number().min(L.locationPauseSec[0]).max(L.locationPauseSec[1]).default(N.locationPauseSec),
+  searchBreakEvery: z.number().int().min(L.breakEvery[0]).max(L.breakEvery[1]).default(N.breakEvery),
+  searchBreakMinutes: z.number().min(L.breakMinutes[0]).max(L.breakMinutes[1]).default(N.breakMinutes),
   emailVerifyCheckSyntax: z.boolean().default(true),
   emailVerifyCheckDomain: z.boolean().default(true),
   emailVerifyCheckMx: z.boolean().default(true),
@@ -137,6 +151,16 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   includePhone: true,
   includeAddress: true,
   includeLocation: true,
+  searchSpeed: 'normal',
+  searchScrollPauseSec: SEARCH_TIMING_PRESETS.normal.scrollPauseSec,
+  searchMorePlacesPauseSec: SEARCH_TIMING_PRESETS.normal.morePlacesPauseSec,
+  searchScrollRounds: SEARCH_TIMING_PRESETS.normal.scrollRounds,
+  searchPagePauseMinSec: SEARCH_TIMING_PRESETS.normal.pagePauseMinSec,
+  searchPagePauseMaxSec: SEARCH_TIMING_PRESETS.normal.pagePauseMaxSec,
+  searchPagesPerLocation: SEARCH_TIMING_PRESETS.normal.pagesPerLocation,
+  searchLocationPauseSec: SEARCH_TIMING_PRESETS.normal.locationPauseSec,
+  searchBreakEvery: SEARCH_TIMING_PRESETS.normal.breakEvery,
+  searchBreakMinutes: SEARCH_TIMING_PRESETS.normal.breakMinutes,
   emailVerifyCheckSyntax: true,
   emailVerifyCheckDomain: true,
   emailVerifyCheckMx: true,
@@ -408,3 +432,4 @@ export const emailVerifyJobIdSchema = z.string().uuid()
 export * from './preferences-file'
 export * from './email-templates'
 export * from './scraper'
+export * from './search-timing'

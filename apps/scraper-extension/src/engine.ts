@@ -1,8 +1,8 @@
 import {
   SCRAPER_FORMAT_VERSION,
-  SCRAPER_PAGES_PER_SEARCH,
-  SCRAPER_PAGE_PAUSE_MS,
-  SCRAPER_SEARCH_GAP_MS,
+  clampSearchTiming,
+  pagePauseMs,
+  SEARCH_TIMING_PRESETS,
   scraperPlacesUrl,
   scraperProgressFile,
   scraperResultFile,
@@ -18,15 +18,15 @@ import { DONE_KEY, JOB_PROGRESS_KEY, PROGRESS_KEY, readJobProgress } from './sta
  * Runs a job's searches one at a time (AGENTS.md, rule 5 exception). Each search opens in a new tab in the settings
  * page's window: Google Search's business list for the search, read card by card. The list is scrolled to the bottom
  * (and "More places" pressed when Google shows it) until no new businesses appear, then the next-page arrow is
- * followed, up to SCRAPER_PAGES_PER_SEARCH pages. When the search is finished its tab closes and the next search gets
+ * followed, up to the job's pages per location. When the search is finished its tab closes and the next search gets
  * a new tab. results/<jobId>/<n>.json is saved after every step. Pauses keep requests polite (several seconds between
- * pages, at least SCRAPER_SEARCH_GAP_MS between searches). It does not hide that it is automated: at Google's check
+ * pages, a pause between searches, and a longer break every few searches; all from the job's pacing, chosen in
+ * Preferences → Search → Search timing). It does not hide that it is automated: at Google's check
  * page it saves what it has and stops. Finished searches are remembered, so a later run resumes after them.
  */
 
 const CHALLENGE = /captcha|unusual traffic|verify you are human|not a robot|before you continue to google/i
-/** Scroll rounds per page before giving up on more cards, and the most businesses kept per search. */
-const MAX_SCROLL_ROUNDS = 12
+/** The most businesses kept per search. */
 const MAX_BUSINESSES = 300
 
 export type Control = { action: 'run' | 'pause' | 'stop' }
@@ -172,6 +172,9 @@ export async function runJob(
   const scraperTab = await chrome.tabs.getCurrent()
   let tabId: number | undefined
   let lastSearchAt = 0
+  // The job's pauses (Preferences → Search → Search timing); jobs sent before that setting existed use Normal.
+  const timing = clampSearchTiming(job.pacing ?? SEARCH_TIMING_PRESETS.normal)
+  let searchedThisRun = 0
   let page = 0
   const report = async (state: ScraperProgress['state'], current: number, message: string) => {
     const progress: ScraperProgress = {
@@ -198,13 +201,25 @@ export async function runJob(
       currentIndex = search.index
       if (done.has(search.index)) continue
       if (control.action !== 'run') return await stopped(control, search.index)
+      // A longer break every few locations, then the usual pause between locations.
+      if (timing.breakEvery && searchedThisRun && searchedThisRun % timing.breakEvery === 0) {
+        await report(
+          'waiting',
+          search.index,
+          `Taking a ${timing.breakMinutes}-minute break after ${searchedThisRun} locations, to keep requests polite...`,
+        )
+        await pause(timing.breakMinutes * 60_000, control)
+        if (control.action !== 'run') return await stopped(control, search.index)
+      }
+      const gap = timing.locationPauseSec * 1000
       const since = Date.now() - lastSearchAt
-      if (lastSearchAt && since < SCRAPER_SEARCH_GAP_MS) {
+      if (lastSearchAt && since < gap) {
         await report('waiting', search.index, `Waiting before ${search.place}, to keep requests polite...`)
-        await pause(SCRAPER_SEARCH_GAP_MS - since, control)
+        await pause(gap - since, control)
         if (control.action !== 'run') return await stopped(control, search.index)
       }
       lastSearchAt = Date.now()
+      searchedThisRun++
       const result: ScraperResult = {
         version: SCRAPER_FORMAT_VERSION,
         jobId: job.id,
@@ -270,7 +285,7 @@ export async function runJob(
       })
       tabId = created.id
       if (tabId === undefined) throw new Error('Chrome did not open a tab for the search.')
-      for (page = 1; page <= SCRAPER_PAGES_PER_SEARCH; page++) {
+      for (page = 1; page <= timing.pagesPerLocation; page++) {
         await report('running', search.index, `Reading ${search.place}, page ${page}...`)
         await waitForTab(tabId)
         let read: PageRead | undefined
@@ -296,10 +311,10 @@ export async function runJob(
         await save()
         // Scroll to the bottom until no new businesses load (pressing "More places" when it is shown).
         let quiet = 0
-        for (let round = 0; round < MAX_SCROLL_ROUNDS && quiet < 2 && control.action === 'run'; round++) {
+        for (let round = 0; round < timing.scrollRounds && quiet < 2 && control.action === 'run'; round++) {
           await report('running', search.index, `Reading ${search.place}, page ${page}: scrolling for more...`)
           const pressed = await inject(tabId, scrollForMore)
-          await pause(pressed ? 3000 : 2200, control)
+          await pause((pressed ? timing.morePlacesPauseSec : timing.scrollPauseSec) * 1000, control)
           const more = await inject(tabId, readPlacesPage)
           if (!more) break
           if (/\/sorry\//.test(more.url) || CHALLENGE.test(more.text)) {
@@ -316,8 +331,7 @@ export async function runJob(
         await save()
         if (control.action !== 'run') return await stopped(control, search.index)
         if (!read.next || result.businesses.length >= MAX_BUSINESSES) break
-        const { min, max } = SCRAPER_PAGE_PAUSE_MS
-        await pause(min + Math.round(Math.random() * (max - min)), control)
+        await pause(pagePauseMs(timing), control)
         if (control.action !== 'run') return await stopped(control, search.index)
         await chrome.tabs.update(tabId, { url: read.next })
       }

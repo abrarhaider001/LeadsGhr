@@ -16,6 +16,7 @@ import {
   type DesktopPreferences,
   clampDisplaySize,
   DISPLAY_SIZE_STEP,
+  searchTimingFrom,
 } from '@leadsghr/schemas'
 import { crawlPublicSite } from '@leadsghr/crawler'
 import { createDesktopAdapters, desktopHttp } from './adapters'
@@ -279,6 +280,7 @@ Next: extract the ZIP to a folder named ${folderName}, then open chrome://extens
           googleSearch: preferences.searchGooglePlaces,
           websites: false,
         },
+        searchTimingFrom(preferences),
       ).finally(() => {
         if (activeMapsScan?.id === id) activeMapsScan = undefined
       })

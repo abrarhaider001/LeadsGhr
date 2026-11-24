@@ -9,8 +9,8 @@ LeadsGhr can find businesses in three ways. All three save into the same kind of
 | Source | Started from | Runs in | Reads |
 | --- | --- | --- | --- |
 | Google Maps (default) | **New Search** → **Search contractors** | The desktop app's own fresh, signed-out Chrome | Google Maps' list of places, scrolled to the end |
-| Google Search business list, in the app | **New Search**, with **Show Google Search business listings** on in Preferences → Search sources | The same desktop Chrome, after Maps for each location | The **More businesses** page, up to 5 pages |
-| **LeadsGhr Scraper** (this extension) | **New Search** → **Send to LeadsGhr Scraper** | Your own Chrome, through the extension | The **More businesses** page, scrolled to the end, up to 5 pages |
+| Google Search business list, in the app | **New Search**, with **Show Google Search business listings** on in Preferences → Search sources | The same desktop Chrome, after Maps for each location | The **More businesses** page, with the pages and pauses from **Search timing** |
+| **LeadsGhr Scraper** (this extension) | **New Search** → **Send to LeadsGhr Scraper** | Your own Chrome, through the extension | The **More businesses** page, scrolled to the end, with the pages and pauses from **Search timing** |
 
 Use the Scraper when the in-app Google Search source keeps hitting Google's check page: a normal Chrome profile is less likely to be stopped than an automated one. Reading Google Search is the owner-approved exception to Google's robots.txt in AGENTS.md (rule 5); it covers this page only.
 
@@ -61,11 +61,11 @@ One search at a time, in order:
 1. Opens a **new tab in the same Chrome window** as the settings page, at Google Search's business list for `<niche> in <place>`.
 2. Reads every business card: name, phone, address, and the **Website** button's link. It understands both of Google's layouts (the compact list and the larger photo cards). Ads are skipped and counted.
 3. Scrolls to the bottom, pressing **More places** when Google shows it, until no new businesses load.
-4. Follows the next-page arrow, up to **5 pages** per location (and at most 300 businesses).
+4. Follows the next-page arrow, up to the **pages per location** from Search timing (5 by default, and at most 300 businesses).
 5. Saves `results/<jobId>/<n>.json` after every step, so nothing is lost if it stops.
 6. Closes the tab, waits, and opens the next location in a new tab.
 
-Pauses keep it polite: **4 to 7 seconds** between pages and at least **45 seconds** between locations.
+Pauses keep it polite. They come from **Settings → Preferences → Search → Search timing** in the desktop app and are saved with the job when you send it (`pacing` in `jobs.json`), so changing them later does not affect jobs already in the list. With the default **Normal** preset: 2.2 seconds after each scroll (3 after **More places**, at most 12 scrolls per page), **4 to 7 seconds** between pages, at least **45 seconds** between locations, and a **5-minute break every 10 locations**. **Careful** and **Faster** presets, and every single pause, can be changed there; the lower limits cannot be passed. Jobs sent before this setting existed use Normal. The settings page's footnote shows the pauses of the picked job.
 
 If Google shows a captcha, consent, or "unusual traffic" page, the Scraper saves what it has and stops with **Stopped by Google**; it never tries to get past the check. **Resume** later continues with the location where it stopped; finished locations are not searched again. Closing the settings tab also stops the run; the popup then shows it as interrupted.
 

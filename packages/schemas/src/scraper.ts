@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { searchTimingSchema } from './search-timing'
 
 /*
  * Files shared by the LeadsGhr desktop app and the LeadsGhr Scraper Chrome extension, in the Scraper's data folder
@@ -17,10 +18,8 @@ import { z } from 'zod'
  */
 
 export const SCRAPER_FORMAT_VERSION = 1
-/** Pages read per search, and the pauses that keep requests polite (AGENTS.md, rule 5). */
-export const SCRAPER_PAGES_PER_SEARCH = 5
-export const SCRAPER_PAGE_PAUSE_MS = { min: 4000, max: 7000 }
-export const SCRAPER_SEARCH_GAP_MS = 45_000
+/* Pages read per search and the pauses that keep requests polite (AGENTS.md, rule 5) are the job's `pacing`
+ * (packages/schemas/src/search-timing.ts), chosen in Preferences → Search → Search timing. */
 
 export const scraperSearchSchema = z.object({
   index: z.number().int().min(0),
@@ -40,6 +39,9 @@ export const scraperJobSchema = z.object({
   niches: z.array(z.string().max(120)).max(500),
   states: z.array(z.string().max(80)).max(60),
   searches: z.array(scraperSearchSchema).min(1).max(5000),
+  /** The pauses chosen in Preferences → Search → Search timing when the job was sent. Older jobs have none and use the
+   *  Normal preset. */
+  pacing: searchTimingSchema.optional(),
 })
 export type ScraperJob = z.infer<typeof scraperJobSchema>
 

@@ -21,6 +21,7 @@ import {
   type ScraperJob,
   type ScraperJobList,
   type ScraperProgress,
+  searchTimingFrom,
   visibleScraperJobs,
 } from '@leadsghr/schemas'
 import type { createCrawlRunStore } from './crawl-runs'
@@ -91,6 +92,8 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
       niches: run.criteria.selectedNiches,
       states: run.criteria.selectedStates,
       searches: run.searches.map((search, index) => ({ index, ...search })),
+      // The pauses chosen in Preferences → Search → Search timing, kept with the job.
+      pacing: searchTimingFrom(run.preferences),
     })
     await mkdir(dataFolder(), { recursive: true })
     // Add the job to the saved list (newest first). An older single job.json moves into the list.

@@ -6,7 +6,15 @@ import { basename, dirname, join, resolve } from 'node:path'
 import robotsParser from 'robots-parser'
 import { desktopHttp } from './adapters'
 import { discoverPage, extractContacts } from '@leadsghr/extract'
-import { combineSources, withWebsiteSource, type CrawlRowSource } from '@leadsghr/schemas'
+import {
+  clampSearchTiming,
+  combineSources,
+  pagePauseMs,
+  SEARCH_TIMING_PRESETS,
+  withWebsiteSource,
+  type CrawlRowSource,
+  type SearchTiming,
+} from '@leadsghr/schemas'
 
 const AGENT = 'LeadsGhr/0.1 (public-data crawler)'
 const CHALLENGE =
@@ -257,15 +265,14 @@ function cleanWebsite(url: string) {
 const isGoogleHost = (hostname: string) => /(^|\.)google\.[a-z.]+$/i.test(hostname)
 
 /*
- * Polite pacing for Google Search (AGENTS.md, rule 5): at most GOOGLE_SEARCH_PAGES result pages per location, a
- * pause of several seconds between pages, and at least GOOGLE_SEARCH_GAP_MS between two locations' Google Search
- * reads, so LeadsGhr asks Google far less often than a fast script would. It does not hide that it is a browser
- * controlled by LeadsGhr; when Google still shows its check page, the search stops.
+ * Polite pacing for Google Search (AGENTS.md, rule 5), from Preferences → Search → Search timing
+ * (packages/schemas/src/search-timing.ts): at most the chosen pages per location, a random pause between pages, a
+ * pause between two locations' Google Search reads, and a longer break every few locations, so LeadsGhr asks Google
+ * far less often than a fast script would. It does not hide that it is a browser controlled by LeadsGhr; when Google
+ * still shows its check page, the search stops.
  */
-const GOOGLE_SEARCH_PAGES = 5
-const GOOGLE_SEARCH_GAP_MS = 45_000
 let lastGoogleSearchAt = 0
-const politePause = (signal: AbortSignal) => wait(4000 + Math.round(Math.random() * 3000), signal)
+let googleSearchReads = 0
 
 /**
  * Turns a Google Search Website link (an encoded /goto or /url redirect) into the business's own address by reading
@@ -314,6 +321,7 @@ export async function scanMaps(
     googleSearch: false,
     websites: false,
   },
+  timing: SearchTiming = SEARCH_TIMING_PRESETS.normal,
 ) {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}&hl=en`
   // Google Search's business list (what "More businesses" opens). Google's robots.txt disallows /search; reading it
@@ -502,20 +510,30 @@ export async function scanMaps(
     }
     if (googleSearch) {
       if (signal.aborted) throw new Error('Search stopped')
-      const sinceLast = Date.now() - lastGoogleSearchAt
-      if (lastGoogleSearchAt && sinceLast < GOOGLE_SEARCH_GAP_MS) {
+      const pace = clampSearchTiming(timing)
+      if (pace.breakEvery && googleSearchReads && googleSearchReads % pace.breakEvery === 0) {
         emit({
           type: 'status',
-          text: `Waiting ${Math.ceil((GOOGLE_SEARCH_GAP_MS - sinceLast) / 1000)} s before the next Google Search, to keep requests polite...`,
+          text: `Taking a ${pace.breakMinutes}-minute break after ${googleSearchReads} Google Searches, to keep requests polite...`,
         })
-        await wait(GOOGLE_SEARCH_GAP_MS - sinceLast, signal)
+        await wait(pace.breakMinutes * 60_000, signal)
+      }
+      const gap = pace.locationPauseSec * 1000
+      const sinceLast = Date.now() - lastGoogleSearchAt
+      if (lastGoogleSearchAt && sinceLast < gap) {
+        emit({
+          type: 'status',
+          text: `Waiting ${Math.ceil((gap - sinceLast) / 1000)} s before the next Google Search, to keep requests polite...`,
+        })
+        await wait(gap - sinceLast, signal)
       }
       lastGoogleSearchAt = Date.now()
+      googleSearchReads++
       emit({ type: 'status', text: 'Reading Google Search business listings...' })
       if (sources.maps || sources.websites) await cdp.call('Page.navigate', { url: placesUrl })
       const placesSeen = new Set<string>()
       let previousFirst = ''
-      for (let pageNumber = 1; pageNumber <= GOOGLE_SEARCH_PAGES && placesSeen.size < 200; pageNumber++) {
+      for (let pageNumber = 1; pageNumber <= pace.pagesPerLocation && placesSeen.size < 200; pageNumber++) {
         // Wait for this page's business cards; after a page change, wait until they are the new page's cards.
         let page:
           | { url: string; text: string; cards: PlacesCard[]; first: string; hasNext: boolean }
@@ -580,7 +598,7 @@ export async function scanMaps(
         if (!page.hasNext) break
         const arrow = await cdp.evaluate<{ x: number; y: number } | null>(nextArrowPoint)
         if (!arrow) break
-        await politePause(signal)
+        await wait(pagePauseMs(pace), signal)
         for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased'])
           await cdp.call('Input.dispatchMouseEvent', {
             type,
