@@ -13,8 +13,8 @@ import {
 import { writeDataFile } from './data-folder'
 
 /*
- * Runs a job's searches one at a time (AGENTS.md, rule 5 exception). Each search opens in a new tab in the Scraper's
- * own window: Google Search's business list for the search, read card by card. The list is scrolled to the bottom
+ * Runs a job's searches one at a time (AGENTS.md, rule 5 exception). Each search opens in a new tab in the settings
+ * page's window: Google Search's business list for the search, read card by card. The list is scrolled to the bottom
  * (and "More places" pressed when Google shows it) until no new businesses appear, then the next-page arrow is
  * followed, up to SCRAPER_PAGES_PER_SEARCH pages. When the search is finished its tab closes and the next search gets
  * a new tab. results/<jobId>/<n>.json is saved after every step. Pauses keep requests polite (several seconds between
