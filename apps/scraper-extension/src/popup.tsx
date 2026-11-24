@@ -3,72 +3,145 @@ import './scraper.css'
 import React, { useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { LicenseGate } from '@leadsghr/license/extension'
-import { scraperJobSchema, type ScraperJob } from '@leadsghr/schemas'
-import { readDataFile } from './data-folder'
+import type { ScraperJob } from '@leadsghr/schemas'
+import { dataFolderState, type DataFolderState } from './data-folder'
 import { finishedSearches, PROGRESS_KEY } from './engine'
-import { Header, icons } from './parts'
+import { icons } from './parts'
+import { elapsedClock, isLive, readJob, sendCommand, startRun, type StoredProgress } from './state'
 
-/** Opens the Scraper page (or brings it to the front): runs happen there, because this popup closes when it loses focus. */
-async function openRunner() {
-  const url = chrome.runtime.getURL('runner.html')
-  const [existing] = await chrome.tabs.query({ url })
-  if (existing?.id !== undefined) {
-    await chrome.tabs.update(existing.id, { active: true })
-    if (existing.windowId !== undefined) await chrome.windows.update(existing.windowId, { focused: true })
-  } else await chrome.tabs.create({ url })
-  window.close()
-}
-
+/**
+ * The toolbar popup: a summary only (job, progress, counts) with Start, Pause, and Stop, like LeadsGhr Mailer's popup.
+ * The full list of locations and the data folder are on the settings page (the gear). The run itself happens on the
+ * settings page, which the popup opens in the background when needed.
+ */
 function Popup() {
+  const [folder, setFolder] = useState<DataFolderState | null>(null)
   const [job, setJob] = useState<ScraperJob | null | undefined>(undefined)
   const [done, setDone] = useState(0)
-  const [status, setStatus] = useState('')
+  const [progress, setProgress] = useState<StoredProgress | null>(null)
+  const [now, setNow] = useState(Date.now())
+
   useEffect(() => {
     void (async () => {
-      const parsed = scraperJobSchema.safeParse(await readDataFile('job.json'))
-      setJob(parsed.success ? parsed.data : null)
-      if (parsed.success) setDone((await finishedSearches(parsed.data.id)).size)
-      const progress = (await chrome.storage.local.get(PROGRESS_KEY))[PROGRESS_KEY] as { jobId?: string; message?: string } | undefined
-      if (parsed.success && progress?.jobId === parsed.data.id) setStatus(progress.message ?? '')
+      setFolder(await dataFolderState())
+      const loaded = await readJob()
+      setJob(loaded)
+      if (loaded) setDone((await finishedSearches(loaded.id)).size)
+      const saved = (await chrome.storage.local.get(PROGRESS_KEY))[PROGRESS_KEY] as StoredProgress | undefined
+      if (loaded && saved?.jobId === loaded.id) setProgress(saved)
     })()
+    const listener = (changes: Record<string, chrome.storage.StorageChange>) => {
+      const next = changes[PROGRESS_KEY]?.newValue as StoredProgress | undefined
+      if (next) setProgress(next)
+      if (next?.jobId) void finishedSearches(next.jobId).then((set) => setDone(set.size))
+    }
+    chrome.storage.onChanged.addListener(listener)
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => {
+      chrome.storage.onChanged.removeListener(listener)
+      clearInterval(timer)
+    }
   }, [])
+
+  const state = progress?.state
+  const active = isLive(progress)
+  const total = job?.searches.length ?? 0
+  const finished = !!job && done >= total
+  const counts = progress?.counts ?? { businesses: 0, withWebsite: 0, adsSkipped: 0, perSearch: {} }
+  const current = Math.min((active ? (progress?.current ?? done) : done) + 1, total)
+  const canStart = folder === 'connected' && !!job && !finished && !active
+
   return (
-    <div className="sc-pop sc-popup">
-      <Header />
-      <div className="sc-body">
-        {job === undefined ? (
-          <p className="sc-note">Loading...</p>
-        ) : !job ? (
-          <div className="sc-empty">
-            <span className="sc-big">{icons.desktop}</span>
-            <h3>No search job yet</h3>
-            <p>
-              In LeadsGhr, open <b>New Search</b>, choose the niche, state, and locations, then select <b>Send to LeadsGhr
-              Scraper</b>.
-            </p>
-          </div>
-        ) : (
-          <div className="sc-card">
-            <div className="sc-ct">Search job from LeadsGhr</div>
-            <dl>
-              <dt>Niche</dt>
-              <dd>{job.niches.join(', ')}</dd>
-              <dt>State</dt>
-              <dd>{job.states.join(', ')}</dd>
-              <dt>Searches</dt>
-              <dd>
-                {done} of {job.searches.length} done
-              </dd>
-            </dl>
-            {status && <p className="sc-note">{status}</p>}
+    <div className="sc-popup">
+      <header className="sc-bar-head">
+        <img src="/icon.svg" alt="" width={22} height={22} />
+        <b>LeadsGhr Scraper</b>
+        <button type="button" className="sc-icon-button" title="Settings" aria-label="Settings" onClick={() => void chrome.runtime.openOptionsPage()}>
+          {icons.gear}
+        </button>
+      </header>
+      <main className="sc-popup-body">
+        {folder && folder !== 'connected' && (
+          <div className="sc-notice">
+            <span>{folder === 'needs-permission' ? 'Data folder needs permission again.' : 'Data folder not connected.'}</span>
+            <button type="button" className="sc-link" onClick={() => void chrome.runtime.openOptionsPage()}>
+              Set up
+            </button>
           </div>
         )}
-        <button type="button" className="sc-primary" onClick={() => void openRunner()}>
-          {icons.play}
-          {job && done && done < job.searches.length ? 'Open Scraper to resume' : 'Open Scraper'}
+        {job === undefined ? (
+          <p className="sc-muted">Loading...</p>
+        ) : !job ? (
+          <div className="sc-empty-line">
+            <b>No search job yet</b>
+            <span>
+              In LeadsGhr, open <b>New Search</b>, choose the niche, state, and locations, then select <b>Send to LeadsGhr Scraper</b>.
+            </span>
+          </div>
+        ) : (
+          <>
+            <section>
+              <h2 className="sc-section-title">Search job</h2>
+              <p className="sc-job-line">
+                {job.niches.join(', ')} · {job.states.join(', ')} · {total} {total === 1 ? 'location' : 'locations'}
+              </p>
+            </section>
+            <section className="sc-summary">
+              <div className="sc-pt">
+                <b>{finished ? `All ${total} searches finished` : `Search ${current} of ${total}`}</b>
+                <span>{progress?.startedAt && (active || finished) ? elapsedClock((finished ? Date.parse(progress.updatedAt) : now) - progress.startedAt) : ''}</span>
+              </div>
+              <div className="sc-bar">
+                <i style={{ width: `${total ? Math.round((done / total) * 100) : 0}%` }} />
+              </div>
+              <div className="sc-stats">
+                <div>
+                  <b>{counts.businesses}</b>
+                  <small>businesses</small>
+                </div>
+                <div>
+                  <b>{counts.withWebsite}</b>
+                  <small>with website</small>
+                </div>
+                <div>
+                  <b>{counts.adsSkipped}</b>
+                  <small>ads skipped</small>
+                </div>
+              </div>
+            </section>
+            {progress?.message && (
+              <p className={`sc-status${state === 'blocked' ? ' sc-status-warn' : ''}`}>
+                {active && <i className="sc-dot" />}
+                {active || (state !== 'running' && state !== 'waiting')
+                  ? progress.message
+                  : 'Interrupted (the Scraper tab was closed). Resume to continue.'}
+              </p>
+            )}
+          </>
+        )}
+      </main>
+      <footer className="sc-footer">
+        {active ? (
+          <button type="button" className="sc-primary" onClick={() => void sendCommand('pause')}>
+            {icons.pause}Pause
+          </button>
+        ) : (
+          <button type="button" className="sc-primary" disabled={!canStart} onClick={() => void startRun()}>
+            {icons.play}
+            {done && !finished ? 'Resume scraping' : 'Start scraping'}
+          </button>
+        )}
+        <button
+          type="button"
+          className="sc-square"
+          title="Stop"
+          aria-label="Stop"
+          disabled={!active}
+          onClick={() => void sendCommand('stop')}
+        >
+          {icons.stopFilled}
         </button>
-        <p className="sc-note">Tip: run the Scraper in a separate Chrome profile that is not signed in to Google.</p>
-      </div>
+      </footer>
     </div>
   )
 }

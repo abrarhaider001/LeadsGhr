@@ -155,7 +155,15 @@ export async function runJob(
   onUpdate: (update: EngineUpdate) => void,
 ): Promise<ScraperProgress['state']> {
   const done = await finishedSearches(job.id)
-  const counts: Counts = { businesses: 0, withWebsite: 0, adsSkipped: 0, perSearch: {} }
+  // Continue the counts of an earlier run of this job (after Resume), so the totals stay right.
+  const earlier = (await chrome.storage.local.get(PROGRESS_KEY))[PROGRESS_KEY] as
+    | { jobId?: string; counts?: Counts }
+    | undefined
+  const counts: Counts =
+    earlier?.jobId === job.id && earlier.counts
+      ? { ...earlier.counts, perSearch: { ...earlier.counts.perSearch } }
+      : { businesses: 0, withWebsite: 0, adsSkipped: 0, perSearch: {} }
+  const startedAt = Date.now()
   const scraperTab = await chrome.tabs.getCurrent()
   let tabId: number | undefined
   let lastSearchAt = 0
@@ -171,7 +179,7 @@ export async function runJob(
       updatedAt: new Date().toISOString(),
     }
     onUpdate({ progress, counts, page })
-    await chrome.storage.local.set({ [PROGRESS_KEY]: { ...progress, counts } })
+    await chrome.storage.local.set({ [PROGRESS_KEY]: { ...progress, counts, startedAt, page } })
     await writeDataFile('progress.json', progress).catch(() => undefined)
   }
   const closeSearchTab = async () => {
@@ -200,6 +208,10 @@ export async function runJob(
         updatedAt: new Date().toISOString(),
         businesses: [],
       }
+      // A search that was cut short earlier starts again from its first page: drop its earlier count.
+      const earlierCount = counts.perSearch[search.index] ?? 0
+      counts.businesses = Math.max(0, counts.businesses - earlierCount)
+      counts.perSearch[search.index] = 0
       const seen = new Set<string>()
       const save = () => {
         result.updatedAt = new Date().toISOString()

@@ -22,7 +22,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         popup: resolve(root, 'popup.html'),
-        runner: resolve(root, 'runner.html'),
+        settings: resolve(root, 'settings.html'),
         background: resolve(root, 'src/background.ts'),
       },
       output: {

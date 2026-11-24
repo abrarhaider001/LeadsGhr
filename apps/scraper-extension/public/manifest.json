@@ -3,9 +3,26 @@
   "name": "LeadsGhr Scraper",
   "version": "0.1.0",
   "description": "Runs the searches saved in LeadsGhr on Google Search's business list and saves the results for the LeadsGhr desktop app.",
-  "permissions": ["storage", "tabs", "scripting"],
-  "host_permissions": ["https://www.google.com/*"],
-  "background": { "service_worker": "background.js", "type": "module" },
-  "icons": { "16": "icon.png", "32": "icon.png", "128": "icon.png" },
-  "action": { "default_title": "LeadsGhr Scraper", "default_popup": "popup.html" }
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "128": "icon.png"
+  },
+  "action": {
+    "default_title": "LeadsGhr Scraper",
+    "default_popup": "popup.html"
+  },
+  "options_page": "settings.html"
 }
