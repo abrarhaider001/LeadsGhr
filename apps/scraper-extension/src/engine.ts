@@ -126,6 +126,8 @@ function scrollForMore(): boolean {
   return false
 }
 
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
 /** Runs inside the Google tab: brings one business card into view, like a person reading the list. */
 function scrollToCard(key: string): boolean {
   const card = document.querySelector<HTMLElement>(`[data-leadsghr-key="${CSS.escape(key)}"]`)
@@ -135,11 +137,30 @@ function scrollToCard(key: string): boolean {
 }
 
 /** Runs inside the Google tab: requests a Website link the way the page itself would (same site, the profile's own
- *  cookies) without following it, so Google answers with its redirect; the extension reads where it points. */
-function requestRedirect(link: string): Promise<boolean> {
+ *  cookies) without following it. A redirect is read by the extension (webRequest); when Google answers with a page
+ *  of its own instead (its "redirect notice"), that page's HTML is returned so the address can be read from it. */
+function requestRedirect(link: string): Promise<{ redirected: boolean; status: number; html: string } | null> {
   return fetch(link, { redirect: 'manual', credentials: 'include', cache: 'no-store' })
-    .then(() => true)
-    .catch(() => false)
+    .then(async (response) =>
+      response.type === 'opaqueredirect'
+        ? { redirected: true, status: 0, html: '' }
+        : { redirected: false, status: response.status, html: (await response.text()).slice(0, 60_000) },
+    )
+    .catch(() => null)
+}
+
+/** The first link to a non-Google http(s) address in a Google page (its redirect notice), or ''. */
+function addressInPage(html: string): string {
+  for (const match of html.matchAll(/href="(https?:\/\/[^"]+)"/gi)) {
+    const address = match[1].replace(/&amp;/g, '&')
+    try {
+      const url = new URL(address)
+      if (!isGoogle(url.hostname) && !/(^|\.)(gstatic|googleusercontent|googleapis)\.com$/i.test(url.hostname)) return address
+    } catch {
+      /* not a usable address */
+    }
+  }
+  return ''
 }
 
 const isGoogle = (hostname: string) => /(^|\.)google\.[a-z.]+$/i.test(hostname)
@@ -157,9 +178,11 @@ function cleanWebsite(address: string): string {
 }
 
 /**
- * The business's own address behind a Google Website link, looked up from inside the Google tab (webRequest reads the
- * redirect's Location header; the business's site is never opened). Returns '' when the link leads to no public
- * website, or undefined when Google refused or did not answer (the desktop app then looks it up later).
+ * The business's own address behind a Google Website link, looked up from inside the Google tab: webRequest reads the
+ * redirect's Location header, or the address is read from Google's redirect notice page (the business's site is never
+ * opened). Returns undefined when it could not be found (Google refused, did not answer, or showed a page without
+ * an address); the desktop app then looks it up itself. A Website button always points somewhere, so a lookup is
+ * never saved as "no website".
  */
 async function lookUpWebsite(tabId: number, link: string): Promise<string | undefined> {
   let start: URL
@@ -171,38 +194,40 @@ async function lookUpWebsite(tabId: number, link: string): Promise<string | unde
   if (!isGoogle(start.hostname)) return /^https?:$/.test(start.protocol) ? cleanWebsite(link) : ''
   const direct = start.searchParams.get('adurl') || start.searchParams.get('q')
   if (direct && /^https?:\/\//i.test(direct)) return cleanWebsite(direct)
-  return new Promise((resolve) => {
-    let settled = false
-    const finish = (value: string | undefined) => {
-      if (settled) return
-      settled = true
-      clearTimeout(timer)
-      chrome.webRequest.onHeadersReceived.removeListener(listener)
-      resolve(value)
+  const usable = (address: string | undefined): string | undefined => {
+    if (!address) return undefined
+    try {
+      const target = new URL(address, start)
+      // A redirect back to Google (its check page) means "refused", not an address.
+      if (isGoogle(target.hostname) || !/^https?:$/.test(target.protocol) || target.username || target.password)
+        return undefined
+      return cleanWebsite(target.toString())
+    } catch {
+      return undefined
     }
-    const listener = (details: chrome.webRequest.WebResponseHeadersDetails) => {
-      if (details.url !== start.href && details.url !== link) return
-      const location = details.responseHeaders?.find((header) => header.name.toLowerCase() === 'location')?.value
-      if (!location) return finish(details.statusCode >= 200 && details.statusCode < 300 ? '' : undefined)
-      try {
-        const target = new URL(location, start)
-        // A redirect back to Google (its check page) means "refused", not "no website".
-        if (isGoogle(target.hostname)) return finish(undefined)
-        if (!/^https?:$/.test(target.protocol) || target.username || target.password) return finish('')
-        finish(cleanWebsite(target.toString()))
-      } catch {
-        finish('')
-      }
-    }
-    const timer = setTimeout(() => finish(undefined), 8000)
-    chrome.webRequest.onHeadersReceived.addListener(listener, { urls: ['https://www.google.com/*'], tabId }, ['responseHeaders'])
-    void chrome.scripting
-      .executeScript({ target: { tabId }, func: requestRedirect, args: [link] })
-      .catch(() => finish(undefined))
-  })
+  }
+  let location: string | undefined
+  const listener = (details: chrome.webRequest.WebResponseHeadersDetails) => {
+    if (details.url !== start.href && details.url !== link) return
+    location ??= details.responseHeaders?.find((header) => header.name.toLowerCase() === 'location')?.value
+  }
+  chrome.webRequest.onHeadersReceived.addListener(listener, { urls: ['https://www.google.com/*'], tabId }, ['responseHeaders'])
+  try {
+    const answer = await Promise.race([
+      chrome.scripting
+        .executeScript({ target: { tabId }, func: requestRedirect, args: [link] })
+        .then(([injection]) => injection?.result as Awaited<ReturnType<typeof requestRedirect>> | undefined)
+        .catch(() => undefined),
+      sleep(8000).then(() => undefined),
+    ])
+    if (location) return usable(location)
+    if (answer && !answer.redirected && answer.status >= 200 && answer.status < 300) return usable(addressInPage(answer.html))
+    return undefined
+  } finally {
+    chrome.webRequest.onHeadersReceived.removeListener(listener)
+  }
 }
 
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 /** Waits up to `ms`, ending early when the user pauses or stops. */
 async function pause(ms: number, control: Control) {

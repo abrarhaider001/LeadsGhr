@@ -191,7 +191,7 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
           websites.get(business.websiteLink)
         // Counted per Website link, so a business saved twice (a location read again after Resume) counts once.
         if (saved) websitesFound++
-        else if (business.website === undefined && !websites.has(business.websiteLink)) websitesPending++
+        else if (!websites.has(business.websiteLink)) websitesPending++
       }
     }
     return {
@@ -242,8 +242,9 @@ export function registerScraperIpc(store: ReturnType<typeof createCrawlRunStore>
         const link = business.websiteLink
         const mapsUrl = businessMapsUrl(business.name, business.address, result.data.place)
         const savedWebsite = savedRows.get(mapsUrl)?.website
-        // The Scraper looks websites up itself while it reads the list; use its answer when it has one.
-        if (link && business.website !== undefined && !websites.has(link)) websites.set(link, business.website)
+        // The Scraper looks websites up itself while it reads the list; use the address when it found one (an empty
+        // answer from it is looked up here, since a Website button always points somewhere).
+        if (link && business.website && !websites.has(link)) websites.set(link, business.website)
         if (link && savedWebsite && !websites.has(link)) websites.set(link, savedWebsite)
         const known = !link || websites.has(link)
         if (!changed && known) continue
