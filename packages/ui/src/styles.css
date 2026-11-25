@@ -9445,3 +9445,342 @@ a {
   text-align: right;
   white-space: nowrap;
 }
+
+/* Bento tiles (packages/ui/src/bento.tsx): LeadsGhr Mailer and LeadsGhr Tracker pages. */
+.la-bento {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  grid-auto-rows: minmax(340px, 1fr);
+  gap: var(--ui-space-4);
+}
+.la-bento-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--ui-space-6) var(--ui-space-7);
+  border-radius: var(--ui-radius-4xl);
+}
+.la-bento-art {
+  /* The picture fills the top of the tile; the headline and text sit below it, so they never overlap. */
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 230px;
+  margin: calc(var(--ui-space-6) * -1) calc(var(--ui-space-7) * -1) var(--ui-space-3);
+  pointer-events: none;
+}
+.la-bento-copy {
+  position: relative;
+  max-width: 470px;
+}
+.la-bento-copy h3 {
+  margin: 0 0 var(--ui-space-2);
+  font-size: var(--ui-text-5xl);
+  font-weight: var(--ui-weight-medium);
+  letter-spacing: -0.01em;
+}
+.la-bento-copy p {
+  margin: 0;
+  font-size: var(--ui-text-md);
+  line-height: 1.55;
+}
+.la-bento-tile.is-brand {
+  color: var(--ui-color-on-primary);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ui-brand-accent) 75%, var(--ui-brand-primary)),
+    var(--ui-brand-primary-hover)
+  );
+}
+.la-bento-tile.is-brand::before {
+  content: "";
+  position: absolute;
+  inset: -40% -10% auto auto;
+  width: 70%;
+  height: 120%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    color-mix(in srgb, var(--ui-color-on-primary) 14%, transparent),
+    transparent
+  );
+  transform: rotate(-12deg);
+}
+.la-bento-tile.is-brand p {
+  color: color-mix(in srgb, var(--ui-color-on-primary) 88%, transparent);
+}
+.la-bento-tile.is-soft {
+  border: 1px solid var(--ui-color-border);
+  color: var(--ui-color-text);
+  background: linear-gradient(160deg, var(--ui-color-primary-soft), var(--ui-color-surface) 70%);
+}
+.la-bento-tile.is-soft p {
+  color: var(--ui-color-text-secondary);
+}
+.la-bento-float {
+  position: absolute;
+  border-radius: var(--ui-radius-2xl);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  box-shadow: var(--ui-shadow-lg);
+}
+.la-bento-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+  min-width: 250px;
+  padding: var(--ui-space-3) var(--ui-space-5) var(--ui-space-3) var(--ui-space-3);
+}
+.la-bento-toast strong {
+  display: block;
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-bento-toast small {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+.la-bento-toast-mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-primary-soft);
+  color: var(--ui-color-primary);
+}
+.la-bento-pill {
+  position: absolute;
+  padding: var(--ui-space-2-5) var(--ui-space-5);
+  border-radius: var(--ui-radius-full);
+  font-size: var(--ui-text-md);
+  font-weight: var(--ui-weight-semibold);
+  white-space: nowrap;
+  box-shadow: var(--ui-shadow-md);
+}
+.la-bento-pill.is-brand {
+  background: var(--ui-color-primary);
+  color: var(--ui-color-on-primary);
+}
+.la-bento-pill.is-ink {
+  background: var(--ui-color-surface-inverse);
+  color: var(--ui-color-on-primary);
+}
+.la-bento-pill.is-accent {
+  background: color-mix(in srgb, var(--ui-brand-accent) 70%, var(--ui-brand-primary));
+  color: var(--ui-color-on-primary);
+}
+.la-bento-pill.is-plain {
+  border: 1px solid var(--ui-color-border);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  box-shadow: var(--ui-shadow-sm);
+}
+.la-bento-cursor {
+  position: absolute;
+}
+.la-bento-cursor path {
+  fill: var(--ui-color-text);
+  stroke: var(--ui-color-surface);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+@media (max-width: 1100px) {
+  .la-bento {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* LeadsGhr Mailer and Tracker pages: the pictures inside their tiles. */
+.la-ext-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+.la-ext-popup {
+  top: 26px;
+  right: 46px;
+  width: 280px;
+  padding: var(--ui-space-3);
+  font-size: var(--ui-text-xs);
+  transform: rotate(3deg);
+}
+.la-ext-popup-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin-bottom: var(--ui-space-2);
+  padding-bottom: var(--ui-space-2);
+  border-bottom: 1px solid var(--ui-color-border-subtle);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-ext-popup-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  margin-bottom: var(--ui-space-1-5);
+  padding: 0 var(--ui-space-2);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+}
+.la-ext-popup-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ui-space-1-5);
+}
+.la-ext-popup-send {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-primary);
+  color: var(--ui-color-on-primary);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-ext-toast-main {
+  top: 150px;
+  right: 250px;
+  transform: rotate(-3deg);
+}
+.la-ext-cursor {
+  top: 202px;
+  right: 226px;
+}
+.la-ext-toast-corner {
+  top: 40px;
+  right: 40px;
+  transform: rotate(2deg);
+}
+.la-ext-pill-1 {
+  top: 26px;
+  left: 26px;
+  transform: rotate(-10deg);
+}
+.la-ext-pill-2 {
+  top: 32px;
+  right: 40px;
+  transform: rotate(8deg);
+}
+.la-ext-pill-3 {
+  top: 96px;
+  left: 150px;
+  transform: rotate(6deg);
+}
+.la-ext-pill-4 {
+  top: 102px;
+  right: 22px;
+  transform: rotate(-6deg);
+}
+.la-ext-steps {
+  position: absolute;
+  top: var(--ui-space-5);
+  right: var(--ui-space-6);
+  left: var(--ui-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+}
+.la-ext-step {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2-5);
+  min-height: 42px;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-xl);
+  background: var(--ui-color-surface);
+  box-shadow: var(--ui-shadow-sm);
+  font-size: var(--ui-text-sm);
+}
+.la-ext-step > b {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-primary-soft);
+  color: var(--ui-color-primary);
+  font-size: var(--ui-text-xs);
+}
+.la-ext-step code {
+  padding: 1px var(--ui-space-1-5);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-color-surface-muted);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+}
+.la-ext-step button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  margin-left: auto;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border: 0;
+  border-radius: var(--ui-radius-sm);
+  background: none;
+  color: var(--ui-color-primary);
+  font: inherit;
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+  cursor: pointer;
+}
+.la-ext-step button:hover {
+  background: var(--ui-color-primary-soft);
+}
+/* The install tile's steps include a Copy button, so its picture takes clicks. */
+.la-ext-install .la-bento-art {
+  pointer-events: auto;
+}
+.la-ext-gmail {
+  top: 22px;
+  right: 46px;
+  width: 360px;
+  padding: var(--ui-space-1-5);
+  transform: rotate(3deg);
+}
+.la-ext-gmail-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2-5);
+  padding: var(--ui-space-3);
+  border-bottom: 1px solid var(--ui-color-border-subtle);
+  font-size: var(--ui-text-sm);
+}
+.la-ext-gmail-row:last-child {
+  border-bottom: 0;
+}
+.la-ext-gmail-row strong {
+  font-weight: var(--ui-weight-semibold);
+}
+.la-ext-gmail-row span {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+.la-ext-gmail-row svg {
+  margin-left: auto;
+}
+.la-ext-legend {
+  position: absolute;
+  top: 34px;
+  left: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+.la-ext-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2-5);
+  width: max-content;
+  padding: var(--ui-space-2-5) var(--ui-space-4);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-surface);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
+}
