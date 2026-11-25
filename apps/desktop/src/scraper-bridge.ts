@@ -81,8 +81,8 @@ export type ScraperSync = {
 /*
  * Website links. Each Website button on Google's list is a google.com/goto redirect; the desktop app follows it to
  * find the business's own address. Asking Google for many in a row gets refused (it answers with its check page), so
- * lookups are paced: at most WEBSITE_LOOKUPS per sync, WEBSITE_GAP_MS apart, a pause of WEBSITE_BACKOFF_MS when
- * Google refuses, and a refused link is tried again later instead of being saved as "no website".
+ * lookups are paced: at most WEBSITE_LOOKUPS per sync, WEBSITE_GAP_MS apart, each limited to
+ * WEBSITE_LOOKUP_TIMEOUT_MS (maps-scan.ts), a pause of WEBSITE_BACKOFF_MS when Google refuses or stalls, and a refused link is tried again later instead of being saved as "no website".
  */
 const WEBSITE_LOOKUPS = 12
 const WEBSITE_GAP_MS = 1200

@@ -283,6 +283,10 @@ export type WebsiteLookup = { website: string } | { retry: true; blocked: boolea
  * the redirect target, without opening the business site. Returns '' when it is not a public http(s) website and
  * { retry } when Google answered with its check page, a rate limit, or a server error, or the request failed.
  */
+/** The longest one Website link lookup may take. Google sometimes stalls a connection instead of answering; without a
+ *  limit the request would wait for minutes and hold up every lookup after it. */
+export const WEBSITE_LOOKUP_TIMEOUT_MS = 10_000
+
 export async function lookUpWebsite(link: string, signal: AbortSignal): Promise<WebsiteLookup> {
   let start: URL
   try {
@@ -299,15 +303,17 @@ export async function lookUpWebsite(link: string, signal: AbortSignal): Promise<
     try {
       const response = await fetch(start, {
         redirect: 'manual',
-        signal,
+        signal: AbortSignal.any([signal, AbortSignal.timeout(WEBSITE_LOOKUP_TIMEOUT_MS)]),
         headers: { 'user-agent': app.userAgentFallback || 'Mozilla/5.0' },
       })
       const location = response.headers.get('location')
       await response.body?.cancel().catch(() => undefined)
       if (response.status === 429 || response.status >= 500) return { retry: true, blocked: response.status === 429 }
       if (location) target = new URL(location, start)
-    } catch {
-      return { retry: true, blocked: false }
+    } catch (failure) {
+      // Out of time: Google is stalling the connection, so treat it like a refusal (pause before more lookups).
+      const timedOut = (failure as Error | undefined)?.name === 'TimeoutError'
+      return { retry: true, blocked: timedOut }
     }
   }
   // Google sends refused requests to its own pages (the "unusual traffic" check): try again later.
