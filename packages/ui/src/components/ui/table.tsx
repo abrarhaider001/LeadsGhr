@@ -148,7 +148,7 @@ function Table<Row>({
                   <th
                     key={column.field}
                     className={cn(
-                      'sticky top-0 z-10 border-b border-border bg-card px-(--ui-space-3-5) py-(--ui-space-3) text-(length:--ui-text-xs) font-(--ui-weight-medium) text-foreground',
+                      'sticky top-0 z-10 border-b border-border bg-(--ui-color-primary-subtle) px-(--ui-space-3-5) py-(--ui-space-3) text-(length:--ui-text-xs) font-(--ui-weight-medium) text-foreground',
                       column.className,
                     )}
                   >

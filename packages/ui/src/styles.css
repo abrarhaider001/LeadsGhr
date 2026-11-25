@@ -7714,21 +7714,26 @@ a {
 /* Preferences: a settings menu beside the main sidebar, like a two-level settings page. */
 .la-main:has(.la-pref-layout) .la-content {
   padding: 0;
+  /* The settings menu stays in place; only the settings beside it scroll (.la-pref-main). */
+  overflow: hidden;
 }
 .la-main:has(.la-pref-layout) .la-profile {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   max-width: none;
+  min-height: 0;
 }
 .la-pref-layout {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: 236px minmax(0, 1fr);
-  min-height: 100vh;
+  min-height: 0;
   background: var(--ui-color-surface);
 }
 .la-pref-nav {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  height: 100vh;
+  align-self: stretch;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--ui-space-5-5) var(--ui-space-3);
   border-right: 1px solid var(--ui-color-border);
@@ -7795,8 +7800,12 @@ a {
 }
 .la-pref-main {
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-color-border-strong) transparent;
 }
 .la-pref-head {
   padding: var(--ui-space-5) var(--ui-space-8) var(--ui-space-4);
@@ -7822,8 +7831,17 @@ a {
   .la-pref-layout {
     grid-template-columns: 1fr;
   }
+  /* Narrow windows: the menu sits above the settings and the whole page scrolls. */
+  .la-main:has(.la-pref-layout) .la-content {
+    overflow: auto;
+  }
+  .la-pref-layout {
+    flex: none;
+  }
+  .la-pref-main {
+    overflow: visible;
+  }
   .la-pref-nav {
-    position: static;
     height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--ui-color-border);
