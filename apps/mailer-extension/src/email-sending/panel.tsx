@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DeleteModal } from '@leadsghr/ui'
 import { DATA_CHANGED_KEY } from './data-folder'
 import { deleteTemplate, loadTemplates, saveTemplate } from './storage'
 import { readTemplateFile } from './template'
@@ -16,6 +17,8 @@ export function EmailSendingPanel() {
   const [templates, setTemplates] = useState<SavedTemplate[]>([])
   const [draft, setDraft] = useState<Draft | null>(null)
   const [message, setMessage] = useState('')
+  const [pendingDelete, setPendingDelete] = useState<SavedTemplate | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     void loadTemplates().then(setTemplates)
@@ -75,15 +78,18 @@ export function EmailSendingPanel() {
   }
 
   async function remove(template: SavedTemplate) {
-    if (!window.confirm(`Delete the template "${template.name}"?`)) return
+    setDeleting(true)
     try {
       await deleteTemplate(template.id)
       setTemplates(await loadTemplates())
       if (draft?.id === template.id) setDraft(null)
       setMessage(`Deleted "${template.name}".`)
+      setPendingDelete(null)
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return
       setMessage(error instanceof Error ? error.message : String(error))
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -194,7 +200,7 @@ export function EmailSendingPanel() {
               >
                 Edit
               </button>
-              <button type="button" className="secondary danger" onClick={() => void remove(item)}>
+              <button type="button" className="secondary danger" onClick={() => setPendingDelete(item)}>
                 Delete
               </button>
             </div>
@@ -205,6 +211,20 @@ export function EmailSendingPanel() {
         )}
         {message && <p role="status">{message}</p>}
       </section>
+      <DeleteModal
+        open={pendingDelete !== null}
+        title="Delete template?"
+        description={
+          pendingDelete ? `“${pendingDelete.name}” will be removed from LeadsGhr Mailer.` : ''
+        }
+        busy={deleting}
+        onCancel={() => {
+          if (!deleting) setPendingDelete(null)
+        }}
+        onConfirm={() => {
+          if (pendingDelete) void remove(pendingDelete)
+        }}
+      />
     </>
   )
 }

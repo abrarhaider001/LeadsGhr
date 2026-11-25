@@ -6,7 +6,7 @@
 
 **Status:** Partial.
 
-**Current coverage:** The desktop **Email Templates** page (`packages/app/src/email-templates-page.tsx`) lists saved templates and opens a right-side panel to add or edit a plain-text or HTML body, with a preview and a delete confirmation. Templates are stored in `C:\LeadsGhr\extensions\leadsghr-mailer\data\templates.json`, the file LeadsGhr Mailer reads. Segment builder and mail-merge export remain unimplemented. The LeadsGhr Mailer extension (`apps/mailer-extension`) supports saved templates, CSV or Excel recipients, inclusive ranges, and paced Gmail sends; see [Email Sending](../../EMAIL_SENDING_README.md).
+**Current coverage:** The desktop **Email Templates** page (`packages/app/src/email-templates-page.tsx`) lists saved templates and opens a right-side panel to add or edit a plain-text or HTML body, with a preview and the shared `DeleteModal` before a template is removed. Templates are stored in `C:\LeadsGhr\extensions\leadsghr-mailer\data\templates.json`, the file LeadsGhr Mailer reads. Segment builder and mail-merge export remain unimplemented. The LeadsGhr Mailer extension (`apps/mailer-extension`) supports saved templates, CSV or Excel recipients, inclusive ranges, and paced Gmail sends; see [Email Sending](../../EMAIL_SENDING_README.md).
 
 **Minimum plan:** Professional  
 **Priority:** P2  

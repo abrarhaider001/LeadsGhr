@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { EmptyTable, Icon } from '@leadsghr/ui'
+import { EmptyState, Icon } from '@leadsghr/ui'
 import {
   analyzeSpam,
   BODY_LIMIT,
@@ -68,11 +68,6 @@ export function EmailSpamEnginePage() {
   const hasDraft = Boolean(subject.trim() || body.trim())
   return (
     <div className="la-spam-page">
-      <div className="la-spam-intro">
-        <span className="la-spam-local-badge">
-          <span aria-hidden="true" /> Private on this computer
-        </span>
-      </div>
       <div className="la-spam-layout">
         <section className="la-spam-panel" aria-label="Email draft">
           <div className="la-spam-panel-title">
@@ -288,10 +283,7 @@ export function EmailSpamEnginePage() {
               )}
             </>
           ) : (
-            <EmptyTable
-              title="Ready to check"
-              description="Add a subject and message, then check the content to see highlighted phrases and suggestions."
-            />
+            <EmptyState className="flex-1" />
           )}
         </section>
       </div>

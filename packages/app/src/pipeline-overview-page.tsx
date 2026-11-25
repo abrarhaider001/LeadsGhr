@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CrawlRunSummary, PipelineProvider, SearchCriteria } from '@leadsghr/schemas'
-import { Button, Icon, Input, Label } from '@leadsghr/ui'
+import { Button, DeleteModal, Icon, Input, Label } from '@leadsghr/ui'
 import { PipelineProviderIcon } from './pipeline-provider-icon'
 import { MdOutlineDeleteOutline } from 'react-icons/md'
 import type { PipelineDraft } from './pipeline-draft'
@@ -51,11 +51,13 @@ const stages = [
 
 export function PipelineOverviewPage({
   runs,
+  createRef,
   onCreate,
   onResume,
   onDelete,
 }: {
   runs: CrawlRunSummary[]
+  createRef?: { current: (() => void) | null }
   onCreate(draft: PipelineDraft, start: boolean): void
   onResume(id: string): void
   onDelete(id: string): void
@@ -63,6 +65,7 @@ export function PipelineOverviewPage({
   const nameInputRef = useRef<HTMLInputElement>(null)
   const pipelines = runs.filter((run) => run.kind === 'pipeline')
   const [open, setOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<CrawlRunSummary | null>(null)
   const [name, setName] = useState('')
   const [provider, setProvider] = useState<PipelineProvider | null>(null)
   const [criteria, setCriteria] = useState<SearchCriteria>(empty)
@@ -83,6 +86,15 @@ export function PipelineOverviewPage({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open])
+  useEffect(() => {
+    if (!createRef) return
+    createRef.current = () => {
+      void openDrawer()
+    }
+    return () => {
+      createRef.current = null
+    }
+  })
   async function openDrawer() {
     setProvider(null)
     setOpen(true)
@@ -141,11 +153,6 @@ export function PipelineOverviewPage({
   }
   return (
     <div className="la-pipeline-home">
-      <section className="la-pipeline-toolbar">
-        <Button type="button" onClick={() => void openDrawer()}>
-          <Icon name="add" size={16} /> Create pipeline
-        </Button>
-      </section>
       <div className="la-pipeline-stage-grid">
         {stages.map((stage, index) => (
           <div className="la-pipeline-stage" key={stage.title}>
@@ -198,7 +205,7 @@ export function PipelineOverviewPage({
                     title="Delete pipeline"
                     aria-label={`Delete ${run.name} pipeline`}
                     disabled={run.status === 'running'}
-                    onClick={() => onDelete(run.id)}
+                    onClick={() => setPendingDelete(run)}
                   >
                     <MdOutlineDeleteOutline size={19} aria-hidden="true" />
                   </button>
@@ -318,6 +325,22 @@ export function PipelineOverviewPage({
           </aside>
         </div>
       )}
+      <DeleteModal
+        open={pendingDelete !== null}
+        title="Delete pipeline?"
+        description={
+          pendingDelete
+            ? `“${pendingDelete.name}” will be removed from this computer, including its saved results, URL queue, and export history. CSV files already saved on disk stay available.`
+            : ''
+        }
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (!pendingDelete) return
+          const id = pendingDelete.id
+          setPendingDelete(null)
+          onDelete(id)
+        }}
+      />
     </div>
   )
 }

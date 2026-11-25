@@ -12,7 +12,7 @@ The Niche Library turns a simple business name into a reusable set of public-sea
 - 35 bundled starter packs in `packages/app/data/niche-packs.json`, organized into Construction, Building trades, Site and civil, Development, Property services, and Professional services. Custom niches appear in **Custom**.
 - A category list, niche/keyword search, pack details, selection button, and selected indicators.
 - Each starter pack defines search terms (name and alternate names), related services, negative terms, and typical website phrases.
-- User-added custom niches, including multiple comma- or newline-separated names. A custom niche starts with its name as a search term.
+- User-added custom niches, including multiple comma- or newline-separated names. A custom niche starts with its name as a search term. **Delete custom niche** opens the shared `DeleteModal` before the niche is removed.
 - Editable search and negative term chips. Removing a bundled term stores a user override; adding a term stores a user addition. **Reset pack edits** restores the bundled pack without deleting the underlying data. Custom niches can be deleted.
 - A combined preview of all selected packs: unique keyword count, unique search-query term count per location, negative-term count, and the merged chips. Matching is case-insensitive and retains readable display text.
 - Local persistence through validated Electron IPC in `search-criteria.json` in `C:\LeadsGhr\data`. The built-in JSON is never rewritten by personal edits.
