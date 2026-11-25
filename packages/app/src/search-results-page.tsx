@@ -11,7 +11,7 @@ import { getNichePack } from './niche-library-data'
 import { crawlRunBridge, type PipelinePage } from './crawl-run-bridge'
 import locationData from '../data/us-states-locations.json'
 import { CustomSelect } from './custom-select'
-import { EmptyTable, Icon } from '@leadsghr/ui'
+import { EmptyState, Icon, Table } from '@leadsghr/ui'
 import { FaPause, FaPlay, FaStop } from 'react-icons/fa'
 import { MdOutlineVisibility } from 'react-icons/md'
 import { PipelineTimeline } from './pipeline-timeline'
@@ -81,9 +81,10 @@ export function SearchResultsPage({
   pipelineMode = false,
   pipelineName,
   provider = 'google-maps',
-  onBack,
   onSaved,
   onFinished,
+  exportRef,
+  onExportChange,
 }: {
   criteria: SearchCriteria
   preferences: DesktopPreferences
@@ -91,9 +92,12 @@ export function SearchResultsPage({
   pipelineMode?: boolean
   pipelineName?: string
   provider?: PipelineProvider
-  onBack(): void
   onSaved?(): void
   onFinished?(item: CrawlExport): void
+  exportRef?: { current: (() => void) | null }
+  onExportChange?(
+    item: { fileName: string; filePath: string; entryCount: number } | null,
+  ): void
 }) {
   const [retry, setRetry] = useState(0)
   const [rows, setRows] = useState<MapsRow[]>([])
@@ -739,23 +743,40 @@ export function SearchResultsPage({
     }
   }
 
+  useEffect(() => {
+    if (!exportRef) return
+    exportRef.current = () => {
+      void exportAgain()
+    }
+    return () => {
+      exportRef.current = null
+    }
+  })
+  useEffect(() => {
+    onExportChange?.(
+      lastExport
+        ? {
+            fileName: lastExport.fileName,
+            filePath: lastExport.filePath,
+            entryCount: lastExport.entryCount,
+          }
+        : null,
+    )
+    return () => onExportChange?.(null)
+  }, [lastExport, onExportChange])
+
   return (
     <div className="la-search-results">
       {pipelineMode && <PipelineTimeline current={4} />}
-      <div className="la-results-heading">
-        <button
-          type="button"
-          className="la-result-back"
-          aria-label="Back to choices"
-          title="Back to choices"
-          onClick={onBack}
-        >
-          <Icon name="back" size={18} />
-        </button>
-      </div>
       <section className="la-maps-results">
         <div className="la-maps-results-heading">
-          <h2>{pipelineMode ? 'Pipeline crawl' : 'Crawled businesses'}</h2>
+          {lastExport ? (
+            <p className="la-maps-saved-path" title={lastExport.filePath}>
+              {lastExport.filePath}
+            </p>
+          ) : (
+            <span />
+          )}
           <div className="la-result-controls" role="group" aria-label="Crawl controls">
             <button
               type="button"
@@ -803,16 +824,6 @@ export function SearchResultsPage({
           {isActive && <span className="la-crawler-dot" />}
           {status}
         </p>
-        {lastExport && (
-          <div className="la-crawl-export-note">
-            <span title={lastExport.filePath}>
-              CSV saved: {lastExport.fileName} · {lastExport.entryCount.toLocaleString()} entries
-            </span>
-            <button type="button" onClick={() => void exportAgain()}>
-              <Icon name="exports" size={15} /> Export again
-            </button>
-          </div>
-        )}
         {!pipelineMode &&
           (hasVisibleFields ? (
             <>
@@ -887,86 +898,116 @@ export function SearchResultsPage({
                 </nav>
               </div>
               <div className="la-table-scroll">
-                <table className="la-table la-maps-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      {preferences.includeCompanyName && <th>Business</th>}
-                      {preferences.includeWebsite && <th>Website URL</th>}
-                      {preferences.includePhone && <th>Phone</th>}
-                      {preferences.includeLocation && <th>Location</th>}
-                      {preferences.includeAddress && <th>Address</th>}
-                      <th>Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleRows.map((row, index) => (
-                      <tr key={row.id}>
-                        <td>{pageStart + index + 1}</td>
-                        {preferences.includeCompanyName && (
-                          <td>
-                            <strong className="la-result-ellipsis" title={row.name}>
-                              {row.name || 'Not shown'}
-                            </strong>
-                          </td>
-                        )}
-                        {preferences.includeWebsite && (
-                          <td className="la-maps-url">
-                            {row.website ? (
-                              <a
-                                className="la-result-ellipsis"
-                                title={row.website}
-                                href={row.website}
-                                onClick={(event) => {
-                                  event.preventDefault()
-                                  void mapsBridge()?.openWebsite(row.website)
-                                }}
-                              >
-                                {row.website}
-                              </a>
-                            ) : (
-                              'Not shown'
-                            )}
-                          </td>
-                        )}
-                        {preferences.includePhone && <td>{row.phone || 'Not shown'}</td>}
-                        {preferences.includeLocation && (
-                          <td>
-                            <span className="la-result-ellipsis" title={row.location}>
-                              {row.location || 'Not shown'}
-                            </span>
-                          </td>
-                        )}
-                        {preferences.includeAddress && (
-                          <td>
-                            <span className="la-result-ellipsis" title={row.address}>
-                              {row.address || 'Not shown'}
-                            </span>
-                          </td>
-                        )}
-                        <td>
-                          <span className="la-result-source">{row.source}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {rows.length > 0 && !filteredRows.length && (
-                  <EmptyTable
-                    title="No matching results"
-                    description="No result matches this search. Clear the search box to see every result."
-                  />
-                )}
-                {!rows.length && (
-                  <EmptyTable
-                    title={isActive ? 'Searching for businesses' : 'No results found'}
-                    description={
-                      isActive
-                        ? 'Public result cards will appear here as they load.'
-                        : 'Try another niche or location to find public business listings.'
-                    }
-                  />
-                )}
+                <Table
+                  data={visibleRows.map((row, index) => ({
+                    ...row,
+                    rowNumber: pageStart + index + 1,
+                  }))}
+                  loading={isActive && !rows.length}
+                  paginator={false}
+                  tableClassName="la-maps-table"
+                  rowKey={(row) => row.id}
+                  columns={[
+                    { field: 'rowNumber', header: '#' },
+                    ...(preferences.includeCompanyName
+                      ? [
+                          {
+                            field: 'name',
+                            header: 'Business',
+                            cell: (row: (typeof visibleRows)[number] & { rowNumber: number }) => (
+                              <strong className="la-result-ellipsis" title={row.name}>
+                                {row.name || 'Not shown'}
+                              </strong>
+                            ),
+                          },
+                        ]
+                      : []),
+                    ...(preferences.includeWebsite
+                      ? [
+                          {
+                            field: 'website',
+                            header: 'Website URL',
+                            className: 'la-maps-url',
+                            cell: (row: (typeof visibleRows)[number]) =>
+                              row.website ? (
+                                <a
+                                  className="la-result-ellipsis"
+                                  title={row.website}
+                                  href={row.website}
+                                  onClick={(event) => {
+                                    event.preventDefault()
+                                    void mapsBridge()?.openWebsite(row.website)
+                                  }}
+                                >
+                                  {row.website}
+                                </a>
+                              ) : (
+                                'Not shown'
+                              ),
+                          },
+                        ]
+                      : []),
+                    ...(preferences.includePhone
+                      ? [
+                          {
+                            field: 'phone',
+                            header: 'Phone',
+                            cell: (row: (typeof visibleRows)[number]) => row.phone || 'Not shown',
+                          },
+                        ]
+                      : []),
+                    ...(preferences.includeLocation
+                      ? [
+                          {
+                            field: 'location',
+                            header: 'Location',
+                            cell: (row: (typeof visibleRows)[number]) => (
+                              <span className="la-result-ellipsis" title={row.location}>
+                                {row.location || 'Not shown'}
+                              </span>
+                            ),
+                          },
+                        ]
+                      : []),
+                    ...(preferences.includeAddress
+                      ? [
+                          {
+                            field: 'address',
+                            header: 'Address',
+                            cell: (row: (typeof visibleRows)[number]) => (
+                              <span className="la-result-ellipsis" title={row.address}>
+                                {row.address || 'Not shown'}
+                              </span>
+                            ),
+                          },
+                        ]
+                      : []),
+                    {
+                      field: 'source',
+                      header: 'Source',
+                      cell: (row: (typeof visibleRows)[number]) => (
+                        <span className="la-result-source">{row.source}</span>
+                      ),
+                    },
+                  ]}
+                  empty={
+                    rows.length > 0 ? (
+                      <EmptyState
+                        title="No matching results"
+                        description="No result matches this search. Clear the search box to see every result."
+                      />
+                    ) : (
+                      <EmptyState
+                        title={isActive ? 'Searching for businesses' : 'No results found'}
+                        description={
+                          isActive
+                            ? 'Public result cards will appear here as they load.'
+                            : 'Try another niche or location to find public business listings.'
+                        }
+                      />
+                    )
+                  }
+                />
               </div>
             </>
           ) : (
@@ -1014,75 +1055,69 @@ export function SearchResultsPage({
             <div
               className={`la-table-scroll la-pipeline-queue-table${visibleSitePages.length ? '' : ' la-pipeline-queue-table--empty'}`}
             >
-              <table className="la-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Page URL</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Emails found</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visibleSitePages.map(({ item, index }) => (
-                    <tr
-                      key={sitePageKey(item)}
-                      className={
-                        ['fetching', 'ready', 'crawling'].includes(item.status)
-                          ? 'la-crawl-row--active'
-                          : undefined
-                      }
-                    >
-                      <td>{index + 1}</td>
-                      <td title={item.url}>
-                        <span className="la-result-ellipsis">{item.url}</span>
-                      </td>
-                      <td>{item.kind}</td>
-                      <td title={item.error ?? undefined}>
-                        <span
-                          className={`la-crawler-queue-status la-crawler-queue-status--${item.status}`}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          className="la-crawler-email-chip"
-                          aria-label={`${item.emails.length} emails found`}
-                        >
-                          {item.emails.length}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="la-crawler-view-button"
-                          title="View page emails"
-                          aria-label={`View emails and details for ${item.url}`}
-                          onClick={(event) => {
-                            detailTriggerRef.current = event.currentTarget
-                            setSelectedSitePageKey(sitePageKey(item))
-                          }}
-                        >
-                          <MdOutlineVisibility aria-hidden="true" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {!visibleSitePages.length && (
-                <EmptyTable
-                  title={sitePages.length ? 'No pages waiting' : 'No websites queued'}
-                  description={
-                    sitePages.length
-                      ? 'All queued pages have been processed.'
-                      : 'Websites from public business results will enter the queue as they appear.'
-                  }
-                />
-              )}
+              <Table
+                data={visibleSitePages}
+                loading={false}
+                paginator={false}
+                tableClassName="la-crawler-table"
+                rowKey={(row) => sitePageKey(row.item)}
+                isRowActive={(row) => ['fetching', 'ready', 'crawling'].includes(row.item.status)}
+                columns={[
+                  { field: 'index', header: '#', cell: (row) => row.index + 1 },
+                  {
+                    field: 'url',
+                    header: 'Page URL',
+                    cell: (row) => (
+                      <span className="la-result-ellipsis" title={row.item.url}>
+                        {row.item.url}
+                      </span>
+                    ),
+                  },
+                  { field: 'kind', header: 'Type', cell: (row) => row.item.kind },
+                  {
+                    field: 'status',
+                    header: 'Status',
+                    cell: (row) => (
+                      <span
+                        className={`la-crawler-queue-status la-crawler-queue-status--${row.item.status}`}
+                        title={row.item.error ?? undefined}
+                      >
+                        {row.item.status}
+                      </span>
+                    ),
+                  },
+                  {
+                    field: 'emails',
+                    header: 'Emails found',
+                    cell: (row) => (
+                      <span
+                        className="la-crawler-email-chip"
+                        aria-label={`${row.item.emails.length} emails found`}
+                      >
+                        {row.item.emails.length}
+                      </span>
+                    ),
+                  },
+                  {
+                    field: 'actions',
+                    header: 'Actions',
+                    cell: (row) => (
+                      <button
+                        type="button"
+                        className="la-crawler-view-button"
+                        title="View page emails"
+                        aria-label={`View emails and details for ${row.item.url}`}
+                        onClick={(event) => {
+                          detailTriggerRef.current = event.currentTarget
+                          setSelectedSitePageKey(sitePageKey(row.item))
+                        }}
+                      >
+                        <MdOutlineVisibility aria-hidden="true" />
+                      </button>
+                    ),
+                  },
+                ]}
+              />
             </div>
           </section>
         )}
@@ -1174,10 +1209,6 @@ export function SearchResultsPage({
           </aside>
         </div>
       )}
-      <p className="la-results-note">
-        Search results supply website URLs. Pipeline crawls those sites, filters extracted emails,
-        and exports the saved results to C:\LeadsGhr\exports.
-      </p>
     </div>
   )
 }

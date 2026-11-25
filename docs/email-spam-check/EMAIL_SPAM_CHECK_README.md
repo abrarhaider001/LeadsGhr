@@ -4,7 +4,7 @@ The desktop Email Spam Check page analyzes an email subject and body locally. It
 
 ## User flow
 
-The desktop page uses a two-panel editor: a white draft panel on the left and a white analysis panel on the right. Before the first check, the analysis panel uses the shared `EmptyTable` illustration also used by Email Filtering and other project tables. Attachment selection sits below the message as a compact metadata control. On narrow windows, the panels stack vertically.
+The desktop page uses a two-panel editor: a white draft panel on the left and a white analysis panel on the right. Before the first check, the analysis panel uses the shared `EmptyState` (No Data Found!) also used by Email Filtering and other project tables. Attachment selection sits below the message as a compact metadata control. On narrow windows, the panels stack vertically.
 
 1. Enter a subject and message. The live counters show the current length; the subject is limited to 120 characters and the body to 10,000 characters.
 2. Optionally select attachments. Only their names and sizes are inspected; file contents are not read or uploaded.

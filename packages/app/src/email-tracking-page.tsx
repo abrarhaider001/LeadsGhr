@@ -1,95 +1,36 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type MutableRefObject } from 'react'
+import { Icon, type IconName } from '@leadsghr/ui'
 
 type TrackingBridge = { downloadTrackingExtension(): Promise<string | null> }
 const bridge = () => (window as Window & { leadsGhrDesktop?: TrackingBridge }).leadsGhrDesktop
 
-type IconKind =
-  | 'download'
-  | 'folder'
-  | 'chrome'
-  | 'key'
-  | 'compose'
-  | 'send'
-  | 'open'
-  | 'bell'
-  | 'refresh'
+const setupSteps: { title: string; body: string }[] = [
+  { title: 'Download and extract', body: 'Save the ZIP, then extract the folder.' },
+  { title: 'Load it in Chrome', body: 'Turn on Developer mode and choose Load unpacked.' },
+  { title: 'Connect', body: 'Save the endpoint and key, then reload Gmail.' },
+]
 
-function Icon({ kind }: { kind: IconKind }) {
-  const paths: Record<IconKind, ReactNode> = {
-    download: (
-      <>
-        <path d="M12 3v11m-4-4 4 4 4-4" />
-        <path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
-      </>
-    ),
-    folder: (
-      <>
-        <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <path d="M12 11v5m-2.5-2.5L12 16l2.5-2.5" />
-      </>
-    ),
-    chrome: (
-      <>
-        <rect x="3" y="4" width="18" height="16" rx="3" />
-        <path d="M3 9h18" />
-        <path d="M8 15h8m-8-3h8" />
-      </>
-    ),
-    key: (
-      <>
-        <circle cx="8" cy="15" r="4" />
-        <path d="m11 12 9-9m-3 3 2 2m-5 1 2 2" />
-      </>
-    ),
-    compose: (
-      <>
-        <path d="M4 20h4L19 9l-4-4L4 16z" />
-        <path d="m13 7 4 4" />
-      </>
-    ),
-    send: (
-      <>
-        <path d="M21 3 10 14" />
-        <path d="m21 3-7 18-4-7-7-4z" />
-      </>
-    ),
-    open: (
-      <>
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="m4 7 8 6 8-6" />
-      </>
-    ),
-    bell: (
-      <>
-        <path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z" />
-        <path d="M10 20a2 2 0 0 0 4 0" />
-      </>
-    ),
-    refresh: (
-      <>
-        <path d="M20 11a8 8 0 0 0-14.9-3.5M4 4v4h4" />
-        <path d="M4 13a8 8 0 0 0 14.9 3.5M20 20v-4h-4" />
-      </>
-    ),
-  }
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {paths[kind]}
-    </svg>
-  )
-}
+const howItWorks: { icon: IconName; title: string; body: string }[] = [
+  { icon: 'edit', title: 'You compose', body: 'Tracking shows above Send.' },
+  { icon: 'mailSend', title: 'The email is tagged', body: 'Send adds a unique tracking image.' },
+  { icon: 'mail', title: 'The recipient opens it', body: 'The image load is recorded.' },
+  { icon: 'bell', title: 'You are notified', body: 'Ticks update in Gmail.' },
+]
 
-/** Same double check the extension draws in Gmail: gray by default, first purple when sent, both purple when loaded. */
+const needs: { icon: IconName; title: string; body: string }[] = [
+  { icon: 'settings', title: 'Chrome', body: 'Tracker loaded as an unpacked extension.' },
+  { icon: 'mailTracking', title: 'Endpoint', body: 'The tracking address saved in settings.' },
+  { icon: 'shield', title: 'Registration key', body: 'Entered before the first tracked send.' },
+  { icon: 'mail', title: 'Gmail', body: 'Reload Gmail after you connect.' },
+]
+
+const tickStates: { state: 'untracked' | 'sent' | 'loaded'; title: string; body: string }[] = [
+  { state: 'untracked', title: 'Not tracked', body: 'Sent without tracking, or not confirmed.' },
+  { state: 'sent', title: 'Sent with tracking', body: 'A tracking image was added. No load yet.' },
+  { state: 'loaded', title: 'Opened', body: 'The tracking image loaded at least once.' },
+]
+
+/** Same double check the extension draws in Gmail. */
 function Ticks({ state }: { state: 'untracked' | 'sent' | 'loaded' }) {
   return (
     <svg
@@ -105,238 +46,121 @@ function Ticks({ state }: { state: 'untracked' | 'sent' | 'loaded' }) {
   )
 }
 
-const installSteps: { kind: IconKind; title: string; body: ReactNode }[] = [
-  {
-    kind: 'download',
-    title: 'Download',
-    body: (
-      <>
-        Select <strong>Download extension ZIP</strong>. The save window opens in{' '}
-        <code>C:\LeadsGhr\extensions</code>; keep that location.
-      </>
-    ),
-  },
-  {
-    kind: 'folder',
-    title: 'Extract',
-    body: (
-      <>
-        Right-click the ZIP, choose <strong>Extract All</strong>, and extract to{' '}
-        <code>C:\LeadsGhr\extensions\leadsghr-tracker</code>. Chrome loads this folder, not the ZIP.
-      </>
-    ),
-  },
-  {
-    kind: 'chrome',
-    title: 'Load in Chrome',
-    body: (
-      <>
-        Open <code>chrome://extensions</code>, turn on <strong>Developer mode</strong>, select{' '}
-        <strong>Load unpacked</strong>, and choose the extracted folder. Pin LeadsGhr from the
-        puzzle icon.
-      </>
-    ),
-  },
-  {
-    kind: 'key',
-    title: 'Connect',
-    body: (
-      <>
-        Select the LeadsGhr Tracker icon, then <strong>Open full settings</strong>. Enter the
-        tracking endpoint and registration key, select <strong>Save settings</strong>, allow access,
-        and reload Gmail.
-      </>
-    ),
-  },
-]
-
-const flow: { kind: IconKind; title: string; body: string }[] = [
-  {
-    kind: 'compose',
-    title: 'You compose',
-    body: 'New emails and replies show “LeadsGhr tracking enabled” just above Send. Turn tracking off in the LeadsGhr popup.',
-  },
-  {
-    kind: 'send',
-    title: 'LeadsGhr tags the email',
-    body: 'On Send, the extension creates a unique tracking ID for this email and adds an invisible 1×1 image.',
-  },
-  {
-    kind: 'open',
-    title: 'The recipient opens it',
-    body: 'When the email is opened with images shown, the mail app loads that image and the tracking service records the time.',
-  },
-  {
-    kind: 'bell',
-    title: 'You are notified',
-    body: 'The tracking service pushes each load to the extension right away, which updates the ticks and shows a Chrome notification within seconds.',
-  },
-]
-
-const tickStates: { state: 'untracked' | 'sent' | 'loaded'; title: string; body: string }[] = [
-  {
-    state: 'untracked',
-    title: 'Not tracked',
-    body: 'Sent without LeadsGhr tracking, or the send was not confirmed.',
-  },
-  {
-    state: 'sent',
-    title: 'Sent with tracking',
-    body: 'Sent from Gmail with a tracking image; no load seen yet.',
-  },
-  {
-    state: 'loaded',
-    title: 'Opened or image loaded',
-    body: 'The tracking image was loaded at least once.',
-  },
-]
-
-const notes: ReactNode[] = [
-  <>
-    <strong>Loads are not guaranteed reads.</strong> Mail apps can preload images, and opens with
-    images blocked are not seen.
-  </>,
-  <>
-    <strong>Repeat opens can be missed.</strong> Gmail keeps a cached copy of the image, so later
-    opens often do not reach the tracking service.
-  </>,
-  <>
-    <strong>One email, one tracking image.</strong> An email sent to several people shares one
-    image, so any of them can cause a load. Send separate emails to see who opened.
-  </>,
-  <>
-    <strong>Only Gmail compose is tracked.</strong> Emails sent by other tools, mail merge, or the
-    Gmail API carry no LeadsGhr image.
-  </>,
-  <>
-    <strong>Your data stays private.</strong> Only the random tracking ID and load times are stored
-    online. Recipient, subject, and message stay in your Chrome profile.
-  </>,
-]
-
-export function EmailTrackingPage() {
-  const [message, setMessage] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  async function download() {
-    setBusy(true)
-    try {
-      const api = bridge()
-      if (!api?.downloadTrackingExtension)
-        throw new Error('Restart the desktop app to enable the extension download.')
-      const path = await api.downloadTrackingExtension()
-      setMessage(path ? `Saved to ${path}. Extract it next.` : 'Download cancelled.')
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error))
-    } finally {
-      setBusy(false)
-    }
-  }
-
+function FactPanel({
+  id,
+  title,
+  items,
+}: {
+  id: string
+  title: string
+  items: { icon: IconName; title: string; body: string }[]
+}) {
   return (
-    <section className="la-extension-install">
-      <div className="la-extension-hero">
-        <div className="la-extension-hero-copy">
-          <span className="la-extension-eyebrow">LEADSGHR MAIL TRACKING · CHROME EXTENSION</span>
-          <small>Saves to C:\LeadsGhr\extensions · Works in Google Chrome</small>
-          {message && (
-            <p className="la-extension-status" role="status">
-              {message}
-            </p>
-          )}
-        </div>
-        <div className="la-extension-hero-action">
-          <button
-            type="button"
-            className="la-extension-download"
-            onClick={() => void download()}
-            disabled={busy}
-          >
-            <Icon kind="download" />
-            {busy ? 'Saving…' : 'Download extension ZIP'}
-          </button>
-        </div>
-      </div>
-
-      <div className="la-extension-steps-heading">
-        <div>
-          <h3>Install in Chrome</h3>
-          <p>Do this once on each computer.</p>
-        </div>
-        <span>About 2 minutes</span>
-      </div>
-      <ol className="la-extension-steps la-tracking-install">
-        {installSteps.map((step, index) => (
-          <li className="la-extension-step" key={step.title}>
-            <div className="la-extension-step-top">
-              <span className="la-extension-step-icon">
-                <Icon kind={step.kind} />
-              </span>
-              <span className="la-extension-step-number">{String(index + 1).padStart(2, '0')}</span>
-            </div>
-            <h4>{step.title}</h4>
-            <p>{step.body}</p>
-          </li>
-        ))}
-      </ol>
-
-      <div className="la-tracking-callout">
-        <Icon kind="refresh" />
-        <p>
-          <strong>Updating the extension.</strong> Extract the new ZIP into the same{' '}
-          <code>leadsghr-tracker</code> folder, replace the files, then select{' '}
-          <strong>Reload</strong> on LeadsGhr in <code>chrome://extensions</code>. Using the same
-          folder keeps your settings and tracked emails.
-        </p>
-      </div>
-
-      <div className="la-extension-steps-heading">
-        <div>
-          <h3>How tracking works</h3>
-          <p>From compose to notification.</p>
-        </div>
-      </div>
-      <ol className="la-tracking-flow">
-        {flow.map((item, index) => (
+    <section className="la-mailer-panel" aria-labelledby={id}>
+      <header className="la-mailer-panel-title">
+        <h3 id={id}>{title}</h3>
+      </header>
+      <ul>
+        {items.map((item) => (
           <li key={item.title}>
-            <span className="la-extension-step-icon">
-              <Icon kind={item.kind} />
+            <span className="la-mailer-mark">
+              <Icon name={item.icon} size={18} />
             </span>
             <div>
-              <span className="la-extension-step-number">STEP {index + 1}</span>
               <h4>{item.title}</h4>
               <p>{item.body}</p>
             </div>
           </li>
         ))}
-      </ol>
+      </ul>
+    </section>
+  )
+}
 
-      <div className="la-tracking-columns">
-        <section className="la-tracking-panel" aria-labelledby="la-tracking-ticks-title">
-          <h3 id="la-tracking-ticks-title">Reading the ticks</h3>
-          <ul className="la-tracking-legend">
+/** Email Tracking is the Tracker install guide. The download button stays in the page header. */
+export function EmailTrackingPage({
+  downloadRef,
+}: {
+  downloadRef?: MutableRefObject<(() => void) | null>
+}) {
+  const [message, setMessage] = useState('')
+
+  async function downloadExtension() {
+    try {
+      const api = bridge()
+      if (!api?.downloadTrackingExtension)
+        throw new Error('Restart the desktop app to enable extension download.')
+      const path = await api.downloadTrackingExtension()
+      setMessage(path ? `Saved to ${path}` : 'Download cancelled')
+    } catch (error) {
+      setMessage(String(error))
+    }
+  }
+
+  useEffect(() => {
+    if (!downloadRef) return
+    downloadRef.current = () => {
+      void downloadExtension()
+    }
+    return () => {
+      downloadRef.current = null
+    }
+  })
+
+  return (
+    <section className="la-mailer-guide">
+      {message ? (
+        <p className="la-mailer-status" role="status">
+          {message}
+        </p>
+      ) : null}
+      <section className="la-mailer-block" aria-labelledby="la-tracker-setup">
+        <header>
+          <h3 id="la-tracker-setup">Setup</h3>
+        </header>
+        <ol className="la-mailer-cards">
+          {setupSteps.map((step, index) => (
+            <li className="la-mailer-card" key={step.title}>
+              <span className="la-mailer-index">{String(index + 1).padStart(2, '0')}</span>
+              <h4>{step.title}</h4>
+              <p>{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <section className="la-mailer-block" aria-labelledby="la-tracker-how">
+        <header>
+          <h3 id="la-tracker-how">How it works</h3>
+        </header>
+        <ol className="la-mailer-cards la-mailer-cards-wide">
+          {howItWorks.map((item) => (
+            <li className="la-mailer-card" key={item.title}>
+              <span className="la-mailer-mark">
+                <Icon name={item.icon} size={20} />
+              </span>
+              <h4>{item.title}</h4>
+              <p>{item.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <div className="la-mailer-facts">
+        <FactPanel id="la-tracker-needs" title="What you need" items={needs} />
+        <section className="la-mailer-panel" aria-labelledby="la-tracker-ticks">
+          <header className="la-mailer-panel-title">
+            <h3 id="la-tracker-ticks">Reading the ticks</h3>
+          </header>
+          <ul>
             {tickStates.map((item) => (
               <li key={item.state}>
-                <Ticks state={item.state} />
+                <span className="la-mailer-mark">
+                  <Ticks state={item.state} />
+                </span>
                 <div>
-                  <strong>{item.title}</strong>
-                  <span>{item.body}</span>
+                  <h4>{item.title}</h4>
+                  <p>{item.body}</p>
                 </div>
               </li>
-            ))}
-          </ul>
-          <p className="la-tracking-panel-note">
-            Ticks appear in the Sent list and beside each message you sent inside a conversation, so
-            every reply has its own status. Hover the ticks to see when the image was last loaded
-            and how soon after sending it was first loaded. The Sent list shows the latest email you
-            sent in each conversation.
-          </p>
-        </section>
-        <section className="la-tracking-panel" aria-labelledby="la-tracking-notes-title">
-          <h3 id="la-tracking-notes-title">Good to know</h3>
-          <ul className="la-tracking-notes">
-            {notes.map((note, index) => (
-              <li key={index}>{note}</li>
             ))}
           </ul>
         </section>

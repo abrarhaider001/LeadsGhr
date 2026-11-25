@@ -1,6 +1,6 @@
 import { createElement, useEffect, useRef, useState } from 'react'
 import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leadsghr/extract'
-import { Button, EmptyTable, Input, Label } from '@leadsghr/ui'
+import { Button, Input, Label, Table } from '@leadsghr/ui'
 import { MdOutlineVisibility } from 'react-icons/md'
 import type { DesktopPreferences } from '@leadsghr/schemas'
 import { CRAWL_QUEUE_VISIBLE_ROWS, crawlQueueWindow } from './crawl-queue-window'
@@ -543,77 +543,65 @@ export function CrawlerPage({ preferences }: { preferences: DesktopPreferences }
         <div
           className={`la-crawler-table-wrap${visibleUrlRows.length ? '' : ' la-crawler-table-wrap--empty'}`}
         >
-          <table className="la-table la-crawler-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Page URL</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Emails found</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibleUrlRows.map(({ item: row, index }) => (
-                <tr
-                  key={row.url}
-                  className={
-                    row.status === 'Fetching' || row.status === 'Crawling'
-                      ? 'la-crawl-row--active'
-                      : undefined
-                  }
-                >
-                  <td>{index + 1}</td>
-                  <td title={row.url}>
-                    <a href={row.url} target="_blank" rel="noreferrer">
-                      {row.url}
-                    </a>
-                  </td>
-                  <td>{row.kind}</td>
-                  <td>
-                    <span
-                      className={`la-crawler-queue-status la-crawler-queue-status--${row.status.toLowerCase()}`}
-                    >
-                      {row.status}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className="la-crawler-email-chip"
-                      aria-label={`${row.emails} emails found`}
-                    >
-                      {row.emails}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="la-crawler-view-button"
-                      title="View page emails"
-                      aria-label={`View emails and details for ${row.url}`}
-                      onClick={(event) => {
-                        detailTriggerRef.current = event.currentTarget
-                        setSelectedUrl(row.url)
-                      }}
-                    >
-                      <MdOutlineVisibility aria-hidden="true" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!visibleUrlRows.length && (
-            <EmptyTable
-              title="No pages waiting"
-              description={
-                urlRows.length
-                  ? 'All queued pages have been processed.'
-                  : 'Enter a public homepage URL to discover pages and their email addresses.'
-              }
-            />
-          )}
+          <Table
+            data={visibleUrlRows}
+            loading={false}
+            paginator={false}
+            tableClassName="la-crawler-table"
+            rowKey={(row) => row.item.url}
+            isRowActive={(row) => row.item.status === 'Fetching' || row.item.status === 'Crawling'}
+            columns={[
+              { field: 'index', header: '#', cell: (row) => row.index + 1 },
+              {
+                field: 'url',
+                header: 'Page URL',
+                cell: (row) => (
+                  <a href={row.item.url} target="_blank" rel="noreferrer" title={row.item.url}>
+                    {row.item.url}
+                  </a>
+                ),
+              },
+              { field: 'kind', header: 'Type', cell: (row) => row.item.kind },
+              {
+                field: 'status',
+                header: 'Status',
+                cell: (row) => (
+                  <span
+                    className={`la-crawler-queue-status la-crawler-queue-status--${row.item.status.toLowerCase()}`}
+                  >
+                    {row.item.status}
+                  </span>
+                ),
+              },
+              {
+                field: 'emails',
+                header: 'Emails found',
+                cell: (row) => (
+                  <span className="la-crawler-email-chip" aria-label={`${row.item.emails} emails found`}>
+                    {row.item.emails}
+                  </span>
+                ),
+              },
+              {
+                field: 'actions',
+                header: 'Actions',
+                cell: (row) => (
+                  <button
+                    type="button"
+                    className="la-crawler-view-button"
+                    title="View page emails"
+                    aria-label={`View emails and details for ${row.item.url}`}
+                    onClick={(event) => {
+                      detailTriggerRef.current = event.currentTarget
+                      setSelectedUrl(row.item.url)
+                    }}
+                  >
+                    <MdOutlineVisibility aria-hidden="true" />
+                  </button>
+                ),
+              },
+            ]}
+          />
         </div>
       </section>
       {selectedRow && (

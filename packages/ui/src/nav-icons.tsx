@@ -33,6 +33,10 @@ const ICONS = {
     base: ['M4 5h5v15H4z', 'M9 5h5v15H9z'],
     accent: ['M15.5 6.2l3.6-1 3 13.6-3.6 1z'],
   },
+  email: {
+    base: ['M3.5 6.5h17v12h-17z', 'M3.5 7.5l8.5 6 8.5-6'],
+    accent: ['F:M12 10.6a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z'],
+  },
   emailFiltering: { base: ['M4 5h16l-6 7v5l-4 2v-7z'], accent: ['M17 17h4', 'M19 15v4'] },
   emailValidation: {
     base: ['M3 6h14v11H3z', 'M3 7l7 5 7-5'],
@@ -43,6 +47,18 @@ const ICONS = {
   emailTemplates: {
     base: ['M6 3.5h8.5L18 7v13.5H6z', 'M14.5 3.5V7H18', 'M9 11h6', 'M9 14.5h6'],
     accent: ['M9 18h4.5'],
+  },
+  extensions: {
+    base: [
+      'M9 6.2h2.1',
+      'M14.7 6.2H16a2 2 0 0 1 2 2v2.2',
+      'M18 13.4V16a2 2 0 0 1-2 2h-2.3',
+      'M10.8 18H8a2 2 0 0 1-2-2v-2.2',
+      'M6 11V8.2a2 2 0 0 1 2-2h1',
+      'M12 9.6v4.8',
+      'M9.6 12h4.8',
+    ],
+    accent: ['F:M11.1 3.4a1.8 1.8 0 0 1 3.6 0v2.8h-3.6z'],
   },
   emailTracking: { base: ['M1.8 12.6l4.6 4.6L15.2 7'], accent: ['M11 16l1.2 1.2L22.2 7'] },
   // LeadsGhr Scraper (owner-chosen R2, 2026-11-24): the robot head of the extension icon in outline, with green eyes

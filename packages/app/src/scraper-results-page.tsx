@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CrawlExport, CrawlRow, DesktopPreferences, ScraperProgress, SearchCriteria } from '@leadsghr/schemas'
-import { EmptyTable, Icon, NavIcon } from '@leadsghr/ui'
+import { EmptyState, Icon, NavIcon, Table } from '@leadsghr/ui'
 import { crawlRunBridge } from './crawl-run-bridge'
 import { prepareSearches, stateRange } from './search-results-page'
 
@@ -193,68 +193,71 @@ export function ScraperResultsPage({
           <Icon name="exports" size={15} /> Export CSV
         </button>
       </div>
-      <div className="la-table-scroll">
-        <table className="la-table la-maps-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Business</th>
-              <th>Website URL</th>
-              <th>Phone</th>
-              <th>Location</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            {shown.map((row, index) => (
-              <tr key={row.id}>
-                <td>{index + 1}</td>
-                <td>
-                  <strong className="la-result-ellipsis" title={row.name}>
-                    {row.name}
-                  </strong>
-                </td>
-                <td className="la-maps-url">
-                  {row.website ? (
-                    <a
-                      className="la-result-ellipsis"
-                      title={row.website}
-                      href={row.website}
-                      onClick={(event) => {
-                        event.preventDefault()
-                        void scraperBridge()?.openWebsite?.(row.website)
-                      }}
-                    >
-                      {row.website}
-                    </a>
-                  ) : (
-                    'Not shown'
-                  )}
-                </td>
-                <td>{row.phone || 'Not shown'}</td>
-                <td>
-                  <span className="la-result-ellipsis" title={row.location}>
-                    {row.location}
-                  </span>
-                </td>
-                <td>
-                  <span className="la-result-source">{row.source}</span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {!shown.length && (
-          <EmptyTable
+      <Table
+        data={shown.map((row, index) => ({ ...row, rowNumber: index + 1 }))}
+        loading={false}
+        rows={50}
+        tableClassName="la-maps-table"
+        rowKey={(row) => row.id}
+        empty={
+          <EmptyState
             title={rows.length ? 'No matching results' : 'Waiting for results'}
             description={
               rows.length
                 ? 'No result matches this search. Clear the search box to see every result.'
-                : 'Start the job in LeadsGhr Scraper in Chrome. Businesses appear here as each page is saved.'
+                : 'Start the job in LeadsGhr Scraper in Chrome. Businesses appear here as they are saved.'
             }
           />
-        )}
-      </div>
+        }
+        columns={[
+          { field: 'rowNumber', header: '#' },
+          {
+            field: 'name',
+            header: 'Business',
+            cell: (row) => (
+              <strong className="la-result-ellipsis" title={row.name}>
+                {row.name}
+              </strong>
+            ),
+          },
+          {
+            field: 'website',
+            header: 'Website URL',
+            className: 'la-maps-url',
+            cell: (row) =>
+              row.website ? (
+                <a
+                  className="la-result-ellipsis"
+                  title={row.website}
+                  href={row.website}
+                  onClick={(event) => {
+                    event.preventDefault()
+                    void scraperBridge()?.openWebsite?.(row.website)
+                  }}
+                >
+                  {row.website}
+                </a>
+              ) : (
+                'Not shown'
+              ),
+          },
+          { field: 'phone', header: 'Phone', cell: (row) => row.phone || 'Not shown' },
+          {
+            field: 'location',
+            header: 'Location',
+            cell: (row) => (
+              <span className="la-result-ellipsis" title={row.location}>
+                {row.location}
+              </span>
+            ),
+          },
+          {
+            field: 'source',
+            header: 'Source',
+            cell: (row) => <span className="la-result-source">{row.source}</span>,
+          },
+        ]}
+      />
     </section>
   )
 }

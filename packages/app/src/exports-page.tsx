@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CrawlExport, CrawlRunSummary } from '@leadsghr/schemas'
-import { EmptyTable, Icon } from '@leadsghr/ui'
+import { Icon, Table } from '@leadsghr/ui'
 import { crawlRunBridge, formatBytes } from './crawl-run-bridge'
 
 const dateText = (value: string | null) => (value ? new Date(value).toLocaleString() : '—')
@@ -84,68 +84,88 @@ export function ExportsPage({
             <span>{runs.length} runs</span>
           </div>
           <div className="la-table-scroll">
-            <table className="la-table la-history-table">
-              <thead>
-                <tr>
-                  <th>Niche</th>
-                  <th>States</th>
-                  <th>State range</th>
-                  <th>Started</th>
-                  <th>Status</th>
-                  <th>Entries</th>
-                  <th>Latest CSV</th>
-                  <th>Size</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {runs.map((run) => (
-                  <tr key={run.id}>
-                    <td title={run.niches.join(', ')}>{run.niches.join(', ')}</td>
-                    <td title={run.states.join(', ')}>{run.states.join(', ')}</td>
-                    <td>
-                      {run.stateStartNumber}–{run.stateEndNumber}
-                    </td>
-                    <td>{dateText(run.startedAt)}</td>
-                    <td>
-                      {run.status} · {run.nextQueryIndex}/{run.totalQueries}
-                    </td>
-                    <td>{run.entryCount.toLocaleString()}</td>
-                    <td title={run.latestFilePath ?? undefined}>{run.latestFileName ?? '—'}</td>
-                    <td>{formatBytes(run.latestFileSize)}</td>
-                    <td>
-                      <div className="la-history-actions">
-                        <button
-                          type="button"
-                          onClick={() => void reexport(run.id)}
-                          disabled={busyId === run.id}
-                          title="Re-export CSV"
-                          aria-label={`Re-export ${run.niches.join(', ')} run`}
-                        >
-                          <Icon name="exports" size={15} />
-                        </button>
-                        {run.nextQueryIndex < run.totalQueries && (
-                          <button
-                            type="button"
-                            onClick={() => onResume(run.id)}
-                            title="Resume crawl"
-                            aria-label={`Resume ${run.niches.join(', ')} run`}
-                          >
-                            <Icon name="resume" size={15} />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!runs.length && (
-              <EmptyTable
-                title="No crawl runs yet"
-                description="Start a crawl from Pipeline or New Search to build your run history."
-              />
-            )}
+          <Table
+            data={runs}
+            loading={false}
+            paginator={false}
+            tableClassName="la-history-table"
+            rowKey={(run) => run.id}
+            columns={[
+              {
+                field: 'niches',
+                header: 'Niche',
+                cell: (run) => <span title={run.niches.join(', ')}>{run.niches.join(', ')}</span>,
+              },
+              {
+                field: 'states',
+                header: 'States',
+                cell: (run) => <span title={run.states.join(', ')}>{run.states.join(', ')}</span>,
+              },
+              {
+                field: 'stateRange',
+                header: 'State range',
+                cell: (run) => (
+                  <>
+                    {run.stateStartNumber}–{run.stateEndNumber}
+                  </>
+                ),
+              },
+              { field: 'startedAt', header: 'Started', cell: (run) => dateText(run.startedAt) },
+              {
+                field: 'status',
+                header: 'Status',
+                cell: (run) => (
+                  <>
+                    {run.status} · {run.nextQueryIndex}/{run.totalQueries}
+                  </>
+                ),
+              },
+              {
+                field: 'entryCount',
+                header: 'Entries',
+                cell: (run) => run.entryCount.toLocaleString(),
+              },
+              {
+                field: 'latestFileName',
+                header: 'Latest CSV',
+                cell: (run) => (
+                  <span title={run.latestFilePath ?? undefined}>{run.latestFileName ?? '—'}</span>
+                ),
+              },
+              {
+                field: 'latestFileSize',
+                header: 'Size',
+                cell: (run) => formatBytes(run.latestFileSize),
+              },
+              {
+                field: 'actions',
+                header: 'Actions',
+                cell: (run) => (
+                  <div className="la-history-actions">
+                    <button
+                      type="button"
+                      onClick={() => void reexport(run.id)}
+                      disabled={busyId === run.id}
+                      title="Re-export CSV"
+                      aria-label={`Re-export ${run.niches.join(', ')} run`}
+                    >
+                      <Icon name="exports" size={15} />
+                    </button>
+                    {run.nextQueryIndex < run.totalQueries && (
+                      <button
+                        type="button"
+                        onClick={() => onResume(run.id)}
+                        title="Resume crawl"
+                        aria-label={`Resume ${run.niches.join(', ')} run`}
+                      >
+                        <Icon name="resume" size={15} />
+                      </button>
+                    )}
+                  </div>
+                ),
+              },
+            ]}
+          />
           </div>
         </div>
       )}
@@ -159,47 +179,48 @@ export function ExportsPage({
             <span>{exports.length} files</span>
           </div>
           <div className="la-table-scroll">
-            <table className="la-table la-history-table">
-              <thead>
-                <tr>
-                  <th>File name</th>
-                  <th>Exported</th>
-                  <th>Entries</th>
-                  <th>Size</th>
-                  <th>Location</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {exports.map((item) => (
-                  <tr key={item.id}>
-                    <td title={item.fileName}>{item.fileName}</td>
-                    <td>{dateText(item.exportedAt)}</td>
-                    <td>{item.entryCount.toLocaleString()}</td>
-                    <td>{formatBytes(item.fileSize)}</td>
-                    <td title={item.filePath}>{item.filePath}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="la-history-export-button la-history-export-button--icon"
-                        onClick={() => void reexportFile(item)}
-                        disabled={busyId === item.id}
-                        title="Re-export CSV"
-                        aria-label={`Re-export ${item.fileName}`}
-                      >
-                        <Icon name="exports" size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {!exports.length && (
-              <EmptyTable
-                title="No CSV exports yet"
-                description="Export a completed or stopped run to see its file here."
-              />
-            )}
+            <Table
+              data={exports}
+              loading={false}
+              paginator={false}
+              tableClassName="la-history-table"
+              rowKey={(item) => item.id}
+              columns={[
+                {
+                  field: 'fileName',
+                  header: 'File name',
+                  cell: (item) => <span title={item.fileName}>{item.fileName}</span>,
+                },
+                { field: 'exportedAt', header: 'Exported', cell: (item) => dateText(item.exportedAt) },
+                {
+                  field: 'entryCount',
+                  header: 'Entries',
+                  cell: (item) => item.entryCount.toLocaleString(),
+                },
+                { field: 'fileSize', header: 'Size', cell: (item) => formatBytes(item.fileSize) },
+                {
+                  field: 'filePath',
+                  header: 'Location',
+                  cell: (item) => <span title={item.filePath}>{item.filePath}</span>,
+                },
+                {
+                  field: 'action',
+                  header: 'Action',
+                  cell: (item) => (
+                    <button
+                      type="button"
+                      className="la-history-export-button la-history-export-button--icon"
+                      onClick={() => void reexportFile(item)}
+                      disabled={busyId === item.id}
+                      title="Re-export CSV"
+                      aria-label={`Re-export ${item.fileName}`}
+                    >
+                      <Icon name="exports" size={15} />
+                    </button>
+                  ),
+                },
+              ]}
+            />
           </div>
         </div>
       )}

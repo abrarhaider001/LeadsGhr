@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MutableRefObject } from 'react'
 import type { ScraperJobSummary } from '@leadsghr/schemas'
-import { EmptyTable, Icon } from '@leadsghr/ui'
-import { ExtensionInstallPage } from './extension-install-page'
+import { EmptyState, Icon, Table } from '@leadsghr/ui'
 
 type ScraperBridge = {
   downloadScraperExtension(): Promise<string | null>
@@ -11,7 +10,7 @@ type ScraperBridge = {
 
 const bridge = () => (window as Window & { leadsGhrDesktop?: Partial<ScraperBridge> }).leadsGhrDesktop
 
-/** How often the job list is refreshed while the page is open. */
+/** How often the job list is refreshed while the page is open (it also refreshes when the Scraper saves a file). */
 const REFRESH_MS = 5000
 
 const STATE_LABELS: Record<ScraperJobSummary['state'], string> = {
@@ -33,13 +32,15 @@ const stateTone = (state: ScraperJobSummary['state']) =>
         : ''
 
 /**
- * LeadsGhr Scraper: the extension download page (laid out like Email Sending, the Mailer), then every job sent to the
- * Scraper with its status, businesses, and websites found (and how many are still being looked up), each with
- * Open results.
+ * LeadsGhr Scraper (under Extensions): the download button sits in the page header (like Email Sending and Email
+ * Tracking); the page lists every job sent to the Scraper with its status, businesses, and websites found (and how
+ * many are still being looked up), each with Open results.
  */
 export function ScraperExtensionPage({
+  downloadRef,
   onOpenJob,
 }: {
+  downloadRef?: MutableRefObject<(() => void) | null>
   onOpenJob?(job: { jobId: string; runId: string; searches: number }): void
 }) {
   const [message, setMessage] = useState('')
@@ -82,88 +83,111 @@ export function ScraperExtensionPage({
     }
   }
 
+  useEffect(() => {
+    if (!downloadRef) return
+    downloadRef.current = () => {
+      void downloadExtension()
+    }
+    return () => {
+      downloadRef.current = null
+    }
+  })
+
   return (
-    <ExtensionInstallPage
-      onDownload={() => {
-        void downloadExtension()
-      }}
-      message={message}
-      eyebrow="LEADSGHR SCRAPER"
-      showSetup={false}
-    >
-      <div className="la-scraper-jobs">
-        <div className="la-extension-steps-heading">
-          <div>
-            <h3>Jobs</h3>
-            <p>
-              Every job sent to LeadsGhr Scraper, newest first. Websites are looked up a few at a time
-              after the Scraper saves them, also while this page is closed.
-            </p>
-          </div>
-          {jobs && <span>{jobs.length} {jobs.length === 1 ? 'job' : 'jobs'}</span>}
-        </div>
-        <div className="la-table-scroll">
-          <table className="la-table la-scraper-jobs-table">
-            <thead>
-              <tr>
-                <th>Job</th>
-                <th>Status</th>
-                <th>Searches</th>
-                <th>Businesses</th>
-                <th>Websites</th>
-                <th aria-label="Actions" />
-              </tr>
-            </thead>
-            <tbody>
-              {(jobs ?? []).map((job) => (
-                <tr key={job.jobId}>
-                  <td>
-                    <strong className="la-result-ellipsis" title={job.title}>
-                      {job.title}
-                    </strong>
-                    <small className="la-scraper-jobs-date">
-                      Sent {new Date(job.createdAt).toLocaleString()}
-                    </small>
-                  </td>
-                  <td>
-                    <span className={`la-scraper-state${stateTone(job.state)}`} title={job.message}>
-                      {STATE_LABELS[job.state]}
-                    </span>
-                  </td>
-                  <td>
-                    {job.searchesDone} of {job.searches}
-                  </td>
-                  <td>{job.businesses.toLocaleString()}</td>
-                  <td>
-                    {job.websitesFound.toLocaleString()} of {job.websiteLinks.toLocaleString()}
-                    {job.websitesPending > 0 && (
-                      <small className="la-scraper-jobs-pending">
-                        <span className="la-crawler-dot" />
-                        {job.websitesPending.toLocaleString()} looking up
-                      </small>
-                    )}
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="la-scraper-action"
-                      onClick={() => onOpenJob?.({ jobId: job.jobId, runId: job.runId, searches: job.searches })}
-                    >
-                      <Icon name="search" size={14} /> Open results
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {jobs !== null && !jobs.length && (
-            <EmptyTable
+    <section className="la-mailer-guide">
+      {message ? (
+        <p className="la-mailer-status" role="status">
+          {message}
+        </p>
+      ) : null}
+      <section className="la-mailer-block" aria-labelledby="la-scraper-jobs">
+        <header>
+          <h3 id="la-scraper-jobs">Jobs{jobs ? ` (${jobs.length})` : ''}</h3>
+        </header>
+        <p className="la-mailer-status">
+          Every job sent to LeadsGhr Scraper, newest first. Websites the Scraper could not find are
+          looked up here a few at a time, also while this page is closed.
+        </p>
+        <Table
+          data={jobs ?? []}
+          loading={jobs === null}
+          paginator={false}
+          tableClassName="la-scraper-jobs-table"
+          rowKey={(job) => job.jobId}
+          empty={
+            <EmptyState
               title="No jobs yet"
               description="In New Search, choose the niche, state, and locations, then select Send to LeadsGhr Scraper."
             />
-          )}
-        </div>
-      </div>
-    </ExtensionInstallPage>
+          }
+          columns={[
+            {
+              field: 'title',
+              header: 'Job',
+              cell: (job) => (
+                <>
+                  <strong className="la-result-ellipsis" title={job.title}>
+                    {job.title}
+                  </strong>
+                  <small className="la-scraper-jobs-date">
+                    Sent {new Date(job.createdAt).toLocaleString()}
+                  </small>
+                </>
+              ),
+            },
+            {
+              field: 'state',
+              header: 'Status',
+              cell: (job) => (
+                <span className={`la-scraper-state${stateTone(job.state)}`} title={job.message}>
+                  {STATE_LABELS[job.state]}
+                </span>
+              ),
+            },
+            {
+              field: 'searches',
+              header: 'Searches',
+              cell: (job) => `${job.searchesDone} of ${job.searches}`,
+            },
+            {
+              field: 'businesses',
+              header: 'Businesses',
+              cell: (job) => job.businesses.toLocaleString(),
+            },
+            {
+              field: 'websitesFound',
+              header: 'Websites',
+              cell: (job) => (
+                <>
+                  {job.websitesFound.toLocaleString()} of {job.websiteLinks.toLocaleString()}
+                  {job.websitesPending > 0 && (
+                    <small className="la-scraper-jobs-pending">
+                      <span className="la-crawler-dot" />
+                      {job.websitesPending.toLocaleString()} looking up
+                    </small>
+                  )}
+                </>
+              ),
+            },
+            {
+              field: 'actions',
+              header: '',
+              className: 'la-scraper-jobs-actions',
+              cell: (job) => (
+                <button
+                  type="button"
+                  className="la-scraper-action"
+                  onClick={() =>
+                    onOpenJob?.({ jobId: job.jobId, runId: job.runId, searches: job.searches })
+                  }
+                >
+                  <Icon name="search" size={14} /> Open results
+                </button>
+              ),
+            },
+          ]}
+        />
+      </section>
+    </section>
   )
 }

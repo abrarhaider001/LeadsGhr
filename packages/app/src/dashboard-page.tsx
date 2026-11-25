@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { Card, EmptyTable, Icon, type IconName } from '@leadsghr/ui'
+import {
+  Card,
+  Icon,
+  Table,
+  type IconName,
+} from '@leadsghr/ui'
 import type { CrawlRunSummary } from '@leadsghr/schemas'
 import { formatBytes } from './crawl-run-bridge'
 
@@ -210,62 +215,66 @@ export function DashboardPage({
           </button>
         </div>
         <div className="la-table-scroll">
-          <table className="la-table">
-            <thead>
-              <tr>
-                <th>Niche</th>
-                <th>States</th>
-                <th>Queries</th>
-                <th>Entries</th>
-                <th>Status</th>
-                <th>Latest CSV</th>
-                <th>Export</th>
-              </tr>
-            </thead>
-            <tbody>
-              {crawlRuns.slice(0, 5).map((run) => (
-                <tr key={run.id}>
-                  <td title={run.niches.join(', ')}>{run.niches.join(', ')}</td>
-                  <td title={run.states.join(', ')}>{run.states.join(', ')}</td>
-                  <td>
+          <Table<CrawlRunSummary>
+            data={crawlRuns.slice(0, 5)}
+            loading={false}
+            paginator={false}
+            rowKey={(run) => run.id}
+            columns={[
+              {
+                field: 'niches',
+                header: 'Niche',
+                cell: (run) => <span title={run.niches.join(', ')}>{run.niches.join(', ')}</span>,
+              },
+              {
+                field: 'states',
+                header: 'States',
+                cell: (run) => <span title={run.states.join(', ')}>{run.states.join(', ')}</span>,
+              },
+              {
+                field: 'queries',
+                header: 'Queries',
+                cell: (run) => (
+                  <>
                     {run.nextQueryIndex}/{run.totalQueries}
-                  </td>
-                  <td>{run.entryCount.toLocaleString()}</td>
-                  <td>{run.status}</td>
-                  <td title={run.latestFilePath ?? undefined}>
+                  </>
+                ),
+              },
+              {
+                field: 'entryCount',
+                header: 'Entries',
+                cell: (run) => run.entryCount.toLocaleString(),
+              },
+              { field: 'status', header: 'Status' },
+              {
+                field: 'latestFileName',
+                header: 'Latest CSV',
+                cell: (run) => (
+                  <span title={run.latestFilePath ?? undefined}>
                     {run.latestFileName ?? '—'}{' '}
-                    {run.latestFileSize !== null && (
-                      <small>({formatBytes(run.latestFileSize)})</small>
-                    )}
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="la-history-export-button"
-                      onClick={() => onExport(run.id)}
-                      title="Re-export CSV"
-                      aria-label={`Re-export ${run.niches.join(', ')} run`}
-                    >
-                      <Icon name="exports" size={15} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!crawlRuns.length && (
-            <EmptyTable
-              title="No pipelines yet"
-              description="Start a crawl from Pipeline to see recent runs here."
-            />
-          )}
+                    {run.latestFileSize !== null && <small>({formatBytes(run.latestFileSize)})</small>}
+                  </span>
+                ),
+              },
+              {
+                field: 'export',
+                header: 'Export',
+                cell: (run) => (
+                  <button
+                    type="button"
+                    className="la-history-export-button"
+                    onClick={() => onExport(run.id)}
+                    title="Re-export CSV"
+                    aria-label={`Re-export ${run.niches.join(', ')} run`}
+                  >
+                    <Icon name="exports" size={15} />
+                  </button>
+                ),
+              },
+            ]}
+          />
         </div>
       </section>
-
-      <p className="la-dashboard-disclaimer">
-        Counts reflect saved local pipeline runs. The chart groups each run's current results by its
-        start date; repeated businesses across runs are counted in each run.
-      </p>
     </div>
   )
 }

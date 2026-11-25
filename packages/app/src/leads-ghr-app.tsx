@@ -30,12 +30,13 @@ import { PipelineTimeline } from './pipeline-timeline'
 import type { PipelineDraft } from './pipeline-draft'
 import { CustomSelect } from './custom-select'
 import {
+  Button,
   Card,
-  EmptyTable,
   Icon,
   BrandLogo,
   BrandMark,
   NavIcon,
+  Table,
   type NavIconName,
 } from '@leadsghr/ui'
 import Avatar, { genConfig } from 'react-nice-avatar'
@@ -59,13 +60,8 @@ const navigation: { label: string; icon: NavIconName }[] = [
   { label: 'Crawler', icon: 'crawler' },
   { label: 'New Search', icon: 'newSearch' },
   { label: 'Niche Library', icon: 'nicheLibrary' },
-  { label: 'Email Filtering', icon: 'emailFiltering' },
-  { label: 'Email Validation', icon: 'emailValidation' },
-  { label: 'Email Spam Check', icon: 'emailSpamCheck' },
-  { label: 'Email Templates', icon: 'emailTemplates' },
-  { label: 'Email Sending', icon: 'emailSending' },
-  { label: 'Email Tracking', icon: 'emailTracking' },
-  { label: 'LeadsGhr Scraper', icon: 'scraper' },
+  { label: 'Email', icon: 'email' },
+  { label: 'Extensions', icon: 'extensions' },
   { label: 'Leads', icon: 'leads' },
   { label: 'Runs', icon: 'runs' },
   { label: 'Profiles', icon: 'profiles' },
@@ -120,7 +116,30 @@ const bridge = () => (window as Window & { leadsGhrDesktop?: DesktopBridge }).le
 
 export function LeadsGhrApp() {
   const [page, setPage] = useState('Dashboard')
+  const openPipelineCreateRef = useRef<(() => void) | null>(null)
+  const openAddNicheRef = useRef<(() => void) | null>(null)
+  const openLibraryAddRef = useRef<(() => void) | null>(null)
+  const searchBackRef = useRef<(() => void) | null>(null)
+  const exportAgainRef = useRef<(() => void) | null>(null)
+  const downloadMailerRef = useRef<(() => void) | null>(null)
+  const downloadTrackerRef = useRef<(() => void) | null>(null)
+  const downloadScraperRef = useRef<(() => void) | null>(null)
+  const [crawlExport, setCrawlExport] = useState<{
+    fileName: string
+    filePath: string
+    entryCount: number
+  } | null>(null)
+  const reportCrawlExport = useCallback(
+    (item: { fileName: string; filePath: string; entryCount: number } | null) =>
+      setCrawlExport(item),
+    [],
+  )
+  const [searchStep, setSearchStep] = useState<'details' | 'niches' | 'states' | 'locations'>(
+    'niches',
+  )
   const [settingsExpanded, setSettingsExpanded] = useState(false)
+  const [extensionsExpanded, setExtensionsExpanded] = useState(false)
+  const [emailExpanded, setEmailExpanded] = useState(false)
   const [splashComplete, setSplashComplete] = useState(false)
   const [leads, setLeads] = useState<LocalLead[]>([])
   const [runs, setRuns] = useState<LocalRun[]>([])
@@ -262,12 +281,6 @@ export function LeadsGhrApp() {
   async function deletePipeline(id: string) {
     const run = crawlRuns.find((item) => item.id === id && item.kind === 'pipeline')
     if (!run) return
-    if (
-      !window.confirm(
-        `Delete "${run.name}"? This removes its saved results, URL queue, and export history from the app. CSV files already saved on disk remain available.`,
-      )
-    )
-      return
     try {
       await crawlRunBridge()?.deleteCrawlRun(id)
       await refreshCrawlHistory()
@@ -359,11 +372,19 @@ export function LeadsGhrApp() {
         </label>
         <nav className="la-nav" aria-label="Main navigation">
           {navigation
-            .filter(
-              ({ label }) =>
-                label.toLowerCase().includes(navQuery.trim().toLowerCase()) ||
-                (label === 'Settings' && 'preferences'.includes(navQuery.trim().toLowerCase())),
-            )
+            .filter(({ label }) => {
+              const query = navQuery.trim().toLowerCase()
+              if (!query) return true
+              if (label.toLowerCase().includes(query)) return true
+              if (label === 'Settings' && 'preferences'.includes(query)) return true
+              const children =
+                label === 'Extensions'
+                  ? ['email sending', 'email tracking', 'leadsghr scraper']
+                  : label === 'Email'
+                    ? ['email filtering', 'email validation', 'email spam check', 'email templates']
+                    : []
+              return children.some((name) => name.includes(query))
+            })
             .map(({ label, icon }) => (
               <div key={label} className="la-nav-item">
                 {!navQuery &&
@@ -380,28 +401,51 @@ export function LeadsGhrApp() {
                   type="button"
                   aria-current={
                     label !== 'Settings' &&
+                    label !== 'Extensions' &&
+                    label !== 'Email' &&
                     (page === label ||
                       ((page === 'Crawl Results' ||
                         page === 'New Pipeline' ||
                         page === 'Pipeline Export') &&
                         label === searchOrigin) ||
                       (page === 'Scraper Results' &&
-                        label === (openScraperJob ? 'LeadsGhr Scraper' : 'New Search')))
+                        !openScraperJob &&
+                        label === 'New Search'))
                       ? 'page'
                       : undefined
                   }
-                  aria-expanded={label === 'Settings' ? settingsExpanded : undefined}
-                  aria-controls={label === 'Settings' ? 'la-settings-submenu' : undefined}
+                  aria-expanded={
+                    label === 'Settings'
+                      ? settingsExpanded
+                      : label === 'Extensions'
+                        ? extensionsExpanded
+                        : label === 'Email'
+                          ? emailExpanded
+                          : undefined
+                  }
+                  aria-controls={
+                    label === 'Settings'
+                      ? 'la-settings-submenu'
+                      : label === 'Extensions'
+                        ? 'la-extensions-submenu'
+                        : label === 'Email'
+                          ? 'la-email-submenu'
+                          : undefined
+                  }
                   onClick={() =>
                     label === 'Settings'
                       ? setSettingsExpanded((current) => !current)
-                      : void showPage(label)
+                      : label === 'Extensions'
+                        ? setExtensionsExpanded((current) => !current)
+                        : label === 'Email'
+                          ? setEmailExpanded((current) => !current)
+                          : void showPage(label)
                   }
                   title={label}
                 >
                   <NavIcon name={icon} size={18} />
                   <span>{label}</span>
-                  {label === 'Settings' && (
+                  {(label === 'Settings' || label === 'Extensions' || label === 'Email') && (
                     <svg
                       className="la-nav-caret"
                       width="14"
@@ -447,6 +491,70 @@ export function LeadsGhrApp() {
                     </div>
                   </div>
                 )}
+                {label === 'Email' && (
+                  <div
+                    className="la-sidebar-settings-collapse"
+                    data-open={Boolean(emailExpanded || navQuery.trim())}
+                    inert={!(emailExpanded || navQuery.trim())}
+                  >
+                    <div className="la-sidebar-settings-clip">
+                      <div className="la-sidebar-settings-children" id="la-email-submenu">
+                        {(
+                          [
+                            ['Email Filtering', 'emailFiltering'],
+                            ['Email Validation', 'emailValidation'],
+                            ['Email Spam Check', 'emailSpamCheck'],
+                            ['Email Templates', 'emailTemplates'],
+                          ] as const
+                        ).map(([child, childIcon]) => (
+                          <button
+                            key={child}
+                            type="button"
+                            aria-current={page === child ? 'page' : undefined}
+                            onClick={() => void showPage(child)}
+                          >
+                            <NavIcon name={childIcon} size={16} />
+                            {child}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {label === 'Extensions' && (
+                  <div
+                    className="la-sidebar-settings-collapse"
+                    data-open={Boolean(extensionsExpanded || navQuery.trim())}
+                    inert={!(extensionsExpanded || navQuery.trim())}
+                  >
+                    <div className="la-sidebar-settings-clip">
+                      <div className="la-sidebar-settings-children" id="la-extensions-submenu">
+                        {(
+                          [
+                            ['Email Sending', 'emailSending'],
+                            ['Email Tracking', 'emailTracking'],
+                            ['LeadsGhr Scraper', 'scraper'],
+                          ] as const
+                        ).map(([child, childIcon]) => (
+                          <button
+                            key={child}
+                            type="button"
+                            aria-current={
+                              page === child ||
+                              (child === 'LeadsGhr Scraper' && page === 'Scraper Results' && openScraperJob)
+                                ? 'page'
+                                : undefined
+                            }
+                            onClick={() => void showPage(child)}
+                          >
+                            <NavIcon name={childIcon} size={16} />
+                            {child}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
         </nav>
@@ -469,7 +577,52 @@ export function LeadsGhrApp() {
         </div>
       </aside>
       <main className="la-main">
-        <PageHeader title={page} subtitle={descriptions[page]}>
+        <PageHeader
+          title={page === 'New Search' && searchStep === 'locations' ? 'Location' : page}
+          subtitle={
+            page === 'New Search' && searchStep === 'locations'
+              ? 'Choose locations from the selected states.'
+              : descriptions[page]
+          }
+          onBack={
+            page === 'New Search' && searchStep === 'locations'
+              ? () => searchBackRef.current?.()
+              : page === 'Crawl Results'
+                ? () => void showPage(searchOrigin === 'Pipeline' ? 'New Pipeline' : 'New Search')
+                : undefined
+          }
+          action={
+            page === 'Pipeline' ? (
+              <Button type="button" onClick={() => openPipelineCreateRef.current?.()}>
+                <Icon name="add" size={16} /> Create pipeline
+              </Button>
+            ) : page === 'New Search' && searchStep !== 'locations' ? (
+              <Button type="button" onClick={() => openAddNicheRef.current?.()}>
+                <Icon name="add" size={16} /> Add custom niche
+              </Button>
+            ) : page === 'Niche Library' ? (
+              <Button type="button" onClick={() => openLibraryAddRef.current?.()}>
+                <Icon name="add" size={16} /> Add niche
+              </Button>
+            ) : page === 'Crawl Results' && crawlExport ? (
+              <Button type="button" onClick={() => exportAgainRef.current?.()}>
+                <Icon name="exports" size={16} /> Export again
+              </Button>
+            ) : page === 'Email Sending' ? (
+              <Button type="button" onClick={() => downloadMailerRef.current?.()}>
+                <Icon name="download" size={16} /> Download extension ZIP
+              </Button>
+            ) : page === 'Email Tracking' ? (
+              <Button type="button" onClick={() => downloadTrackerRef.current?.()}>
+                <Icon name="download" size={16} /> Download extension ZIP
+              </Button>
+            ) : page === 'LeadsGhr Scraper' ? (
+              <Button type="button" onClick={() => downloadScraperRef.current?.()}>
+                <Icon name="download" size={16} /> Download extension ZIP
+              </Button>
+            ) : undefined
+          }
+        >
           {page === 'Dashboard' && (
             <span className="la-topbar-account">
               <span className="la-topbar-account-mark">
@@ -505,9 +658,10 @@ export function LeadsGhrApp() {
           ) : page === 'Email Spam Check' ? (
             <EmailSpamEnginePage />
           ) : page === 'Email Sending' ? (
-            <EmailSendingPage />
+            <EmailSendingPage downloadRef={downloadMailerRef} />
           ) : page === 'LeadsGhr Scraper' ? (
             <ScraperExtensionPage
+              downloadRef={downloadScraperRef}
               onOpenJob={(job) => {
                 setOpenScraperJob(job)
                 setPage('Scraper Results')
@@ -516,15 +670,17 @@ export function LeadsGhrApp() {
           ) : page === 'Email Templates' ? (
             <EmailTemplatesPage />
           ) : page === 'Email Tracking' ? (
-            <EmailTrackingPage />
+            <EmailTrackingPage downloadRef={downloadTrackerRef} />
           ) : page === 'Niche Library' ? (
             <NicheLibraryPage
               useNicheKeywords={preferences.useNicheKeywords}
+              addRef={openLibraryAddRef}
               onStartSearch={() => void showPage('New Search')}
             />
           ) : page === 'Pipeline' ? (
             <PipelineOverviewPage
               runs={crawlRuns}
+              createRef={openPipelineCreateRef}
               onCreate={(draft, start) => {
                 setSearchOrigin('Pipeline')
                 setPipelineDraft(draft)
@@ -541,6 +697,9 @@ export function LeadsGhrApp() {
               iconActions
               pipelineMode={page === 'New Pipeline'}
               pipelineDraft={page === 'New Pipeline' ? pipelineDraft : null}
+              addNicheRef={page === 'New Search' ? openAddNicheRef : undefined}
+              backRef={page === 'New Search' ? searchBackRef : undefined}
+              onStepChange={page === 'New Search' ? setSearchStep : undefined}
               onSearch={(criteria, details) => {
                 setRunDetail(null)
                 setSearchOrigin(page === 'New Pipeline' ? 'Pipeline' : 'New Search')
@@ -583,9 +742,8 @@ export function LeadsGhrApp() {
               pipelineMode={searchOrigin === 'Pipeline'}
               pipelineName={pipelineDetails?.name}
               provider={pipelineDetails?.provider ?? 'google-maps'}
-              onBack={() =>
-                void showPage(searchOrigin === 'Pipeline' ? 'New Pipeline' : 'New Search')
-              }
+              exportRef={exportAgainRef}
+              onExportChange={reportCrawlExport}
               onSaved={() => void refreshCrawlHistory()}
               onFinished={(item) => {
                 setFinishedExport(item)
@@ -654,37 +812,31 @@ export function LeadsGhrApp() {
                 <span className="la-records-count">{visibleLeads.length} shown</span>
               </div>
               <div className="la-records-table-wrap">
-                <table className="la-table la-records-table">
-                  <thead>
-                    <tr>
-                      {['Business', 'Email', 'Phone', 'Source'].map((heading) => (
-                        <th key={heading}>{heading}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visibleLeads.map((lead) => (
-                      <tr key={lead.sourceUrl}>
-                        <td>
-                          <strong>{lead.name}</strong>
-                        </td>
-                        <td>{lead.emails.join(', ') || 'No email'}</td>
-                        <td>{lead.phones.join(', ') || '—'}</td>
-                        <td>{lead.sourceUrl}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {visibleLeads.length === 0 && (
-                  <EmptyTable
-                    title={leads.length === 0 ? 'No saved leads yet' : 'No matching leads'}
-                    description={
-                      leads.length === 0
-                        ? 'Saved businesses will appear here after a crawl.'
-                        : 'Try another email filter or search term.'
-                    }
-                  />
-                )}
+                <Table
+                  data={visibleLeads}
+                  loading={false}
+                  paginator={false}
+                  tableClassName="la-records-table"
+                  rowKey={(lead) => lead.sourceUrl}
+                  columns={[
+                    {
+                      field: 'name',
+                      header: 'Business',
+                      cell: (lead) => <strong>{lead.name}</strong>,
+                    },
+                    {
+                      field: 'emails',
+                      header: 'Email',
+                      cell: (lead) => lead.emails.join(', ') || 'No email',
+                    },
+                    {
+                      field: 'phones',
+                      header: 'Phone',
+                      cell: (lead) => lead.phones.join(', ') || '—',
+                    },
+                    { field: 'sourceUrl', header: 'Source' },
+                  ]}
+                />
               </div>
             </section>
           ) : (
