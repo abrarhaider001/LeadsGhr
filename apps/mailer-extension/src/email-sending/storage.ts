@@ -1,5 +1,11 @@
 import { PREFERENCES_FILE, TEMPLATES_FILE, readDataFile, writeDataFile } from './data-folder'
-import type { SavedTemplate, SendHistoryEntry, SendingDraft, SendingPreferences, SendJob } from './types'
+import type {
+  SavedTemplate,
+  SendHistoryEntry,
+  SendingDraft,
+  SendingPreferences,
+  SendJob,
+} from './types'
 
 const JOB_KEY = 'sendingJob'
 const HISTORY_KEY = 'sendingHistory'
@@ -48,7 +54,10 @@ export async function saveTemplate(template: SavedTemplate): Promise<void> {
 }
 
 export async function deleteTemplate(id: string): Promise<void> {
-  await writeDataFile(TEMPLATES_FILE, (await loadTemplates()).filter((item) => item.id !== id))
+  await writeDataFile(
+    TEMPLATES_FILE,
+    (await loadTemplates()).filter((item) => item.id !== id),
+  )
 }
 
 /**
@@ -65,7 +74,9 @@ export async function migrateLegacyData(): Promise<number> {
   }
   const preferences = legacy[LEGACY_PREFERENCES_KEY] as Partial<SendingPreferences> | undefined
   if (preferences && !(await readDataFile(PREFERENCES_FILE))) {
-    await writeDataFile(PREFERENCES_FILE, { delayMode: preferences.delayMode === 'steps' ? 'steps' : 'between' })
+    await writeDataFile(PREFERENCES_FILE, {
+      delayMode: preferences.delayMode === 'steps' ? 'steps' : 'between',
+    })
   }
   await chrome.storage.local.remove([LEGACY_TEMPLATES_KEY, LEGACY_PREFERENCES_KEY])
   return moved

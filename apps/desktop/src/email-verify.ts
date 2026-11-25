@@ -25,9 +25,25 @@ export function registerEmailVerifyIpc(db: Database.Database) {
   ipcMain.handle('leadsghr:email-verify:start', async (event, input: unknown) => {
     requireOwner(event)
     const parsed = emailVerifyRequestSchema.parse(input)
-    const mailFrom = /@(?:localhost|.+\.invalid)$/i.test(parsed.mailFrom) ? 'verify@example.com' : parsed.mailFrom
-    const ehlo = /^(?:localhost|.*\.invalid)$/i.test(parsed.ehlo) ? 'verify.example.com' : parsed.ehlo
-    const { emails, concurrency, perSession, paceMs } = parsed
+    const mailFrom = /@(?:localhost|.+\.invalid)$/i.test(parsed.mailFrom)
+      ? 'verify@example.com'
+      : parsed.mailFrom
+    const ehlo = /^(?:localhost|.*\.invalid)$/i.test(parsed.ehlo)
+      ? 'verify.example.com'
+      : parsed.ehlo
+    const {
+      emails,
+      concurrency,
+      perSession,
+      paceMs,
+      checkSyntax,
+      checkDomain,
+      checkMx,
+      checkSmtp,
+      checkDisposable,
+      checkRoleBased,
+      checkCatchAll,
+    } = parsed
     activeJob?.controller.abort()
     const id = randomUUID()
     const controller = new AbortController()
@@ -39,7 +55,7 @@ export function registerEmailVerifyIpc(db: Database.Database) {
         const slots: Array<EmailVerifyResult | undefined> = Array.from({ length: emails.length })
         let completed = 0
         try {
-          if (!await preflight(controller.signal)) {
+          if (checkSmtp && !(await preflight(controller.signal))) {
             if (!sender.isDestroyed() && activeJob?.id === id) {
               sender.send('leadsghr:email-verify:event', {
                 id,
@@ -47,7 +63,8 @@ export function registerEmailVerifyIpc(db: Database.Database) {
                 completed: 0,
                 total: emails.length,
                 done: true,
-                error: 'Port 25 is blocked on this network. Use another network or a VPS/API fallback.',
+                error:
+                  'Port 25 is blocked on this network. Use another network or a VPS/API fallback.',
                 results: [],
               })
             }
@@ -56,7 +73,20 @@ export function registerEmailVerifyIpc(db: Database.Database) {
 
           await verifyPipeline(
             emails,
-            { mailFrom, ehlo, perSession, paceMs, workers: concurrency },
+            {
+              mailFrom,
+              ehlo,
+              perSession,
+              paceMs,
+              workers: concurrency,
+              checkSyntax,
+              checkDomain,
+              checkMx,
+              checkSmtp,
+              checkDisposable,
+              checkRoleBased,
+              checkCatchAll,
+            },
             controller.signal,
             (result, index) => {
               slots[index] = result

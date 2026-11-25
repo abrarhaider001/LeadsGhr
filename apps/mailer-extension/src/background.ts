@@ -5,4 +5,6 @@ import { registerSendingRuntime } from './email-sending/runner'
 registerSendingRuntime()
 
 // License check at every browser start (the popup checks again when it opens).
-chrome.runtime.onStartup.addListener(() => { void checkExtensionLicense('mailer', { force: true }).catch(() => undefined) })
+chrome.runtime.onStartup.addListener(() => {
+  void checkExtensionLicense('mailer', { force: true }).catch(() => undefined)
+})

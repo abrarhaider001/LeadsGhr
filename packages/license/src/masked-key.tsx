@@ -28,7 +28,8 @@ export function useMaskedKey(onEdit?: () => void) {
   // Changing the shown text (a character turning into a dot, or a paste being hidden) would move the caret to the end.
   useLayoutEffect(() => {
     const node = field.current
-    if (node && caret.current && document.activeElement === node) node.setSelectionRange(caret.current[0], caret.current[1])
+    if (node && caret.current && document.activeElement === node)
+      node.setSelectionRange(caret.current[0], caret.current[1])
     caret.current = null
   }, [display])
 

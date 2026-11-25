@@ -26,7 +26,7 @@ const ALLOWED_COLOURS = new Map([['packages/app/src/pipeline-provider-icon.tsx',
 const STYLED = [
   'packages/ui/src/styles.css', 'packages/ui/src/globals.css',
   ...files('packages/ui/src', /\.tsx$/), ...files('packages/app/src', /\.tsx?$/),
-  ...files('apps/extension/src', /\.tsx?$/), ...files('apps/mailer-extension/src', /\.tsx?$/), ...files('packages/license/src', /\.tsx?$/),
+  ...files('apps/extension/src', /\.tsx?$/), ...files('apps/mailer-extension/src', /\.tsx?$/), ...files('packages/license/src', /\.tsx?$/), ...files('apps/scraper-extension/src', /\.(tsx?|css)$/),
 ].map((p) => p.replaceAll('\\', '/'))
 
 test('generated token copies match tokens.css', () => {

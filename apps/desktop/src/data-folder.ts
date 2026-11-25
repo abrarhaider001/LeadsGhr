@@ -4,7 +4,13 @@ import { join } from 'node:path'
 import { leadsGhrDataDirectory } from './paths'
 
 /** Files LeadsGhr keeps in its data folder (the database with its WAL files, settings, and profile). */
-const DATA_FILES = ['leadsghr.sqlite', 'leadsghr.sqlite-wal', 'leadsghr.sqlite-shm', 'preferences.json', 'search-criteria.json'] as const
+const DATA_FILES = [
+  'leadsghr.sqlite',
+  'leadsghr.sqlite-wal',
+  'leadsghr.sqlite-shm',
+  'preferences.json',
+  'search-criteria.json',
+] as const
 
 let dataDirectory: string | undefined
 
@@ -33,19 +39,31 @@ export function prepareDataFolder(): string {
   try {
     mkdirSync(target, { recursive: true })
   } catch (error) {
-    console.warn('[LeadsGhr] Could not create the data folder; using', legacy, error instanceof Error ? error.message : error)
+    console.warn(
+      '[LeadsGhr] Could not create the data folder; using',
+      legacy,
+      error instanceof Error ? error.message : error,
+    )
     dataDirectory = legacy
     return dataDirectory
   }
   // Copy the database only together with its WAL files, and only when the data folder has no database yet.
-  const copyDatabase = !existsSync(join(target, 'leadsghr.sqlite')) && existsSync(join(legacy, 'leadsghr.sqlite'))
+  const copyDatabase =
+    !existsSync(join(target, 'leadsghr.sqlite')) && existsSync(join(legacy, 'leadsghr.sqlite'))
   for (const name of DATA_FILES) {
     const from = join(legacy, name)
     const to = join(target, name)
     if (name.startsWith('leadsghr.sqlite') && !copyDatabase) continue
     if (!existsSync(from) || existsSync(to)) continue
-    try { copyFileSync(from, to) }
-    catch (error) { console.warn('[LeadsGhr] Could not copy', from, error instanceof Error ? error.message : error) }
+    try {
+      copyFileSync(from, to)
+    } catch (error) {
+      console.warn(
+        '[LeadsGhr] Could not copy',
+        from,
+        error instanceof Error ? error.message : error,
+      )
+    }
   }
   dataDirectory = target
   return dataDirectory

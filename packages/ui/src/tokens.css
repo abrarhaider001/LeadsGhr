@@ -53,6 +53,7 @@
   --ui-line: #E6E8EB;                 /* default divider colour */
   --ui-line-subtle: #EEF0F2;
   --ui-shadow-color: #1F2328;
+  --ui-overlay-ink: #1F2328;          /* modal scrim; not overridden in dark, so the overlay stays this charcoal */
   --ui-logo-soft: #D3D6DB;           /* the short bar of the logo */
   --ui-logo-accent: var(--ui-brand-accent); /* the "opened" tick of the Tracker mark */
   --ui-tint-soft: 8%;                 /* how much brand colour the soft/subtle/muted tints mix in */
@@ -159,6 +160,7 @@
   --ui-color-info: var(--ui-info);
   --ui-color-info-soft: var(--ui-info-soft);
   --ui-color-shadow: var(--ui-shadow-color);
+  --ui-color-overlay: color-mix(in srgb, var(--ui-overlay-ink) 32%, transparent); /* modal and drawer scrim, same in both themes */
   --ui-logo-bar: var(--ui-color-text);                /* logo bars and "Leads" */
   --ui-logo-bar-soft: var(--ui-logo-soft);
   --ui-gradient-brand: linear-gradient(90deg, var(--ui-brand-primary), var(--ui-brand-accent));
@@ -166,22 +168,24 @@
   /* ------------------------------------------------------------- Typography */
   --ui-font-sans: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
   --ui-font-mono: 'IBM Plex Mono', Consolas, ui-monospace, monospace;
-  --ui-text-3xs: 9px;
-  --ui-text-2xs: 10px;
-  --ui-text-xs: 11px;
-  --ui-text-sm: 12px;
-  --ui-text-md: 13px;   /* body */
-  --ui-text-base: 14px;
-  --ui-text-lg: 15px;
-  --ui-text-xl: 16px;
-  --ui-text-2xl: 18px;
-  --ui-text-3xl: 20px;
-  --ui-text-4xl: 22px;
-  --ui-text-5xl: 24px;
-  --ui-text-6xl: 28px;
-  --ui-text-display-sm: 38px;
-  --ui-text-display-md: 46px;
-  --ui-text-display-lg: 54px;
+  /* 1 = 100%. Settings → Preferences → Appearance → Font size sets this on the desktop page. Spacing and controls do not use it. */
+  --ui-font-scale: 1;
+  --ui-text-3xs: calc(9px * var(--ui-font-scale));
+  --ui-text-2xs: calc(10px * var(--ui-font-scale));
+  --ui-text-xs: calc(11px * var(--ui-font-scale));
+  --ui-text-sm: calc(12px * var(--ui-font-scale));
+  --ui-text-md: calc(13px * var(--ui-font-scale));   /* body */
+  --ui-text-base: calc(14px * var(--ui-font-scale));
+  --ui-text-lg: calc(15px * var(--ui-font-scale));
+  --ui-text-xl: calc(16px * var(--ui-font-scale));
+  --ui-text-2xl: calc(18px * var(--ui-font-scale));
+  --ui-text-3xl: calc(20px * var(--ui-font-scale));
+  --ui-text-4xl: calc(22px * var(--ui-font-scale));
+  --ui-text-5xl: calc(24px * var(--ui-font-scale));
+  --ui-text-6xl: calc(28px * var(--ui-font-scale));
+  --ui-text-display-sm: calc(38px * var(--ui-font-scale));
+  --ui-text-display-md: calc(46px * var(--ui-font-scale));
+  --ui-text-display-lg: calc(54px * var(--ui-font-scale));
   --ui-weight-light: 200;
   --ui-weight-regular: 400;
   --ui-weight-medium: 500;

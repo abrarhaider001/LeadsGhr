@@ -1,53 +1,136 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { scanRequestSchema, searchCriteriaSchema, mapsScanSchema, desktopPreferencesSchema, createCrawlRunSchema, crawlRunIdSchema, crawlRunRowInputSchema, crawlRunProgressSchema, emailVerifyRequestSchema, emailVerifyJobIdSchema } from '@leadsghr/schemas'
+import {
+  scanRequestSchema,
+  searchCriteriaSchema,
+  mapsScanSchema,
+  desktopPreferencesSchema,
+  createCrawlRunSchema,
+  crawlRunIdSchema,
+  crawlRunRowInputSchema,
+  crawlRunProgressSchema,
+  emailVerifyRequestSchema,
+  emailVerifyJobIdSchema,
+  emailTemplateDraftSchema,
+} from '@leadsghr/schemas'
 
 contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   scan: (input: unknown) => ipcRenderer.invoke('leadsghr:scan', scanRequestSchema.parse(input)),
   leads: () => ipcRenderer.invoke('leadsghr:leads'),
   runs: () => ipcRenderer.invoke('leadsghr:runs'),
-  createCrawlRun: (input: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:create', createCrawlRunSchema.parse(input)),
-  getCrawlRun: (id: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:get', crawlRunIdSchema.parse(id)),
-  deleteCrawlRun: (id: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:delete', crawlRunIdSchema.parse(id)),
+  createCrawlRun: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:create', createCrawlRunSchema.parse(input)),
+  getCrawlRun: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:get', crawlRunIdSchema.parse(id)),
+  deleteCrawlRun: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:delete', crawlRunIdSchema.parse(id)),
   listCrawlRuns: () => ipcRenderer.invoke('leadsghr:crawl-runs:list'),
   listCrawlExports: () => ipcRenderer.invoke('leadsghr:crawl-runs:exports'),
-  saveCrawlRow: (input: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:row', crawlRunRowInputSchema.parse(input)),
-  filterCrawlRunEmails: (id: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:filter-emails', crawlRunIdSchema.parse(id)),
-  enqueuePipelineWebsite: (input: unknown) => ipcRenderer.invoke('leadsghr:pipeline-pages:enqueue', crawlRunRowInputSchema.parse(input)),
-  listPipelinePages: (id: unknown) => ipcRenderer.invoke('leadsghr:pipeline-pages:list', crawlRunIdSchema.parse(id)),
-  startPipelinePages: (id: unknown) => ipcRenderer.invoke('leadsghr:pipeline-pages:start', crawlRunIdSchema.parse(id)),
-  pausePipelinePages: (id: unknown) => ipcRenderer.invoke('leadsghr:pipeline-pages:pause', crawlRunIdSchema.parse(id)),
-  onPipelinePagesEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:pipeline-pages:event', listener); return () => ipcRenderer.removeListener('leadsghr:pipeline-pages:event', listener) },
-  updateCrawlRun: (input: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:progress', crawlRunProgressSchema.parse(input)),
-  exportCrawlRun: (id: unknown, saveAs = false) => ipcRenderer.invoke('leadsghr:crawl-runs:export', crawlRunIdSchema.parse(id), saveAs === true),
-  reexportCrawlSnapshot: (id: unknown) => ipcRenderer.invoke('leadsghr:crawl-runs:reexport-snapshot', crawlRunIdSchema.parse(id)),
-  startMapsScan: (input: unknown) => ipcRenderer.invoke('leadsghr:maps-scan:start', mapsScanSchema.parse(input)),
+  saveCrawlRow: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:row', crawlRunRowInputSchema.parse(input)),
+  filterCrawlRunEmails: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:filter-emails', crawlRunIdSchema.parse(id)),
+  enqueuePipelineWebsite: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:pipeline-pages:enqueue', crawlRunRowInputSchema.parse(input)),
+  listPipelinePages: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:pipeline-pages:list', crawlRunIdSchema.parse(id)),
+  startPipelinePages: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:pipeline-pages:start', crawlRunIdSchema.parse(id)),
+  pausePipelinePages: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:pipeline-pages:pause', crawlRunIdSchema.parse(id)),
+  onPipelinePagesEvent: (callback: (message: unknown) => void) => {
+    const listener = (_event: unknown, message: unknown) => callback(message)
+    ipcRenderer.on('leadsghr:pipeline-pages:event', listener)
+    return () => ipcRenderer.removeListener('leadsghr:pipeline-pages:event', listener)
+  },
+  updateCrawlRun: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:progress', crawlRunProgressSchema.parse(input)),
+  exportCrawlRun: (id: unknown, saveAs = false) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:export', crawlRunIdSchema.parse(id), saveAs === true),
+  reexportCrawlSnapshot: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawl-runs:reexport-snapshot', crawlRunIdSchema.parse(id)),
+  startMapsScan: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:maps-scan:start', mapsScanSchema.parse(input)),
   stopMapsScan: (id: string) => ipcRenderer.invoke('leadsghr:maps-scan:stop', id),
   openWebsite: (url: string) => ipcRenderer.invoke('leadsghr:website:open', url),
-  onMapsScanEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:maps-scan:event', listener); return () => ipcRenderer.removeListener('leadsghr:maps-scan:event', listener) },
+  onMapsScanEvent: (callback: (message: unknown) => void) => {
+    const listener = (_event: unknown, message: unknown) => callback(message)
+    ipcRenderer.on('leadsghr:maps-scan:event', listener)
+    return () => ipcRenderer.removeListener('leadsghr:maps-scan:event', listener)
+  },
   loadPreferences: () => ipcRenderer.invoke('leadsghr:preferences:load'),
-  onDisplaySizeChanged: (callback: (size: number) => void) => { const listener = (_event: unknown, size: unknown) => { if (typeof size === 'number') callback(size) }; ipcRenderer.on('leadsghr:display-size:changed', listener); return () => { ipcRenderer.removeListener('leadsghr:display-size:changed', listener) } },
+  // LeadsGhr Scraper: send New Search's searches as a job, then sync its result files into the run.
+  sendScraperJob: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:scraper:send-job', createCrawlRunSchema.parse(input)),
+  syncScraperJob: (jobId: unknown) =>
+    ipcRenderer.invoke('leadsghr:scraper:sync', crawlRunIdSchema.parse(jobId)),
+  openScraperFolder: () => ipcRenderer.invoke('leadsghr:scraper:open-folder'),
+  listScraperJobs: () => ipcRenderer.invoke('leadsghr:scraper:list-jobs'),
+  onScraperChanged: (callback: (jobIds: string[]) => void) => {
+    const listener = (_event: unknown, jobIds: unknown) =>
+      callback(Array.isArray(jobIds) ? jobIds.filter((id): id is string => typeof id === 'string') : [])
+    ipcRenderer.on('leadsghr:scraper:changed', listener)
+    return () => ipcRenderer.removeListener('leadsghr:scraper:changed', listener)
+  },
+  onDisplaySizeChanged: (callback: (size: number) => void) => {
+    const listener = (_event: unknown, size: unknown) => {
+      if (typeof size === 'number') callback(size)
+    }
+    ipcRenderer.on('leadsghr:display-size:changed', listener)
+    return () => {
+      ipcRenderer.removeListener('leadsghr:display-size:changed', listener)
+    }
+  },
   loadProfile: () => ipcRenderer.invoke('leadsghr:profile:load'),
   saveProfile: (profile: unknown) => ipcRenderer.invoke('leadsghr:profile:save', profile),
-  savePreferences: (input: unknown) => ipcRenderer.invoke('leadsghr:preferences:save', desktopPreferencesSchema.parse(input)),
-  getLicenseStatus: (force?: boolean) => ipcRenderer.invoke('leadsghr:license:status', force === true),
+  savePreferences: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:preferences:save', desktopPreferencesSchema.parse(input)),
+  getLicenseStatus: (force?: boolean) =>
+    ipcRenderer.invoke('leadsghr:license:status', force === true),
   activateLicense: (key: string) => ipcRenderer.invoke('leadsghr:license:activate', key),
   copyLicenseKey: () => ipcRenderer.invoke('leadsghr:license:copy') as Promise<boolean>,
   getAppVersion: () => ipcRenderer.invoke('leadsghr:app:version'),
   getUpdateStatus: () => ipcRenderer.invoke('leadsghr:update:status'),
   checkForUpdates: () => ipcRenderer.invoke('leadsghr:update:check'),
   installUpdate: () => ipcRenderer.invoke('leadsghr:update:install'),
-  onUpdateStatus: (callback: (state: unknown) => void) => { const listener = (_event: unknown, state: unknown) => callback(state); ipcRenderer.on('leadsghr:update:event', listener); return () => ipcRenderer.removeListener('leadsghr:update:event', listener) },
-  exportPreferences: (keys?: unknown) => ipcRenderer.invoke('leadsghr:preferences:export', Array.isArray(keys) ? keys.filter((key) => typeof key === 'string').slice(0, 100) : undefined),
+  onUpdateStatus: (callback: (state: unknown) => void) => {
+    const listener = (_event: unknown, state: unknown) => callback(state)
+    ipcRenderer.on('leadsghr:update:event', listener)
+    return () => ipcRenderer.removeListener('leadsghr:update:event', listener)
+  },
+  exportPreferences: (keys?: unknown) =>
+    ipcRenderer.invoke(
+      'leadsghr:preferences:export',
+      Array.isArray(keys) ? keys.filter((key) => typeof key === 'string').slice(0, 100) : undefined,
+    ),
   importPreferences: () => ipcRenderer.invoke('leadsghr:preferences:import'),
-  showSettingsExport: (path: unknown) => ipcRenderer.invoke('leadsghr:preferences:show-export', String(path)),
+  showSettingsExport: (path: unknown) =>
+    ipcRenderer.invoke('leadsghr:preferences:show-export', String(path)),
   loadSearchCriteria: () => ipcRenderer.invoke('leadsghr:search-criteria:load'),
-  saveSearchCriteria: (input: unknown) => ipcRenderer.invoke('leadsghr:search-criteria:save', searchCriteriaSchema.parse(input)),
-  prepareCrawlerTest: (input: unknown) => ipcRenderer.invoke('leadsghr:crawler-test:prepare', scanRequestSchema.parse(input)),
-  inspectCrawlerTest: (input: unknown) => ipcRenderer.invoke('leadsghr:crawler-test:inspect', scanRequestSchema.extend({ method: desktopPreferencesSchema.shape.crawlerFetchMethod }).parse(input)),
-  startEmailVerify: (input: unknown) => ipcRenderer.invoke('leadsghr:email-verify:start', emailVerifyRequestSchema.parse(input)),
-  stopEmailVerify: (id: unknown) => ipcRenderer.invoke('leadsghr:email-verify:stop', emailVerifyJobIdSchema.parse(id)),
-  onEmailVerifyEvent: (callback: (message: unknown) => void) => { const listener = (_event: unknown, message: unknown) => callback(message); ipcRenderer.on('leadsghr:email-verify:event', listener); return () => ipcRenderer.removeListener('leadsghr:email-verify:event', listener) },
+  saveSearchCriteria: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:search-criteria:save', searchCriteriaSchema.parse(input)),
+  prepareCrawlerTest: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:crawler-test:prepare', scanRequestSchema.parse(input)),
+  inspectCrawlerTest: (input: unknown) =>
+    ipcRenderer.invoke(
+      'leadsghr:crawler-test:inspect',
+      scanRequestSchema
+        .extend({ method: desktopPreferencesSchema.shape.crawlerFetchMethod })
+        .parse(input),
+    ),
+  startEmailVerify: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:email-verify:start', emailVerifyRequestSchema.parse(input)),
+  stopEmailVerify: (id: unknown) =>
+    ipcRenderer.invoke('leadsghr:email-verify:stop', emailVerifyJobIdSchema.parse(id)),
+  onEmailVerifyEvent: (callback: (message: unknown) => void) => {
+    const listener = (_event: unknown, message: unknown) => callback(message)
+    ipcRenderer.on('leadsghr:email-verify:event', listener)
+    return () => ipcRenderer.removeListener('leadsghr:email-verify:event', listener)
+  },
   downloadTrackingExtension: () => ipcRenderer.invoke('leadsghr:tracking:download-extension'),
   downloadMailerExtension: () => ipcRenderer.invoke('leadsghr:mailer:download-extension'),
+  downloadScraperExtension: () => ipcRenderer.invoke('leadsghr:scraper:download-extension'),
+  listEmailTemplates: () => ipcRenderer.invoke('leadsghr:email-templates:list'),
+  saveEmailTemplate: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:email-templates:save', emailTemplateDraftSchema.parse(input)),
+  deleteEmailTemplate: (id: unknown) => ipcRenderer.invoke('leadsghr:email-templates:delete', id),
 })
-

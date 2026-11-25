@@ -1,0 +1,540 @@
+/* LeadsGhr Scraper: toolbar popup and settings page, styled like LeadsGhr Mailer (popup and settings) and Tracker
+   (the "not set up" notice and overview cards). Only design tokens (packages/ui/src/tokens.css); light theme. */
+html,
+body {
+  margin: 0;
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font-family: var(--ui-font-sans);
+}
+* {
+  box-sizing: border-box;
+}
+button {
+  font: inherit;
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
+code {
+  padding: 1px var(--ui-space-1-5);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-color-surface-muted);
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-xs);
+  color: var(--ui-color-text);
+}
+
+/* Buttons */
+.sc-primary,
+.sc-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ui-space-2);
+  height: var(--ui-control-height-lg);
+  padding: 0 var(--ui-space-4);
+  border-radius: var(--ui-button-radius-lg);
+  font-size: var(--ui-text-base);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-primary {
+  border: 0;
+  background: var(--ui-color-primary);
+  color: var(--ui-color-on-primary);
+}
+.sc-primary:hover:not(:disabled) {
+  background: var(--ui-color-primary-hover);
+}
+.sc-primary:disabled {
+  background: var(--ui-color-primary-soft);
+  color: color-mix(in srgb, var(--ui-color-text) 55%, transparent);
+}
+.sc-secondary {
+  border: var(--ui-border);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+}
+.sc-secondary:hover {
+  background: var(--ui-color-surface-muted);
+}
+.sc-danger {
+  color: var(--ui-color-danger);
+}
+.sc-fit {
+  flex: none;
+}
+.sc-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ui-color-primary);
+  font-weight: var(--ui-weight-semibold);
+  text-decoration: underline;
+}
+.sc-icon-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  border: 0;
+  border-radius: var(--ui-radius-md);
+  background: none;
+  color: var(--ui-color-text-secondary);
+}
+.sc-icon-button:hover {
+  background: var(--ui-color-surface-muted);
+  color: var(--ui-color-text);
+}
+.sc-square {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--ui-control-height-lg);
+  height: var(--ui-control-height-lg);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-danger);
+}
+.sc-square:disabled {
+  color: var(--ui-color-border-strong);
+}
+
+/* Shared bits */
+.sc-muted {
+  color: var(--ui-color-text-secondary);
+}
+.sc-small {
+  font-size: var(--ui-text-xs);
+  line-height: 1.5;
+}
+.sc-section-title {
+  margin: 0 0 var(--ui-space-1-5);
+  font-size: var(--ui-text-md);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-pt {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--ui-text-md);
+}
+.sc-pt span {
+  font-family: var(--ui-font-mono);
+  font-size: var(--ui-text-sm);
+  color: var(--ui-color-text-secondary);
+}
+.sc-bar {
+  height: 7px;
+  margin: var(--ui-space-2) 0 var(--ui-space-3);
+  overflow: hidden;
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-surface-muted);
+}
+.sc-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ui-color-primary);
+  transition: width 0.3s ease;
+}
+.sc-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ui-space-2);
+}
+.sc-stats div {
+  padding: var(--ui-space-2-5) var(--ui-space-3);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+}
+.sc-stats b {
+  display: block;
+  font-size: var(--ui-text-2xl);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-stats small {
+  font-size: var(--ui-text-xs);
+  color: var(--ui-color-text-secondary);
+}
+.sc-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-2);
+  margin: 0;
+  font-size: var(--ui-text-xs);
+  color: var(--ui-color-text-secondary);
+  line-height: 1.45;
+}
+.sc-status-warn {
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-warning-soft);
+  color: var(--ui-color-warning);
+}
+.sc-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: var(--ui-color-primary);
+}
+.sc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  padding: 2px var(--ui-space-2-5);
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-surface-muted);
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+  white-space: nowrap;
+}
+.sc-pill svg {
+  width: 12px;
+  height: 12px;
+}
+.sc-ok {
+  background: var(--ui-color-success-soft);
+  color: var(--ui-color-success);
+}
+.sc-run {
+  background: var(--ui-color-primary-soft);
+  color: var(--ui-color-primary);
+}
+.sc-warn {
+  background: var(--ui-color-warning-soft);
+  color: var(--ui-color-warning);
+}
+.sc-spin {
+  width: 9px;
+  height: 9px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: sc-spin 0.8s linear infinite;
+}
+@keyframes sc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-spin {
+    animation: none;
+  }
+}
+.sc-error {
+  margin: var(--ui-space-3) 0 0;
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: var(--ui-border-width) solid var(--ui-color-danger-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-danger-soft);
+  color: var(--ui-color-danger);
+  font-size: var(--ui-text-xs);
+}
+
+/* Popup (like LeadsGhr Mailer's) */
+.sc-popup {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  min-height: 420px;
+}
+.sc-bar-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2-5);
+  padding: var(--ui-space-3) var(--ui-space-3-5);
+  border-bottom: var(--ui-border-width) solid var(--ui-color-border-subtle);
+}
+.sc-bar-head b {
+  font-size: var(--ui-text-lg);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-popup-body {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: var(--ui-space-3-5);
+  padding: var(--ui-space-3-5);
+}
+.sc-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-2-5) var(--ui-space-3);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-warning-soft);
+  color: var(--ui-color-warning);
+  font-size: var(--ui-text-sm);
+}
+.sc-job-line {
+  margin: 0;
+  font-size: var(--ui-text-sm);
+  color: var(--ui-color-text-secondary);
+}
+.sc-empty-line {
+  display: grid;
+  gap: var(--ui-space-1);
+  font-size: var(--ui-text-sm);
+  color: var(--ui-color-text-secondary);
+  line-height: 1.45;
+}
+.sc-empty-line > b {
+  color: var(--ui-color-text);
+  font-size: var(--ui-text-md);
+}
+.sc-footer {
+  display: flex;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3) var(--ui-space-3-5);
+  border-top: var(--ui-border-width) solid var(--ui-color-border-subtle);
+}
+.sc-footer .sc-primary {
+  flex: 1;
+}
+
+/* Settings page (like LeadsGhr Mailer's) */
+.sc-settings {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--ui-space-10) var(--ui-space-6) var(--ui-space-12);
+}
+.sc-settings-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+.sc-settings-head h1 {
+  margin: 0;
+  font-size: var(--ui-text-6xl);
+  font-weight: var(--ui-weight-bold);
+  letter-spacing: -0.02em;
+}
+.sc-settings-lead {
+  margin: var(--ui-space-3) 0 var(--ui-space-6);
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-base);
+}
+.sc-panel {
+  margin-bottom: var(--ui-space-5);
+  padding: var(--ui-space-5);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-2xl);
+  background: var(--ui-color-surface);
+}
+.sc-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ui-space-5);
+  margin-bottom: var(--ui-space-3);
+}
+.sc-panel-head h2 {
+  margin: 0;
+  font-size: var(--ui-text-3xl);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-panel-head p {
+  margin: var(--ui-space-1-5) 0 0;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-sm);
+  line-height: 1.55;
+}
+.sc-controls {
+  display: flex;
+  gap: var(--ui-space-2);
+}
+.sc-state-ok,
+.sc-state-bad {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  margin: 0;
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-state-ok {
+  color: var(--ui-color-success);
+}
+.sc-state-bad {
+  color: var(--ui-color-danger);
+}
+.sc-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+  margin: 0 0 var(--ui-space-1);
+}
+.sc-facts dt {
+  font-size: var(--ui-text-xs);
+  color: var(--ui-color-text-secondary);
+}
+.sc-facts dd {
+  margin: var(--ui-space-1) 0 0;
+  font-size: var(--ui-text-md);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-stats-wide {
+  margin-bottom: var(--ui-space-3);
+}
+.sc-table-wrap {
+  overflow: auto;
+  margin-bottom: var(--ui-space-3);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-xl);
+}
+.sc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ui-text-sm);
+}
+.sc-table th {
+  padding: var(--ui-space-2-5) var(--ui-space-3);
+  background: var(--ui-color-primary-subtle);
+  font-weight: var(--ui-weight-semibold);
+  text-align: left;
+}
+.sc-table td {
+  padding: var(--ui-space-2-5) var(--ui-space-3);
+  border-top: var(--ui-border-width) solid var(--ui-color-border-subtle);
+}
+.sc-loc {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+}
+.sc-loc svg {
+  color: var(--ui-color-primary);
+}
+/* Job picker (popup): a custom dropdown like LeadsGhr Mailer's template picker */
+.sc-select {
+  position: relative;
+}
+.sc-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-2);
+  width: 100%;
+  height: var(--ui-control-height-md);
+  padding: 0 var(--ui-space-2-5);
+  border: var(--ui-border);
+  border-radius: var(--ui-field-radius);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  text-align: left;
+}
+.sc-select-btn:hover:not(:disabled) {
+  border-color: var(--ui-color-border-strong);
+}
+.sc-select-btn[aria-expanded='true'] {
+  border-color: var(--ui-color-primary);
+}
+.sc-select-btn:disabled {
+  background: var(--ui-color-surface-muted);
+}
+.sc-select-btn svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--ui-color-text-secondary);
+}
+.sc-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ui-text-sm);
+}
+.sc-select-placeholder {
+  color: var(--ui-color-text-tertiary);
+}
+.sc-menu {
+  position: absolute;
+  z-index: 5;
+  top: calc(var(--ui-control-height-md) + var(--ui-space-1));
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  margin: 0;
+  padding: var(--ui-space-1) 0;
+  overflow-y: auto;
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  background: var(--ui-color-surface);
+  box-shadow: var(--ui-shadow-lg);
+  list-style: none;
+}
+.sc-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--ui-space-2) var(--ui-space-2-5);
+  cursor: pointer;
+  font-size: var(--ui-text-sm);
+}
+.sc-option span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sc-option small {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+.sc-option[aria-selected='true'] span {
+  color: var(--ui-color-primary);
+  font-weight: var(--ui-weight-semibold);
+}
+.sc-option-active {
+  background: var(--ui-color-primary-soft);
+}
+
+/* Jobs list (settings page) */
+.sc-jobs tbody tr {
+  cursor: pointer;
+}
+.sc-jobs tbody tr:hover {
+  background: var(--ui-color-surface-muted);
+}
+.sc-jobs tbody tr.sc-row-selected {
+  background: var(--ui-color-primary-soft);
+}
+.sc-jobs tbody tr.sc-row-locked {
+  cursor: default;
+  opacity: 0.55;
+}
+.sc-job-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  font-weight: var(--ui-weight-semibold);
+  cursor: inherit;
+}
+.sc-job-pick input {
+  accent-color: var(--ui-color-primary);
+}
+.sc-icon-button:disabled {
+  background: none;
+  color: var(--ui-color-border-strong);
+}
+.sc-subhead {
+  margin: var(--ui-space-4) 0 var(--ui-space-1);
+  font-size: var(--ui-text-md);
+  font-weight: var(--ui-weight-semibold);
+}
+@media (max-width: 700px) {
+  .sc-panel-head {
+    flex-direction: column;
+  }
+  .sc-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

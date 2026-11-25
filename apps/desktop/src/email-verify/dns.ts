@@ -15,15 +15,19 @@ function isNullMx(records: { exchange: string; priority: number }[]) {
 
 function mxHosts(records: { exchange: string; priority: number }[]) {
   if (isNullMx(records)) return []
-  return [...new Set(
-    records
-      .sort((a, b) => a.priority - b.priority)
-      .map((record) => record.exchange.replace(/\.$/, ''))
-      .filter(Boolean),
-  )]
+  return [
+    ...new Set(
+      records
+        .sort((a, b) => a.priority - b.priority)
+        .map((record) => record.exchange.replace(/\.$/, ''))
+        .filter(Boolean),
+    ),
+  ]
 }
 
-async function resolveMxRecords(domain: string): Promise<{ hosts: string[]; nullMx: boolean; found: boolean }> {
+async function resolveMxRecords(
+  domain: string,
+): Promise<{ hosts: string[]; nullMx: boolean; found: boolean }> {
   try {
     const records = await resolveMx(domain)
     if (isNullMx(records)) return { hosts: [], nullMx: true, found: true }
@@ -55,7 +59,9 @@ async function resolveAddressFallback(domain: string): Promise<string[]> {
   }
 }
 
-export async function resolveDomain(domain: string): Promise<{ exists: boolean; hosts: string[]; nullMx: boolean }> {
+export async function resolveDomain(
+  domain: string,
+): Promise<{ exists: boolean; hosts: string[]; nullMx: boolean }> {
   const mx = await resolveMxRecords(domain)
   if (mx.nullMx) return { exists: true, hosts: [], nullMx: true }
   if (mx.hosts.length) return { exists: true, hosts: mx.hosts, nullMx: false }

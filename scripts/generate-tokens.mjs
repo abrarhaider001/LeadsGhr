@@ -76,6 +76,10 @@ export function resolve(raw) {
       return toHex([...mix, alpha])
     })
     v = v.replace(/calc\(\s*([\d.]+)px\s*([+-])\s*([\d.]+)px\s*\)/g, (_, x, op, y) => `${op === '+' ? Number(x) + Number(y) : Number(x) - Number(y)}px`)
+    v = v.replace(/calc\(\s*([\d.]+)px\s*\*\s*([\d.]+)\s*\)/g, (_, x, y) => {
+      const n = Number(x) * Number(y)
+      return `${Number.isInteger(n) ? n : Number(n.toFixed(4))}px`
+    })
     done.set(name, v)
     return v
   }

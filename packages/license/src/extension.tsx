@@ -1,6 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { useMaskedKey } from './masked-key'
-import { activateLicense, checkStoredLicense, LICENSE_KEY_LENGTH, LICENSE_PRODUCTS, type LicenseProduct, type LicenseView, type StoredLicense } from './index'
+import {
+  activateLicense,
+  checkStoredLicense,
+  LICENSE_KEY_LENGTH,
+  LICENSE_PRODUCTS,
+  localLicenseView,
+  type LicenseProduct,
+  type LicenseView,
+  type StoredLicense,
+} from './index'
 
 /*
  * License handling shared by every LeadsGhr Chrome extension (Mailer, Tracker, and future ones).
@@ -11,8 +20,21 @@ import { activateLicense, checkStoredLicense, LICENSE_KEY_LENGTH, LICENSE_PRODUC
  * the `leadsghr.licenseActive` flag before doing anything in Gmail.
  */
 
-type ChromeStorageArea = { get(keys: string[]): Promise<Record<string, unknown>>; set(items: Record<string, unknown>): Promise<void>; remove(keys: string[]): Promise<void> }
-declare const chrome: { storage: { local: ChromeStorageArea }; runtime: { getURL(path: string): string } }
+type ChromeStorageArea = {
+  get(keys: string[]): Promise<Record<string, unknown>>
+  set(items: Record<string, unknown>): Promise<void>
+  remove(keys: string[]): Promise<void>
+}
+declare const chrome: {
+  storage: { local: ChromeStorageArea }
+  runtime: { getURL(path: string): string }
+}
+
+/** Set by each extension's vite.config.ts from LEADSGHR_MODE (the repository's .env) when it is built: true for `local`. */
+declare const __LEADSGHR_LOCAL_MODE__: boolean | undefined
+/** True in an extension built in local mode: no license key is needed or checked. */
+export const EXTENSION_LOCAL_MODE =
+  typeof __LEADSGHR_LOCAL_MODE__ !== 'undefined' && __LEADSGHR_LOCAL_MODE__ === true
 
 const LICENSE_RECORD = 'leadsghr.license'
 const CIPHER_KEY = 'leadsghr.licenseCipher'
@@ -44,41 +66,93 @@ export async function installationId(): Promise<string> {
 }
 
 async function readLicense(): Promise<StoredLicense | null> {
-  const record = (await chrome.storage.local.get([LICENSE_RECORD]))[LICENSE_RECORD] as { iv?: string; data?: string } | undefined
+  const record = (await chrome.storage.local.get([LICENSE_RECORD]))[LICENSE_RECORD] as
+    | { iv?: string; data?: string }
+    | undefined
   if (!record?.iv || !record.data) return null
   try {
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64(record.iv) }, await cipherKey(), fromBase64(record.data))
+    const plain = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: fromBase64(record.iv) },
+      await cipherKey(),
+      fromBase64(record.data),
+    )
     return JSON.parse(new TextDecoder().decode(plain)) as StoredLicense
-  } catch { return null }
+  } catch {
+    return null
+  }
 }
 
 async function saveLicense(stored: StoredLicense | null): Promise<void> {
-  if (!stored) { await chrome.storage.local.remove([LICENSE_RECORD]); await chrome.storage.local.set({ [LICENSE_ACTIVE_FLAG]: false }); return }
+  if (!stored) {
+    await chrome.storage.local.remove([LICENSE_RECORD])
+    await chrome.storage.local.set({ [LICENSE_ACTIVE_FLAG]: false })
+    return
+  }
   const iv = crypto.getRandomValues(new Uint8Array(12))
-  const data = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await cipherKey(), new TextEncoder().encode(JSON.stringify(stored))))
-  await chrome.storage.local.set({ [LICENSE_RECORD]: { iv: toBase64(iv), data: toBase64(data) }, [LICENSE_ACTIVE_FLAG]: true })
+  const data = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv },
+      await cipherKey(),
+      new TextEncoder().encode(JSON.stringify(stored)),
+    ),
+  )
+  await chrome.storage.local.set({
+    [LICENSE_RECORD]: { iv: toBase64(iv), data: toBase64(data) },
+    [LICENSE_ACTIVE_FLAG]: true,
+  })
 }
 
 /** Checks the stored license with the service (or within the offline grace period). Removes it when it is no longer valid. */
-export async function checkExtensionLicense(product: LicenseProduct, options: { force?: boolean } = {}): Promise<LicenseView> {
+export async function checkExtensionLicense(
+  product: LicenseProduct,
+  options: { force?: boolean } = {},
+): Promise<LicenseView> {
+  if (EXTENSION_LOCAL_MODE) {
+    // Local mode: content scripts may act without a key.
+    await chrome.storage.local.set({ [LICENSE_ACTIVE_FLAG]: true })
+    return localLicenseView()
+  }
   const stored = await readLicense()
-  if (stored && !options.force && Date.now() - new Date(stored.lastCheckedAt).getTime() < RECHECK_MS && new Date(stored.expiresAt).getTime() > Date.now()) {
-    return { state: 'active', expiresAt: stored.expiresAt, keyEnd: stored.keyEnd, keyLength: stored.key.length, products: stored.products, activatedAt: stored.activatedAt, lastCheckedAt: stored.lastCheckedAt, offline: false }
+  if (
+    stored &&
+    !options.force &&
+    Date.now() - new Date(stored.lastCheckedAt).getTime() < RECHECK_MS &&
+    new Date(stored.expiresAt).getTime() > Date.now()
+  ) {
+    return {
+      state: 'active',
+      expiresAt: stored.expiresAt,
+      keyEnd: stored.keyEnd,
+      keyLength: stored.key.length,
+      products: stored.products,
+      activatedAt: stored.activatedAt,
+      lastCheckedAt: stored.lastCheckedAt,
+      offline: false,
+    }
   }
   const result = await checkStoredLicense(stored, product, await installationId())
   if (result.view.state === 'locked' && result.view.reason !== 'offline') await saveLicense(null)
-  else if (result.view.state === 'locked') await chrome.storage.local.set({ [LICENSE_ACTIVE_FLAG]: false })
+  else if (result.view.state === 'locked')
+    await chrome.storage.local.set({ [LICENSE_ACTIVE_FLAG]: false })
   else if (result.stored) await saveLicense(result.stored)
   return result.view
 }
 
-export async function activateExtensionLicense(product: LicenseProduct, key: string): Promise<LicenseView> {
+export async function activateExtensionLicense(
+  product: LicenseProduct,
+  key: string,
+): Promise<LicenseView> {
+  if (EXTENSION_LOCAL_MODE) return localLicenseView()
   try {
     const result = await activateLicense(key, product, await installationId())
     if (result.stored) await saveLicense(result.stored)
     return result.view
   } catch {
-    return { state: 'locked', reason: 'error', message: 'The license service did not answer. Check your internet connection and try again.' }
+    return {
+      state: 'locked',
+      reason: 'error',
+      message: 'The license service did not answer. Check your internet connection and try again.',
+    }
   }
 }
 
@@ -116,11 +190,50 @@ const styles = `
   .lg-lic-note{margin:var(--ui-space-2) 0 0;color:var(--ui-color-text-secondary);font-size:var(--ui-text-xs)}
   .lg-lic-wait{display:grid;place-items:center;width:360px;max-width:100%;margin:0 auto;height:560px;color:var(--ui-color-text-secondary);font-family:var(--ui-font-sans);font-size:var(--ui-text-md)}
 `
-const keyIcon = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="15" r="4"/><path d="m10.8 12.2 8.7-8.7M17 6l3 3M14.5 8.5l2 2"/></svg>
-const slotIcon = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>
+const keyIcon = (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="8" cy="15" r="4" />
+    <path d="m10.8 12.2 8.7-8.7M17 6l3 3M14.5 8.5l2 2" />
+  </svg>
+)
+const slotIcon = (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="m5 12 5 5 9-10" />
+  </svg>
+)
 
 /** The license screen (design B): brand header, key field, Activate, and the products one key covers. */
-export function ExtensionLicenseScreen({ product, logo, initialMessage, onActivated }: { product: LicenseProduct; logo: string; initialMessage?: string; onActivated(view: LicenseView): void }) {
+export function ExtensionLicenseScreen({
+  product,
+  logo,
+  initialMessage,
+  onActivated,
+}: {
+  product: LicenseProduct
+  logo: string
+  initialMessage?: string
+  onActivated(view: LicenseView): void
+}) {
   const name = LICENSE_PRODUCTS.find((item) => item.id === product)?.name ?? product
   const short = LICENSE_PRODUCTS.find((item) => item.id === product)?.short ?? product
   const [busy, setBusy] = useState(false)
@@ -135,27 +248,96 @@ export function ExtensionLicenseScreen({ product, logo, initialMessage, onActiva
     if (view.state === 'active') onActivated(view)
     else setMessage(view.message)
   }
-  return <div className="lg-lic"><style>{styles}</style>
-    <header className="lg-lic-head"><img src={logo} alt="" /><h1>{name}</h1><p>License required to continue</p></header>
-    <form className="lg-lic-body" onSubmit={(event) => void submit(event)}>
-      <label htmlFor="lg-lic-key">License key</label>
-      <div className={`lg-lic-field${message ? ' bad' : ''}`}>{keyIcon}<textarea id="lg-lic-key" {...fieldProps} rows={1} autoFocus spellCheck={false} autoComplete="off" maxLength={200} placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`} aria-invalid={Boolean(message)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } }} /></div>
-      {message && <div className="lg-lic-err" role="alert">{message}</div>}
-      <button type="submit" className="lg-lic-btn" disabled={busy || !key.trim()}>{busy ? 'Checking key...' : `Activate ${short}`}</button>
-      <div className="lg-lic-slots" aria-label="Products this key can activate">{LICENSE_PRODUCTS.map((item) => <span className="lg-lic-slot" key={item.id}>{slotIcon}{item.short}</span>)}</div>
-      <p className="lg-lic-note">One key works once on each product. Key expired? Ask your admin for a new one.</p>
-    </form>
-  </div>
+  return (
+    <div className="lg-lic">
+      <style>{styles}</style>
+      <header className="lg-lic-head">
+        <img src={logo} alt="" />
+        <h1>{name}</h1>
+        <p>License required to continue</p>
+      </header>
+      <form className="lg-lic-body" onSubmit={(event) => void submit(event)}>
+        <label htmlFor="lg-lic-key">License key</label>
+        <div className={`lg-lic-field${message ? ' bad' : ''}`}>
+          {keyIcon}
+          <textarea
+            id="lg-lic-key"
+            {...fieldProps}
+            rows={1}
+            autoFocus
+            spellCheck={false}
+            autoComplete="off"
+            maxLength={200}
+            placeholder={`Paste your ${LICENSE_KEY_LENGTH}-character license key`}
+            aria-invalid={Boolean(message)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                event.currentTarget.form?.requestSubmit()
+              }
+            }}
+          />
+        </div>
+        {message && (
+          <div className="lg-lic-err" role="alert">
+            {message}
+          </div>
+        )}
+        <button type="submit" className="lg-lic-btn" disabled={busy || !key.trim()}>
+          {busy ? 'Checking key...' : `Activate ${short}`}
+        </button>
+        <div className="lg-lic-slots" aria-label="Products this key can activate">
+          {LICENSE_PRODUCTS.map((item) => (
+            <span className="lg-lic-slot" key={item.id}>
+              {slotIcon}
+              {item.short}
+            </span>
+          ))}
+        </div>
+        <p className="lg-lic-note">
+          One key works once on each product. Key expired? Ask your admin for a new one.
+        </p>
+      </form>
+    </div>
+  )
 }
 
 /**
  * Entry point for every extension popup: shows the license screen until this extension has an active key,
  * then the popup. A stored key is re-checked with the service when the popup opens (at most once an hour).
  */
-export function LicenseGate({ product, logo, children }: { product: LicenseProduct; logo: string; children: ReactNode }) {
+export function LicenseGate({
+  product,
+  logo,
+  children,
+}: {
+  product: LicenseProduct
+  logo: string
+  children: ReactNode
+}) {
   const [view, setView] = useState<LicenseView | null>(null)
-  useEffect(() => { void checkExtensionLicense(product).then(setView, () => setView({ state: 'locked', reason: 'error', message: 'Could not read the license. Try again.' })) }, [product])
-  if (!view) return <div className="lg-lic-wait"><style>{styles}</style>Checking license...</div>
+  useEffect(() => {
+    void checkExtensionLicense(product).then(setView, () =>
+      setView({
+        state: 'locked',
+        reason: 'error',
+        message: 'Could not read the license. Try again.',
+      }),
+    )
+  }, [product])
+  if (!view)
+    return (
+      <div className="lg-lic-wait">
+        <style>{styles}</style>Checking license...
+      </div>
+    )
   if (view.state === 'active') return <>{children}</>
-  return <ExtensionLicenseScreen product={product} logo={logo} initialMessage={view.reason === 'missing' ? '' : view.message} onActivated={setView} />
+  return (
+    <ExtensionLicenseScreen
+      product={product}
+      logo={logo}
+      initialMessage={view.reason === 'missing' ? '' : view.message}
+      onActivated={setView}
+    />
+  )
 }

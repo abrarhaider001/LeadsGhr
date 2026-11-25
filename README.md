@@ -6,7 +6,7 @@ LeadsGhr is a desktop application for discovering businesses by niche and locati
 
 A companion Gmail tracking extension, **LeadsGhr Tracker**, is available as a downloadable MV3 ZIP from the desktop Email Tracking page. It needs a separately deployed public HTTPS pixel endpoint to observe recipient-side image loads. Manual email extraction in the extension remains planned.
 
-**LeadsGhr Mailer** is a separate Chrome extension (`apps/mailer-extension`) for sending saved email templates to CSV or Excel recipient ranges through the user's Gmail session; the desktop **Email Sending** page downloads it.
+**LeadsGhr Mailer** is a separate Chrome extension (`apps/mailer-extension`) for sending saved email templates to CSV or Excel recipient ranges through the user's Gmail session; the desktop **Email Sending** page downloads it, and **Email Templates** saves those messages in `C:\LeadsGhr\extensions\leadsghr-mailer\data`.
 
 [Feature implementation status](docs/features/FEATURE_STATUS_README.md) tracks what is built and what remains across the original specification.
 
@@ -17,6 +17,62 @@ The **Discovery tools** sidebar also includes **Email Validation** and **Email S
 **Deleting a saved pipeline:** The Pipeline page lists previous pipelines with a trash icon. After confirmation, deletion removes that pipeline's SQLite run, business rows, queued pages, and export history. The delete button is unavailable while a pipeline is running; stop it first. CSV files already written to disk are retained.
 
 **License keys:** LeadsGhr has no sign-up. The desktop app and each Chrome extension open with a license-key screen (desktop: after the splash screen; extensions: when the popup, Mailer settings page, or Tracker side panel opens). The owner creates keys in the Supabase SQL editor (`select public.create_license_key('Name', 'email@example.com', '2026-12-31');`, which returns a 32-character key with capital and small letters, digits, and special characters such as `6fN$YM7xQ7!3RP2!JtqYHAWzT3QYN!Mx`, made from the name, email, the current time, and a random value with SHA-256; keys are case-sensitive) and gives each person their own. A key activates once on each product (desktop app, LeadsGhr Mailer, LeadsGhr Tracker) and is then bound to that installation, so it cannot be shared; `reset_license_product` frees a product again (for example after reinstalling Windows) and `revoke_license_key` turns a key off. Every start re-checks the key with the `license` Edge Function; an expired, revoked, or reused key removes the local license and shows the key screen again ("ask your admin for a new key"). Without internet a product keeps working for 7 days after its last check. The key is stored encrypted (desktop: `C:\LeadsGhr\data\license.bin` with Windows encryption; extensions: encrypted in Chrome storage) and never shown in full; **Settings → License** shows the status, masked key, expiry date, and which products the key is used on. Supabase holds only the keys with the name and email they were made for, expiry dates, and activation records (`supabase/migrations/0005_license_keys.sql`). Deleting LeadsGhr's data at uninstall also removes this computer's installation ID, so that key needs `reset_license_product` before it can activate the desktop app again.
+
+**App mode (`local` or `production`):** set `LEADSGHR_MODE` in the `.env` file in the repository root (copy `.env.example`, which lists every setting the project uses with what it is for, to `.env` to start). `production` (the default, also used when the line is missing or has any other value) requires license keys. `LEADSGHR_MODE=local` lets you work without them: `pnpm dev` opens the desktop app straight after the splash screen (the **License** entry under **Settings** is hidden), and `pnpm build:extension` / `pnpm build:mailer-extension` build extensions without the license screen. Switch back with `LEADSGHR_MODE=production` and restart (or rebuild the extensions). Installed copies of the desktop app always require a key, and a `local` extension build never replaces the ZIPs committed in the repository; only the copy in `C:\LeadsGhr\extensions` is updated.
+
+**Run locally without license keys** (`local`). Set this line in `.env` in the repository root:
+
+```
+LEADSGHR_MODE=local
+```
+
+Then start the desktop app from the repository root:
+
+```
+pnpm run dev
+```
+
+For the Chrome extensions without a key, also build them, then press **Reload** in `chrome://extensions`:
+
+```
+pnpm run build:extension
+pnpm run build:mailer-extension
+```
+
+**Run locally with license keys** (`production`). Change the line in `.env` to:
+
+```
+LEADSGHR_MODE=production
+```
+
+Then:
+
+```
+pnpm run dev
+```
+
+For the Chrome extensions with a key, also build them, then press **Reload**:
+
+```
+pnpm run build:extension
+pnpm run build:mailer-extension
+```
+
+In `production`, the license screen appears after the splash only when this computer has no active license yet. Once a key is activated (stored in `C:\LeadsGhr\data\license.bin`), LeadsGhr opens straight into the workspace, and **Settings → License** shows the key.
+
+**One-off without editing `.env` (PowerShell).** A variable set in the terminal overrides `.env` for that terminal only:
+
+```
+$env:LEADSGHR_MODE = 'production'; pnpm run dev
+```
+
+```
+$env:LEADSGHR_MODE = 'local'; pnpm run dev
+```
+
+To go back to whatever `.env` says, run `Remove-Item Env:LEADSGHR_MODE`, or open a new terminal.
+
+Always restart `pnpm run dev` after changing the mode. The extensions keep the mode they were built with until you rebuild them.
 
 **Where LeadsGhr keeps your data:** everything LeadsGhr saves is in `C:\LeadsGhr` (on the system drive): `data\` holds the database (`leadsghr.sqlite`: runs, results, pipeline queues, email-validation cache, export history), `preferences.json`, `search-criteria.json`, and `profile.json` (name, email, avatar); `exports\` holds CSV exports, `extensions\` the Chrome extensions, and `settings\` exported settings files. Back up or move LeadsGhr's data by copying that one folder. It is not removed when LeadsGhr is uninstalled, so a reinstall shows the same runs, results, and settings. The first start of a version with the data folder copies the database and settings from the old location (`%APPDATA%\@leadsghr\desktop`) into `C:\LeadsGhr\data` (only files the data folder does not have yet) and leaves the old files there as a backup; the profile moves from the window's storage into `profile.json`. If `C:\LeadsGhr\data` cannot be created, LeadsGhr keeps using the old location. `LEADSGHR_DATA_DIR` points the data folder elsewhere, for example a separate folder for tests. Electron's own caches stay in `%APPDATA%\@leadsghr\desktop`.
 
@@ -62,7 +118,7 @@ Legacy web, API, and worker folders remain inactive reference code. `apps/extens
 
 ## LeadsGhr Mailer (Gmail sending)
 
-Open **Email Sending** in the desktop app and select **Download extension ZIP**; an **Extension saved** dialog shows where `leadsghr-mailer.zip` was saved. Extract it to a `leadsghr-mailer` folder and load it with **Load unpacked** in `chrome://extensions`. Save templates on the Mailer's settings page (popup gear button), then click the toolbar icon in Gmail: pick a template, upload a CSV or Excel file, set Start, End, and a 5–120 second delay, and use Start, Pause, Resume, and Stop. Rebuild with `pnpm.cmd build:mailer-extension`. See [Email Sending](docs/EMAIL_SENDING_README.md).
+Open **Email Sending** in the desktop app and select **Download extension ZIP**; an **Extension saved** dialog shows where `leadsghr-mailer.zip` was saved. Extract it to a `leadsghr-mailer` folder and load it with **Load unpacked** in `chrome://extensions`. Save templates on the desktop **Email Templates** page, which writes `C:\LeadsGhr\extensions\leadsghr-mailer\data\templates.json`, or on the Mailer's settings page (popup gear button), then click the toolbar icon in Gmail: pick a template, upload a CSV or Excel file, set Start, End, and a 5–120 second delay, and use Start, Pause, Resume, and Stop. Rebuild with `pnpm.cmd build:mailer-extension`. See [Email Sending](docs/EMAIL_SENDING_README.md).
 
 ## Supabase deployment
 
@@ -101,9 +157,17 @@ The current scan flow can crawl a user-supplied public site through the Electron
 
 The desktop app has a light and a dark theme (Settings → Preferences → Appearance: Light, Dark, or Match Windows). Light uses white cards on a soft grey canvas with charcoal text and green actions; dark uses charcoal surfaces with bright green actions. Both come from the design tokens in `packages/ui/src/tokens.css`. It keeps compact type, four icon-and-copy metric cards, a trend chart, quick actions, and a Latest pipelines table. Its metrics, chart, and table read saved local crawl runs and CSV history. The [theme](docs/theme/THEME_README.md), [components](docs/components/COMPONENTS_README.md), and [icons](docs/icons/ICONS_README.md) guides describe the design and brand assets.
 
+### LeadsGhr Scraper (Chrome extension)
+
+**LeadsGhr Scraper** (`apps/scraper-extension`) runs New Search's searches on Google Search's business list (the **More businesses** page) inside Chrome and saves the businesses for the desktop app. In **New Search** select **Send to LeadsGhr Scraper** (each job is saved in the Scraper's job list), then in Chrome open the Scraper, pick the job, and select **Start scraping**; **Scraper Results** in the desktop app fills in as each page is saved, with a search box, a Source column, and **Export CSV**. It stops at Google's check page and resumes later. Download it from the **LeadsGhr Scraper** page in the sidebar (or build it with `pnpm build:scraper-extension`) and load `C:\LeadsGhr\extensions\leadsghr-scraper` in a separate Chrome profile that is not signed in to Google. See [LeadsGhr Scraper](docs/SCRAPER_README.md).
+
 ### Contractor search sources and emails
 
-Profile > Preferences controls whether Crawl Results shows public Google Maps business listings and whether it uses expanded Niche Library terms. Expanded terms are off by default: each selected niche name is searched once per location. Turn them on for broader searches that take longer. The saved run table shows the selected business fields and hides listings without a website URL by default. Profile > Preferences > Search result filters can turn those rows back on. Pipeline crawls linked public websites for emails after the Maps searches; New Search remains search-only. Google regular web-search results are not scanned because Google disallows automated `/search` access in robots.txt.
+Profile > Preferences controls whether Crawl Results shows public Google Maps business listings and whether it uses expanded Niche Library terms. Expanded terms are off by default: each selected niche name is searched once per location. Turn them on for broader searches that take longer. The saved run table shows the selected business fields and hides listings without a website URL by default. Profile > Preferences > Search result filters can turn those rows back on. Pipeline crawls linked public websites for emails after the Maps searches; New Search remains search-only.
+
+**Search sources:** Settings → Preferences → Search → Search sources has **Show Google Maps listings** (on by default) and **Show Google Search business listings** (off by default). With both on, each location is searched on Google Maps first, then on Google Search's business list (the **More businesses** page, with the pages and pauses set in **Search timing**), and both appear in one table; a business found in both is one row with the source **Maps + Google Search**. Google's robots.txt disallows `/search`; reading this one page is an owner-approved exception (AGENTS.md, rule 5). Google often answers automated Google Search reads with its "unusual traffic" check page; the search then stops with a message and does not try to get past it. Crawl Results has a **search box** that filters the table by name, website, phone, place, address, source, or email, and a **Source** column (Maps, Google Search, Maps + Google Search, and "+ website" once the website was checked). The Maps search scrolls the result list with the mouse wheel and stops at Maps' own "end of the list" message, so it reads the whole list.
+
+**Search timing:** at the end of Settings → Preferences → Search, **Search timing** sets how long Google searches wait between steps, for **LeadsGhr Scraper** and the Google Search business list. Pick a **Speed** preset (**Careful**, **Normal** (default), **Faster**; changing any pause picks **Custom**), or set each pause: on each listing (0.5–10 s; the Scraper reads the list one business at a time), before loading more (1.5–10 s), after **More places** (2–15 s), loads per page (3–30), a random pause before the next page between two values (3–60 s), pages per location (1–5), the pause between locations (30–600 s), and a longer break every few locations (0 turns it off). The lower limits keep searches polite and cannot be set lower. A Scraper job keeps the pauses it was sent with. Normal keeps the earlier pauses (1.2 s on each listing, 2.2 s before loading more, 4–7 s between pages, 5 pages, 45 s between locations) and adds a 5-minute break every 10 locations. The definitions are in `packages/schemas/src/search-timing.ts`.
 
 ### Crawler test page
 
@@ -111,9 +175,9 @@ Open **Crawler** in the desktop sidebar, enter a public homepage URL, and click 
 
 ## Profile and preferences
 
-The **Profile** sidebar page has Account and Preferences tabs. The Account tab starts with Abrar Haider and abrar@leedsghr.com as editable local profile details and displays a locally saved generated avatar. The sidebar greets the saved first name. A Reset Password form is visible but inactive until Supabase authentication is connected. Click **Generate new** to replace the avatar and save the new choice. Supabase sign-in is not wired into this desktop build, so no name, email, or plan is invented. Profile details and preferences are saved in `C:\LeadsGhr\data` (`profile.json`, `preferences.json`): show or hide the Crawler webpage preview, show Chrome during contractor searches or run it in the background, choose fast niche-name searches or expanded Niche Library terms, show or hide businesses without website URLs (hidden by default), and choose which contractor fields appear in the saved crawl results table (company, website, phone, address, and searched location). Hiding the preview does not stop the Crawler from scrolling and extracting. Crawl results and selected fields are saved locally with their run; Supabase does not receive them.
+The **Profile** sidebar page has Account and Preferences tabs. The Account tab starts with Abrar Haider and abrar@leedsghr.com as editable local profile details and displays a locally saved generated avatar. The sidebar greets the saved first name. A Reset Password form is visible but inactive until Supabase authentication is connected. Click **Generate new** to replace the avatar and save the new choice. Supabase sign-in is not wired into this desktop build, so no name, email, or plan is invented. Profile details and preferences are saved in `C:\LeadsGhr\data` (`profile.json`, `preferences.json`): show or hide the Crawler webpage preview, show Chrome during contractor searches or run it in the background, choose fast niche-name searches or expanded Niche Library terms, show or hide businesses without website URLs (hidden by default), and choose which contractor fields appear in the saved crawl results table (company, website, phone, address, and searched location), and choose Email Validation checks (Syntax, Domain, MX, SMTP, Disposable, Role-based, and Catch-all; Catch-all needs SMTP, SMTP needs MX, and MX needs Domain). Hiding the preview does not stop the Crawler from scrolling and extracting. Crawl results and selected fields are saved locally with their run; Supabase does not receive them.
 
-**Import and export settings:** the top of **Settings → Preferences** has **Export settings** and **Import settings**. Export opens **Choose what to export**: tick a whole section (Appearance, Crawler, Search, Email Validation, Updates) or open it and pick single settings (a section shows a mixed tick when only some are chosen, and each setting shows its current value), then **Export N settings** writes only those to `C:\LeadsGhr\settings\leadsghr-settings-<date>-<time>.json` (`{ app, kind: "preferences", version, exportedAt, preferences }`) and shows a **Settings exported** notice with **Show in folder**. Send that file to someone to share your setup. Import opens a file picker for a `.json` file, applies only the preferences that are in the file and that this version accepts, keeps every other preference at its current value, saves the result, and shows **Settings imported successfully** with how many settings were updated (and, for a file from another version, how many were kept or ignored); the open page updates at once. So a file from an older LeadsGhr (fewer preferences) changes only what it contains, and a file from a newer one imports everything this version understands. A file that is not JSON, holds no usable LeadsGhr preferences, or is over 1 MB is rejected with a **Settings not changed** notice and nothing is changed. The file format and these rules live in `packages/schemas/src/preferences-file.ts`. Account details (name, email, avatar) are not part of the file. Search public websites stays off after an import, as it does for every save.
+**Import and export settings:** the top of **Settings → Preferences** has **Export settings** and **Import settings**. Export opens **Choose what to export**: tick a whole section (Appearance, Crawler, Search (including **Search timing**), Email Validation, Updates) or open it and pick single settings (a section shows a mixed tick when only some are chosen, and each setting shows its current value), then **Export N settings** writes only those to `C:\LeadsGhr\settings\leadsghr-settings-<date>-<time>.json` (`{ app, kind: "preferences", version, exportedAt, preferences }`) and shows a **Settings exported** notice with **Show in folder**. Send that file to someone to share your setup. Import opens a file picker for a `.json` file, applies only the preferences that are in the file and that this version accepts, keeps every other preference at its current value, saves the result, and shows **Settings imported successfully** with how many settings were updated (and, for a file from another version, how many were kept or ignored); the open page updates at once. So a file from an older LeadsGhr (fewer preferences) changes only what it contains, and a file from a newer one imports everything this version understands. A file that is not JSON, holds no usable LeadsGhr preferences, or is over 1 MB is rejected with a **Settings not changed** notice and nothing is changed. The file format and these rules live in `packages/schemas/src/preferences-file.ts`. Account details (name, email, avatar) are not part of the file. Search public websites stays off after an import, as it does for every save.
 
 ## Feature summary
 
@@ -251,6 +315,8 @@ The specification describes Explorer, Starter, Professional and Agency plans. Th
 
 
 ## Desktop zoom
+
+**Font size:** Settings → Preferences → Appearance → **Font size** sets the type from 80% to 150% in 10% steps. Only the letters change. Spacing, buttons, and the rest of the layout stay the same. It is saved in `preferences.json` and included in the Appearance section of exported settings.
 
 **Display size:** Settings → Preferences → Appearance → **Display size** sets the window zoom from 70% to 200% in 10% steps with the **Zoom** row's − / + stepper (and **Reset** to 100%); a second row lists the keyboard shortcuts. `Ctrl + Plus` (or `Ctrl + =`) makes everything larger, `Ctrl + Minus` smaller, and `Ctrl + 0` returns to 100%. The shortcuts and the setting are the same thing: either one is saved in `preferences.json`, shown on the Appearance page, and applied the next time LeadsGhr opens. Display size is part of the Appearance section in exported settings files.
 

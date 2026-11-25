@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
  * only the status, expiry date, last eight characters, and which products the key is used on.
  */
 
-const PRODUCTS = ['desktop', 'mailer', 'tracker'] as const
+const PRODUCTS = ['desktop', 'mailer', 'tracker', 'scraper'] as const
 const allowed = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }
 const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { ...allowed, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 

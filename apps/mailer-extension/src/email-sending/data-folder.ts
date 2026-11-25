@@ -22,7 +22,13 @@ type DirectoryHandle = FileSystemDirectoryHandle & {
   queryPermission(options: { mode: 'readwrite' }): Promise<Permission>
   requestPermission(options: { mode: 'readwrite' }): Promise<Permission>
 }
-type PickerWindow = Window & { showDirectoryPicker(options?: { id?: string; mode?: 'readwrite'; startIn?: string }): Promise<DirectoryHandle> }
+type PickerWindow = Window & {
+  showDirectoryPicker(options?: {
+    id?: string
+    mode?: 'readwrite'
+    startIn?: string
+  }): Promise<DirectoryHandle>
+}
 
 export type DataFolderState = 'connected' | 'needs-permission' | 'not-connected'
 
@@ -33,7 +39,9 @@ const HANDLE_KEY = 'data-folder'
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, 1)
-    request.onupgradeneeded = () => { request.result.createObjectStore(STORE) }
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(STORE)
+    }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
   })
@@ -63,7 +71,7 @@ export async function readDataFile<T>(name: string): Promise<T | null> {
   try {
     const response = await fetch(chrome.runtime.getURL(`data/${name}`), { cache: 'no-store' })
     if (!response.ok) return null
-    return await response.json() as T
+    return (await response.json()) as T
   } catch {
     return null
   }
@@ -72,7 +80,9 @@ export async function readDataFile<T>(name: string): Promise<T | null> {
 export async function dataFolderState(): Promise<DataFolderState> {
   const handle = await storedHandle().catch(() => null)
   if (!handle) return 'not-connected'
-  return (await handle.queryPermission({ mode: 'readwrite' })) === 'granted' ? 'connected' : 'needs-permission'
+  return (await handle.queryPermission({ mode: 'readwrite' })) === 'granted'
+    ? 'connected'
+    : 'needs-permission'
 }
 
 /** True when the chosen folder is this extension's own data folder (a file written there is served by the extension). */
@@ -97,7 +107,11 @@ async function isExtensionDataFolder(handle: DirectoryHandle): Promise<boolean> 
 export async function connectDataFolder(): Promise<void> {
   const picker = (window as unknown as Partial<PickerWindow>).showDirectoryPicker
   if (!picker) throw new Error('This Chrome version cannot open a folder picker.')
-  const handle = await picker.call(window, { id: 'leadsghr-mailer-data', mode: 'readwrite', startIn: 'desktop' })
+  const handle = await picker.call(window, {
+    id: 'leadsghr-mailer-data',
+    mode: 'readwrite',
+    startIn: 'desktop',
+  })
   if (!(await isExtensionDataFolder(handle))) {
     throw new Error(`That is not the LeadsGhr Mailer data folder. Choose ${DATA_FOLDER_PATH}.`)
   }
@@ -112,9 +126,13 @@ async function writableFolder(): Promise<DirectoryHandle> {
     handle = await storedHandle()
     if (!handle) throw new Error('No data folder was chosen.')
   }
-  if ((await handle.queryPermission({ mode: 'readwrite' })) !== 'granted'
-    && (await handle.requestPermission({ mode: 'readwrite' })) !== 'granted') {
-    throw new Error(`Chrome needs permission to save to ${DATA_FOLDER_PATH}. Select Allow and try again.`)
+  if (
+    (await handle.queryPermission({ mode: 'readwrite' })) !== 'granted' &&
+    (await handle.requestPermission({ mode: 'readwrite' })) !== 'granted'
+  ) {
+    throw new Error(
+      `Chrome needs permission to save to ${DATA_FOLDER_PATH}. Select Allow and try again.`,
+    )
   }
   return handle
 }

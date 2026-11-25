@@ -23,14 +23,28 @@ code{padding:1px var(--ui-space-1-5);border-radius:var(--ui-radius-xs);backgroun
 
 /** LeadsGhr Mailer settings: preferences and saved templates for the toolbar popup. */
 function Settings() {
-  return <main>
-    <style>{style}</style>
-    <div className="brand"><img src="/icon.png" alt=""/><h1>LeadsGhr Mailer</h1></div>
-    <p>Save templates here, then pick one in the LeadsGhr Mailer toolbar popup to send it to a CSV or Excel recipient range.</p>
-    <DataFolderPanel />
-    <SendingPreferencesPanel />
-    <EmailSendingPanel />
-  </main>
+  return (
+    <main>
+      <style>{style}</style>
+      <div className="brand">
+        <img src="/icon.png" alt="" />
+        <h1>LeadsGhr Mailer</h1>
+      </div>
+      <p>
+        Save templates here, then pick one in the LeadsGhr Mailer toolbar popup to send it to a CSV
+        or Excel recipient range.
+      </p>
+      <DataFolderPanel />
+      <SendingPreferencesPanel />
+      <EmailSendingPanel />
+    </main>
+  )
 }
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><LicenseGate product="mailer" logo="/icon.svg"><Settings /></LicenseGate></React.StrictMode>)
+createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <LicenseGate product="mailer" logo="/icon.svg">
+      <Settings />
+    </LicenseGate>
+  </React.StrictMode>,
+)

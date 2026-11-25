@@ -2,7 +2,11 @@ export type LocalAccount = { firstName: string; lastName: string; email: string 
 
 const accountKey = 'leadsghr-local-account'
 const avatarKey = 'leadsghr-profile-avatar-seed'
-export const defaultLocalAccount: LocalAccount = { firstName: 'Abrar', lastName: 'Haider', email: 'abrar@leedsghr.com' }
+export const defaultLocalAccount: LocalAccount = {
+  firstName: 'Abrar',
+  lastName: 'Haider',
+  email: 'abrar@leedsghr.com',
+}
 
 export function loadLocalAccount(): LocalAccount {
   try {
@@ -11,9 +15,16 @@ export function loadLocalAccount(): LocalAccount {
     const data: unknown = JSON.parse(saved)
     if (!data || typeof data !== 'object') return defaultLocalAccount
     const record = data as Record<string, unknown>
-    if (typeof record.firstName !== 'string' || typeof record.lastName !== 'string' || typeof record.email !== 'string') return defaultLocalAccount
+    if (
+      typeof record.firstName !== 'string' ||
+      typeof record.lastName !== 'string' ||
+      typeof record.email !== 'string'
+    )
+      return defaultLocalAccount
     return { firstName: record.firstName, lastName: record.lastName, email: record.email }
-  } catch { return defaultLocalAccount }
+  } catch {
+    return defaultLocalAccount
+  }
 }
 
 export function saveLocalAccount(account: LocalAccount) {
@@ -39,11 +50,17 @@ export function saveAvatarSeed(seed: string) {
  * localStorage stays as a fast start-up copy so the first frame already shows the name and avatar.
  */
 export type StoredProfile = { account: LocalAccount; avatarSeed: string }
-type ProfileBridge = { loadProfile(): Promise<StoredProfile | null>; saveProfile(profile: StoredProfile): Promise<void> }
-const profileBridge = () => (window as Window & { leadsGhrDesktop?: Partial<ProfileBridge> }).leadsGhrDesktop
+type ProfileBridge = {
+  loadProfile(): Promise<StoredProfile | null>
+  saveProfile(profile: StoredProfile): Promise<void>
+}
+const profileBridge = () =>
+  (window as Window & { leadsGhrDesktop?: Partial<ProfileBridge> }).leadsGhrDesktop
 
 function persistProfile() {
-  void profileBridge()?.saveProfile?.({ account: loadLocalAccount(), avatarSeed: loadAvatarSeed() })?.catch(() => undefined)
+  void profileBridge()
+    ?.saveProfile?.({ account: loadLocalAccount(), avatarSeed: loadAvatarSeed() })
+    ?.catch(() => undefined)
 }
 
 /**
@@ -55,7 +72,12 @@ export async function syncProfileFromDisk(): Promise<StoredProfile | null> {
   if (!api?.loadProfile) return null
   const stored = await api.loadProfile().catch(() => null)
   if (stored) {
-    try { window.localStorage.setItem(accountKey, JSON.stringify(stored.account)); window.localStorage.setItem(avatarKey, stored.avatarSeed) } catch { /* start-up copy only */ }
+    try {
+      window.localStorage.setItem(accountKey, JSON.stringify(stored.account))
+      window.localStorage.setItem(avatarKey, stored.avatarSeed)
+    } catch {
+      /* start-up copy only */
+    }
     return stored
   }
   persistProfile()

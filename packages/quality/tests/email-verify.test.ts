@@ -7,6 +7,7 @@ import {
   classifyRcpt,
   finalizeResult,
   isRetryable,
+  looseVerifyEmail,
   normalizeVerifyEmail,
   scoreChecks,
 } from '../src/email-verify/index.ts'
@@ -16,6 +17,13 @@ test('normalizeVerifyEmail accepts common addresses and rejects junk', () => {
   assert.equal(normalizeVerifyEmail('mailto:info@acme.io'), 'info@acme.io')
   assert.equal(normalizeVerifyEmail('bad@@company.com'), null)
   assert.equal(normalizeVerifyEmail(''), null)
+})
+
+test('looseVerifyEmail keeps a minimal local@domain when strict syntax is off', () => {
+  assert.equal(looseVerifyEmail(' Sales@Company.com '), 'sales@company.com')
+  assert.equal(looseVerifyEmail('a@b.c'), 'a@b.c')
+  assert.equal(looseVerifyEmail('no-domain'), null)
+  assert.equal(looseVerifyEmail(''), null)
 })
 
 test('risk checks detect disposable and role-based addresses', () => {
@@ -31,7 +39,10 @@ test('classifyRcpt keeps policy blocks out of Invalid', () => {
   assert.equal(classifyRcpt(451, '4.7.1 Greylisted').signal, 'temp')
   assert.equal(classifyRcpt(550, '5.7.1 Client host blocked').signal, 'blocked')
   assert.equal(classifyRcpt(572, 'host name is unknown').code, 'domain_not_found')
-  assert.equal(classifyMailFrom(573, 'verify@localhost failed to route the address').code, 'sender_blocked')
+  assert.equal(
+    classifyMailFrom(573, 'verify@localhost failed to route the address').code,
+    'sender_blocked',
+  )
 })
 
 test('finalizeResult decides status from signals then clamps score to that band', () => {
@@ -90,7 +101,7 @@ test('finalizeResult decides status from signals then clamps score to that band'
   assert.equal(roleAccepted.checks.roleBased, true)
   assert.equal(roleAccepted.confidence, 85)
 
-  const roleUnknown = finalizeResult({
+  const providerHide = finalizeResult({
     email: 'info@company.com',
     syntax: true,
     domain: true,
@@ -100,8 +111,9 @@ test('finalizeResult decides status from signals then clamps score to that band'
     catchAll: false,
     smtp: 'unverifiable',
   })
-  assert.equal(roleUnknown.status, 'unknown')
-  assert.equal(roleUnknown.confidence, 38)
+  assert.equal(providerHide.status, 'valid')
+  assert.equal(providerHide.code, 'provider_unverifiable')
+  assert.equal(providerHide.confidence, 85)
 
   const inconsistent = finalizeResult({
     email: 'stevetilley782@gmail.com',
@@ -162,11 +174,40 @@ test('scoreChecks never overrides status bands', () => {
   assert.equal(scoreChecks({ ...accepted, catchAll: true }, 'risky'), 45)
   assert.equal(scoreChecks({ ...accepted, disposable: true, smtp: 'unverifiable' }, 'risky'), 25)
   assert.equal(scoreChecks({ ...accepted, smtp: 'rejected' }, 'invalid'), 15)
-  assert.equal(scoreChecks({ ...accepted, smtp: 'temp' }, 'unknown'), 55)
+  assert.equal(scoreChecks({ ...accepted, smtp: 'temp' }, 'valid'), 85)
 })
 
-test('isRetryable only covers transient Unknown codes', () => {
-  assert.equal(isRetryable({ status: 'unknown', code: 'greylist' }), true)
-  assert.equal(isRetryable({ status: 'unknown', code: 'policy_block' }), false)
+test('disabled confidence checks are ignored for score and status', () => {
+  const enabled = {
+    syntax: true,
+    domain: true,
+    mx: true,
+    smtp: false,
+    disposable: false,
+    roleBased: false,
+    catchAll: false,
+  }
+  const limited = finalizeResult({
+    email: 'abrar@company.com',
+    syntax: true,
+    domain: true,
+    mx: true,
+    disposable: true,
+    roleBased: true,
+    catchAll: true,
+    smtp: 'skipped',
+    code: 'smtp_disabled',
+    enabled,
+  })
+  assert.equal(limited.status, 'valid')
+  assert.equal(limited.checks.disposable, false)
+  assert.equal(limited.checks.roleBased, false)
+  assert.equal(limited.checks.catchAll, false)
+  assert.equal(limited.confidence, scoreChecks(limited.checks, 'valid', enabled))
+})
+
+test('isRetryable covers transient soft Valid codes', () => {
+  assert.equal(isRetryable({ status: 'valid', code: 'greylist' }), true)
+  assert.equal(isRetryable({ status: 'valid', code: 'policy_block' }), false)
   assert.equal(isRetryable({ status: 'invalid', code: 'mailbox_not_found' }), false)
 })

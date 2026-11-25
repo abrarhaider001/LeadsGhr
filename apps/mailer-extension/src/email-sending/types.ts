@@ -8,6 +8,8 @@ export type SavedTemplate = Template & {
   id: string
   name: string
   updatedAt: number
+  /** Set by the desktop Email Templates page. The Mailer still sends from the body itself. */
+  format?: 'plain' | 'html'
 }
 
 /** Popup inputs, saved as they change so closing the popup loses nothing. */
@@ -79,9 +81,11 @@ export type ComposePayload = {
   stepDelayMs?: number
 }
 
-export type ComposeResult = {
-  ok: true
-} | {
-  ok: false
-  error: string
-}
+export type ComposeResult =
+  | {
+      ok: true
+    }
+  | {
+      ok: false
+      error: string
+    }
