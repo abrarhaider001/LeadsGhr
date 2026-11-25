@@ -71,7 +71,7 @@ If Google shows a captcha, consent, or "unusual traffic" page, the Scraper saves
 
 ### 5. See the results in the desktop app
 
-The **LeadsGhr Scraper** page in the sidebar lists every job sent to the Scraper with its status, searches done, businesses, and websites found (and how many are still being looked up), refreshed every 5 seconds. **Open results** opens a job's Scraper Results at any time, also for jobs sent earlier.
+The **LeadsGhr Scraper** page in the sidebar (Extensions) starts with two tiles, what the Scraper does and how to install it, then lists every job sent to the Scraper with its status, searches done, businesses, and websites found (and how many are still being looked up), refreshed every 5 seconds. **Open results** opens a job's Scraper Results at any time, also for jobs sent earlier.
 
 
 The desktop app **watches the data folder**: each time the Scraper saves a business, it is imported within about a second, and Scraper Results and the Jobs table refresh at once. As a fallback, Scraper Results also checks every 3 seconds and every saved job is checked in the background every 20 seconds (so results arrive after a restart too). Only files that changed are imported:

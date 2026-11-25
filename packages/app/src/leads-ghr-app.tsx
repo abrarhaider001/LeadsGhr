@@ -92,7 +92,7 @@ const descriptions: Record<string, string> = {
   'Email Templates': 'Write plain or HTML messages, preview them, and use them in LeadsGhr Mailer.',
   'Email Tracking': 'See when your emails are opened, right in Gmail.',
   'Crawl Results': 'Review businesses found across the selected niche and locations.',
-  'LeadsGhr Scraper': 'Download the Chrome extension that searches Google Search business listings for you.',
+  'LeadsGhr Scraper': "Read Google's business list in your own Chrome and save it here.",
   'Scraper Results': 'Businesses found by LeadsGhr Scraper on Google Search, saved as they arrive.',
   Leads: 'Review businesses and contacts saved on this computer.',
   Runs: 'Review crawl progress, saved results, and selected state ranges.',
