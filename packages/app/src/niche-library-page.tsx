@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SearchCriteria } from '@leadsghr/schemas'
-import { Icon } from '@leadsghr/ui'
+import { DeleteModal, Icon } from '@leadsghr/ui'
 import {
   compileNicheSelection,
   getNichePack,
@@ -26,9 +26,11 @@ const bridge = () => (window as Window & { leadsGhrDesktop?: CriteriaBridge }).l
 export function NicheLibraryPage({
   onStartSearch,
   useNicheKeywords,
+  addRef,
 }: {
   onStartSearch(): void
   useNicheKeywords: boolean
+  addRef?: { current: (() => void) | null }
 }) {
   const [criteria, setCriteria] = useState<SearchCriteria>(empty)
   const [ready, setReady] = useState(false)
@@ -40,6 +42,14 @@ export function NicheLibraryPage({
   const [negativeDraft, setNegativeDraft] = useState('')
   const [message, setMessage] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [pendingNiche, setPendingNiche] = useState<string | null>(null)
+  useEffect(() => {
+    if (!addRef) return
+    addRef.current = () => setShowAdd(true)
+    return () => {
+      addRef.current = null
+    }
+  })
 
   useEffect(() => {
     let active = true
@@ -163,11 +173,6 @@ export function NicheLibraryPage({
   }
   return (
     <div className="la-niche-library">
-      <div className="la-library-intro">
-        <button type="button" onClick={() => setShowAdd(true)}>
-          Add niche
-        </button>
-      </div>
       <div className="la-library-layout">
         <aside className="la-library-categories" aria-label="Niche categories">
           <strong>Categories</strong>
@@ -389,7 +394,7 @@ export function NicheLibraryPage({
                 </button>
               )}
               {criteria.customNiches.includes(active) && (
-                <button type="button" onClick={removeCustom}>
+                <button type="button" onClick={() => setPendingNiche(active)}>
                   Delete custom niche
                 </button>
               )}
@@ -490,6 +495,18 @@ export function NicheLibraryPage({
           </aside>
         </div>
       )}
+      <DeleteModal
+        open={pendingNiche !== null}
+        title="Delete custom niche?"
+        description={
+          pendingNiche ? `“${pendingNiche}” will be removed from your niche list on this computer.` : ''
+        }
+        onCancel={() => setPendingNiche(null)}
+        onConfirm={() => {
+          removeCustom()
+          setPendingNiche(null)
+        }}
+      />
     </div>
   )
 }

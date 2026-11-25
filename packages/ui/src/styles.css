@@ -704,6 +704,8 @@ body {
   display: flex;
   align-items: center;
   gap: var(--ui-space-4-5);
+  margin-left: auto;
+  flex: none;
 }
 .la-global-search {
   display: flex;
@@ -1093,11 +1095,6 @@ body {
   text-align: center;
   color: var(--ui-color-text);
 }
-.la-dashboard-disclaimer {
-  margin: 0;
-  color: color-mix(in srgb, var(--ui-color-text) 55%, var(--ui-color-text-muted));
-  font-size: var(--ui-text-2xs);
-}
 .la-local-page h2 {
   margin: 0 0 var(--ui-space-3-5);
   font-size: var(--ui-text-2xl);
@@ -1193,7 +1190,9 @@ body {
   filter: brightness(0.92);
 }
 .la-extension-status {
+  margin: 0;
   overflow-wrap: anywhere;
+  color: var(--ui-color-text-muted);
   font-size: var(--ui-text-sm) !important;
 }
 .la-extension-steps-heading {
@@ -1598,6 +1597,8 @@ ol.la-extension-steps,
   background: var(--ui-color-surface);
 }
 .la-topbar {
+  align-items: center;
+  justify-content: space-between;
   min-height: 106px;
   padding: var(--ui-space-4-5) var(--ui-space-7);
   background: var(--ui-color-surface);
@@ -1608,6 +1609,23 @@ ol.la-extension-steps,
 .la-topbar h1 {
   font-size: var(--ui-text-5xl);
   line-height: 1.2;
+}
+.la-topbar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+.la-topbar-back-mark {
+  display: inline-flex;
+  transform: rotate(180deg);
 }
 .la-topbar-heading p {
   margin: var(--ui-space-1-5) 0 0;
@@ -1658,9 +1676,6 @@ ol.la-extension-steps,
 .la-table td {
   padding: var(--ui-space-3) var(--ui-space-3-5);
   border: 0;
-}
-.la-table tbody tr:nth-child(even) {
-  background: color-mix(in srgb, var(--ui-color-primary-subtle) 40%, var(--ui-color-surface));
 }
 .la-table tbody tr:hover {
   background: color-mix(in srgb, var(--ui-color-primary-subtle) 65%, var(--ui-color-surface));
@@ -2440,6 +2455,8 @@ ol.la-extension-steps,
   font-size: var(--ui-text-xs);
 }
 .la-choice-page-size .la-select-menu {
+  top: auto;
+  bottom: calc(100% + var(--ui-space-1));
   min-width: 90px;
   font-size: var(--ui-text-xs);
 }
@@ -2456,7 +2473,7 @@ ol.la-extension-steps,
   z-index: 100;
   display: flex;
   justify-content: flex-end;
-  background: color-mix(in srgb, var(--ui-color-text) 32%, transparent);
+  background: var(--ui-color-overlay);
 }
 .la-niche-panel {
   width: min(420px, 100vw);
@@ -3076,9 +3093,6 @@ body {
   color: var(--ui-color-text-secondary);
   border-bottom: 1px solid var(--ui-color-border);
 }
-.la-table tbody tr:nth-child(even) {
-  background: var(--ui-color-surface-subtle);
-}
 .la-table tbody tr:hover {
   background: var(--ui-color-info-soft);
 }
@@ -3631,9 +3645,6 @@ body {
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
 }
-.la-table tbody tr:nth-child(even) td {
-  background: var(--ui-color-surface);
-}
 .la-table tbody tr:hover td {
   background: var(--ui-color-surface-subtle);
 }
@@ -3790,27 +3801,42 @@ body {
 .la-location-footer-pagination .la-select-menu button[aria-selected='true'] {
   background: var(--ui-color-surface-hover);
 }
-/* Keep the shared Pipeline and New Search action row at the bottom of the workspace. */
+/* Keep the shared Pipeline and New Search action row at the bottom of the workspace.
+   The scroller is the content area so the bar sits on the window edge, not inside the page padding. */
 .la-main:has(.la-search-setup) .la-content {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 0;
   padding-bottom: 0;
 }
 .la-search-setup {
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   flex-direction: column;
+  overflow: visible;
+  padding-right: var(--ui-space-7);
 }
 .la-search-setup .la-search-start {
   position: sticky;
   bottom: 0;
+  flex: none;
   z-index: 2;
   margin-top: auto;
   padding: var(--ui-space-4) 0 var(--ui-space-6);
   background: var(--ui-color-bg);
 }
 /* Place the location method and its active controls together on the right. */
+.la-location-section {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  gap: var(--ui-space-4);
+  padding-bottom: 0;
+  border-bottom: 0;
+}
 .la-location-heading {
   align-items: center;
 }
@@ -3818,6 +3844,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  margin-left: auto;
   gap: var(--ui-space-2-5);
   flex: 0 1 auto;
   min-width: 0;
@@ -4370,8 +4397,27 @@ body {
 }
 .la-maps-results-heading {
   align-items: center;
+  margin: 0;
+}
+.la-maps-saved-path {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-sm);
 }
 .la-maps-results-heading h2 {
+  margin: 0;
+}
+.la-main:has(.la-search-results) .la-content {
+  padding-top: var(--ui-space-3);
+}
+.la-search-results > .la-maps-results {
+  gap: var(--ui-space-2);
+}
+.la-search-results .la-maps-scan-status {
   margin: 0;
 }
 .la-result-controls {
@@ -4919,13 +4965,12 @@ body {
   font-size: var(--ui-text-sm);
 }
 .la-email-verify-page .la-email-filter-layout {
-  grid-template-columns: 40% 60%;
   align-items: stretch;
   min-height: 620px;
 }
 .la-email-verify-page .la-email-filter-panel {
-  gap: var(--ui-space-3);
-  padding: var(--ui-space-4);
+  gap: var(--ui-space-4-5);
+  padding: var(--ui-space-5-5);
   height: 100%;
   min-height: 620px;
 }
@@ -4933,7 +4978,7 @@ body {
   flex: 1;
   min-height: 0;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: var(--ui-space-1);
+  gap: var(--ui-space-2);
 }
 .la-email-verify-page .la-email-filter-paste textarea {
   height: 100%;
@@ -4944,9 +4989,6 @@ body {
 .la-email-verify-page .la-email-filter-table-wrap {
   flex: 1;
   min-height: 0;
-}
-.la-email-verify-page .la-email-filter-panel-heading p {
-  display: none;
 }
 .la-email-verify-page .la-email-filter-note {
   display: none;
@@ -5004,11 +5046,6 @@ body {
 .la-email-verify-concurrency-controls input[type='number']:focus-visible {
   outline: 2px solid var(--ui-color-focus);
   outline-offset: 2px;
-}
-.la-email-verify-progress {
-  margin: 0;
-  color: var(--ui-color-text-secondary);
-  font-size: var(--ui-text-sm);
 }
 .la-email-verify-stop {
   background: var(--ui-color-surface) !important;
@@ -5125,7 +5162,7 @@ body {
   display: grid;
   place-items: center;
   padding: var(--ui-space-6);
-  background: color-mix(in srgb, var(--ui-color-text) 32%, transparent);
+  background: var(--ui-color-overlay);
 }
 .la-email-verify-modal {
   width: min(440px, 100%);
@@ -5456,14 +5493,10 @@ body,
   border-bottom-color: var(--ui-color-border);
   font-weight: var(--ui-weight-strong);
 }
-.la-table td,
-.la-table tbody tr:nth-child(even) td {
+.la-table td {
   background: var(--ui-color-surface);
   color: var(--ui-color-text);
   border-top-color: var(--ui-color-border-subtle);
-}
-.la-table tbody tr:nth-child(even) td {
-  background: var(--ui-color-primary-soft);
 }
 .la-table tbody tr:hover td {
   background: var(--ui-color-primary-subtle);
@@ -5730,28 +5763,6 @@ a {
 
 .la-pipeline-home {
   gap: var(--ui-space-5);
-}
-.la-pipeline-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--ui-space-5);
-  padding: var(--ui-space-0-5) 0;
-}
-.la-pipeline-toolbar h2 {
-  margin: 0 0 var(--ui-space-1-5);
-  font: inherit;
-  font-size: var(--ui-text-2xl);
-  font-weight: var(--ui-weight-bold);
-  letter-spacing: -0.02em;
-}
-.la-pipeline-toolbar p {
-  margin: 0;
-  color: var(--ui-color-text-muted);
-  font-size: var(--ui-text-sm);
-}
-.la-pipeline-toolbar .la-button {
-  flex: none;
 }
 .la-pipeline-stage-grid {
   display: grid;
@@ -6444,12 +6455,6 @@ a {
   gap: var(--ui-space-5);
   min-height: calc(100vh - 90px);
 }
-.la-spam-intro {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: var(--ui-space-4-5);
-}
 .la-spam-intro h2 {
   font-size: var(--ui-text-4xl);
   line-height: 1.2;
@@ -6457,25 +6462,6 @@ a {
 }
 .la-spam-intro p {
   font-size: var(--ui-text-sm);
-}
-.la-spam-local-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ui-space-2);
-  flex: none;
-  margin-top: var(--ui-space-0-5);
-  padding: var(--ui-space-2) var(--ui-space-2-5);
-  border: 1px solid var(--ui-color-border);
-  border-radius: var(--ui-radius-md);
-  background: var(--ui-color-surface);
-  color: var(--ui-color-text-muted);
-  font-size: var(--ui-text-xs);
-}
-.la-spam-local-badge span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--ui-color-primary);
 }
 .la-spam-layout {
   flex: 1;
@@ -6652,12 +6638,6 @@ a {
   gap: var(--ui-space-5);
   min-height: calc(100vh - 90px);
 }
-.la-email-filter-intro {
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-  gap: var(--ui-space-4-5);
-}
 .la-email-filter-intro h2 {
   margin: 0 0 var(--ui-space-1-5);
   font-size: var(--ui-text-4xl);
@@ -6674,7 +6654,6 @@ a {
   min-height: 570px;
 }
 .la-email-verify-page .la-email-filter-layout {
-  grid-template-columns: 40% 60%;
   align-items: stretch;
   min-height: 620px;
 }
@@ -6965,7 +6944,180 @@ a {
   box-shadow: none !important;
 }
 
-/* Chrome extension install page (Email Sending: LeadsGhr Mailer). */
+/* Email Sending guide. The download button stays in the page header. */
+.la-mailer-guide {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--ui-space-5);
+  min-width: 0;
+  min-height: 0;
+  color: var(--ui-color-text);
+}
+.la-mailer-status {
+  flex: none;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-sm);
+}
+.la-mailer-block {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+.la-mailer-block > header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ui-space-3);
+}
+.la-mailer-block > header::after {
+  content: '';
+  flex: 1 1 auto;
+  height: var(--ui-border-width);
+  background: var(--ui-color-border);
+}
+.la-mailer-block h3 {
+  margin: 0;
+  font-size: var(--ui-text-lg);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-mailer-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.la-mailer-cards-wide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.la-mailer-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ui-space-2);
+  min-width: 0;
+  padding: var(--ui-space-4);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-2xl);
+  background: linear-gradient(180deg, var(--ui-color-surface) 62%, var(--ui-color-primary-soft) 100%);
+  box-shadow: var(--ui-shadow-sm);
+}
+.la-mailer-facts {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+  align-items: start;
+}
+.la-mailer-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-4);
+  min-width: 0;
+  height: 100%;
+  padding: var(--ui-space-5);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-2xl);
+  background: var(--ui-color-surface);
+  box-shadow: var(--ui-shadow-sm);
+}
+.la-mailer-panel-title {
+  flex: none;
+  padding-bottom: var(--ui-space-4);
+  border-bottom: var(--ui-border);
+}
+.la-mailer-panel-title h3 {
+  margin: 0;
+  font-size: var(--ui-text-lg);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-mailer-panel ul {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--ui-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.la-mailer-panel li {
+  display: grid;
+  grid-template-columns: var(--ui-control-height-lg) minmax(0, 1fr);
+  gap: var(--ui-space-3);
+  align-items: center;
+  padding: var(--ui-space-2-5) var(--ui-space-3);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-xl);
+  background: var(--ui-color-primary-soft);
+}
+.la-mailer-panel h4 {
+  margin: 0 0 var(--ui-space-0-5);
+  font-size: var(--ui-text-base);
+  font-weight: var(--ui-weight-semibold);
+  line-height: 1.3;
+}
+.la-mailer-panel p {
+  margin: 0;
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-sm);
+  line-height: 1.4;
+}
+.la-mailer-panel .la-mailer-mark {
+  width: var(--ui-control-height-lg);
+  height: var(--ui-control-height-lg);
+  margin-bottom: 0;
+}
+.la-mailer-index,
+.la-mailer-mark {
+  display: grid;
+  place-items: center;
+  width: var(--ui-control-height-xl);
+  height: var(--ui-control-height-xl);
+  margin-bottom: var(--ui-space-2);
+  border-radius: var(--ui-radius-xl);
+  background: var(--ui-color-primary-subtle);
+  color: var(--ui-color-primary);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-bold);
+}
+.la-mailer-card h4 {
+  margin: 0;
+  font-size: var(--ui-text-lg);
+  font-weight: var(--ui-weight-semibold);
+  line-height: 1.3;
+}
+.la-mailer-card p {
+  margin: 0;
+  max-width: 28ch;
+  color: var(--ui-color-text-muted);
+  font-size: var(--ui-text-sm);
+  line-height: 1.5;
+}
+@media (max-width: 1100px) {
+  .la-mailer-cards-wide,
+  .la-mailer-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .la-mailer-guide,
+  .la-mailer-facts {
+    flex: none;
+  }
+  .la-mailer-cards,
+  .la-mailer-cards-wide,
+  .la-mailer-facts {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Chrome extension install page (Email Tracking still uses these classes). */
 .la-extension-install {
   display: flex;
   flex-direction: column;
@@ -7063,7 +7215,9 @@ a {
   filter: brightness(0.92);
 }
 .la-extension-status {
+  margin: 0;
   overflow-wrap: anywhere;
+  color: var(--ui-color-text-muted);
   font-size: var(--ui-text-sm) !important;
 }
 .la-extension-steps-heading {
@@ -7366,7 +7520,7 @@ a {
   display: grid;
   place-items: center;
   padding: var(--ui-space-6);
-  background: color-mix(in srgb, var(--ui-color-surface-inverse) 35%, transparent);
+  background: var(--ui-color-overlay);
 }
 .la-export-dialog {
   display: flex;
@@ -7729,6 +7883,7 @@ a {
 .la-sidebar .la-nav .la-sidebar-settings-children button {
   display: flex;
   align-items: center;
+  gap: var(--ui-space-2);
 }
 .la-sidebar .la-sidebar-footer[aria-current='page'] {
   background: var(--ui-color-primary-soft);
@@ -8043,6 +8198,128 @@ a {
 .la-email-filter-table-wrap .la-empty-table,
 .la-table-scroll .la-empty-table {
   background: var(--ui-color-surface);
+}
+
+/* The Table component is the only card. These wrappers used to draw a second border and, when
+   empty, a tall minimum height, which left a blank band under the empty state and a different
+   height on each page. */
+.la-table-scroll,
+.la-records-table-wrap,
+.la-crawler-table-wrap,
+.la-crawler-table-wrap--empty,
+.la-email-filter-table-wrap,
+.la-pipeline-queue-table,
+.la-pipeline-queue-table--empty {
+  min-height: 0;
+  max-height: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.la-crawler-table tbody tr[data-empty],
+.la-pipeline-queue-table tbody tr[data-empty] {
+  height: auto;
+}
+.la-crawler-table tbody td[data-empty],
+.la-pipeline-queue-table tbody td[data-empty],
+.la-history-table tbody td[data-empty],
+.la-template-table tbody td[data-empty],
+.la-records-table tbody td[data-empty],
+.la-maps-table tbody td[data-empty],
+.la-email-verify-table tbody td[data-empty] {
+  width: auto;
+  max-width: none;
+  height: auto;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+/* The page is the viewport. Each table grows into the space under the heading and scrolls inside its card. */
+.la-shell,
+.la-main {
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+.la-main {
+  display: flex;
+  flex-direction: column;
+}
+.la-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+.la-content > .la-crawler,
+.la-content > .la-templates,
+.la-content > .la-records,
+.la-content > .la-dashboard,
+.la-content > .la-export-history,
+.la-content > .la-search-results {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+.la-search-results > .la-maps-results,
+.la-search-results > .la-pipeline-queue {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+.la-content > .la-email-filter-page {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: auto;
+}
+.la-main:has(.la-email-filter-page) .la-content,
+.la-main:has(.la-spam-page) .la-content {
+  min-height: 0;
+}
+.la-crawler > .la-crawler-links-section,
+.la-records,
+.la-templates,
+.la-dashboard-table-section,
+.la-export-history > div:not(.la-profile-tabs),
+.la-pipeline-queue,
+.la-email-filter-output {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+.la-dashboard {
+  overflow: auto;
+}
+.la-table-scroll,
+.la-records-table-wrap,
+.la-crawler-table-wrap,
+.la-crawler-table-wrap--empty,
+.la-email-filter-table-wrap,
+.la-pipeline-queue-table,
+.la-pipeline-queue-table--empty,
+.la-templates > [data-slot='table'],
+.la-dashboard-table-section .la-table-scroll,
+.la-email-verify-page .la-email-filter-table-wrap {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+.la-email-filter-output > [data-slot='empty'],
+.la-spam-results > [data-slot='empty'] {
+  flex: 1 1 auto;
+  align-self: stretch;
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Settings → Preferences → Appearance → Display size, in the settings-row style: a Zoom row with a − 100% + stepper and Reset, and a Keyboard shortcuts row. */
@@ -8851,62 +9128,6 @@ a {
 }
 .la-template-drawer-actions .la-button {
   flex: 1;
-}
-.la-confirm-dialog {
-  display: grid;
-  gap: var(--ui-space-3);
-  width: min(420px, 100%);
-  padding: var(--ui-space-5);
-  border-radius: var(--ui-radius-2xl);
-  background: var(--ui-color-surface);
-  box-shadow: 0 20px 50px color-mix(in srgb, var(--ui-color-shadow) 22%, transparent);
-}
-.la-confirm-dialog h2 {
-  margin: 0;
-  font-size: var(--ui-text-2xl);
-}
-.la-confirm-dialog p {
-  margin: 0;
-  color: var(--ui-color-text-muted);
-  font-size: var(--ui-text-sm);
-  line-height: 1.5;
-}
-.la-confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--ui-space-2);
-  margin-top: var(--ui-space-2);
-}
-.la-confirm-actions button {
-  min-height: var(--ui-control-height-md);
-  padding: 0 var(--ui-space-3-5);
-  border: 1px solid var(--ui-color-border);
-  border-radius: var(--ui-button-radius);
-  background: var(--ui-color-surface);
-  color: var(--ui-color-text);
-  font: inherit;
-  font-size: var(--ui-text-md);
-  font-weight: var(--ui-weight-semibold);
-  cursor: pointer;
-}
-.la-confirm-actions button:hover:not(:disabled) {
-  background: var(--ui-color-surface-muted);
-}
-.la-confirm-actions button.danger {
-  border-color: var(--ui-color-danger);
-  background: var(--ui-color-danger);
-  color: var(--ui-color-on-primary);
-}
-.la-confirm-actions button.danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ui-color-danger) 88%, var(--ui-color-text));
-}
-.la-confirm-actions button:focus-visible {
-  outline: 2px solid var(--ui-color-primary);
-  outline-offset: 2px;
-}
-.la-confirm-actions button:disabled {
-  opacity: 0.6;
-  cursor: default;
 }
 @media (max-width: 720px) {
   .la-templates .la-section-heading,

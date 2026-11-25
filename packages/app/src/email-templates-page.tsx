@@ -4,7 +4,7 @@ import {
   type EmailTemplate,
   type EmailTemplateDraft,
 } from '@leadsghr/schemas'
-import { Button, EmptyTable, Icon, Input, Label, Textarea } from '@leadsghr/ui'
+import { Button, DeleteModal, Icon, Input, Label, Table, Textarea } from '@leadsghr/ui'
 
 type TemplateResult = { templates: EmailTemplate[]; synced: boolean }
 type TemplateBridge = {
@@ -51,7 +51,6 @@ export function EmailTemplatesPage() {
   const subjectId = useId()
   const bodyId = useId()
   const nameRef = useRef<HTMLInputElement>(null)
-  const cancelRef = useRef<HTMLButtonElement>(null)
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [query, setQuery] = useState('')
   const [ready, setReady] = useState(false)
@@ -96,21 +95,9 @@ export function EmailTemplatesPage() {
   }, [editorKey])
 
   useEffect(() => {
-    if (!pendingDelete) return
-    const frame = requestAnimationFrame(() => cancelRef.current?.focus())
-    return () => cancelAnimationFrame(frame)
-  }, [pendingDelete])
-
-  useEffect(() => {
-    if (!drawer && !pendingDelete) return
+    if (!drawer || pendingDelete) return
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      if (pendingDelete) {
-        setPendingDelete(null)
-        setDeleteError('')
-        return
-      }
-      setDrawer(null)
+      if (event.key === 'Escape') setDrawer(null)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -259,81 +246,76 @@ export function EmailTemplatesPage() {
           {ready ? `${templates.length} template${templates.length === 1 ? '' : 's'}` : 'Loading…'}
         </span>
       </div>
-      {ready && visible.length > 0 && (
-        <div className="la-table-scroll">
-          <table className="la-table la-template-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Subject</th>
-                <th>Type</th>
-                <th>Updated</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((item) => (
-                <tr key={item.id}>
-                  <td title={item.name}>{item.name}</td>
-                  <td title={item.subject}>{item.subject}</td>
-                  <td>
-                    <span
-                      className={
-                        item.format === 'html'
-                          ? 'la-template-pill la-template-pill--html'
-                          : 'la-template-pill'
-                      }
-                    >
-                      {item.format === 'html' ? 'HTML' : 'Plain'}
-                    </span>
-                  </td>
-                  <td title={new Date(item.updatedAt).toLocaleString()}>{updatedLabel(item.updatedAt)}</td>
-                  <td>
-                    <div className="la-template-actions">
-                      <button
-                        type="button"
-                        title="Edit"
-                        aria-label={`Edit ${item.name}`}
-                        onClick={() => openEdit(item)}
-                      >
-                        <Icon name="edit" size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Preview"
-                        aria-label={`Preview ${item.name}`}
-                        onClick={() => openPreview(item)}
-                      >
-                        <Icon name="eye" size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        className="danger"
-                        title="Delete"
-                        aria-label={`Delete ${item.name}`}
-                        onClick={() => {
-                          setDeleteError('')
-                          setPendingDelete(item)
-                        }}
-                      >
-                        <Icon name="trash" size={15} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      {ready && !visible.length && (
-        <EmptyTable
-          title={templates.length ? 'No matching templates' : 'No templates yet'}
-          description={
-            templates.length
-              ? 'Try a different name or subject.'
-              : 'Add a template to write a plain or HTML message and preview it.'
-          }
+      {ready && (
+        <Table
+          data={visible}
+          loading={false}
+          paginator={false}
+          tableClassName="la-template-table"
+          rowKey={(item) => item.id}
+          columns={[
+            {
+              field: 'name',
+              header: 'Name',
+              cell: (item) => <span title={item.name}>{item.name}</span>,
+            },
+            {
+              field: 'subject',
+              header: 'Subject',
+              cell: (item) => <span title={item.subject}>{item.subject}</span>,
+            },
+            {
+              field: 'format',
+              header: 'Type',
+              cell: (item) => (
+                <span
+                  className={
+                    item.format === 'html' ? 'la-template-pill la-template-pill--html' : 'la-template-pill'
+                  }
+                >
+                  {item.format === 'html' ? 'HTML' : 'Plain'}
+                </span>
+              ),
+            },
+            {
+              field: 'updatedAt',
+              header: 'Updated',
+              cell: (item) => (
+                <span title={new Date(item.updatedAt).toLocaleString()}>{updatedLabel(item.updatedAt)}</span>
+              ),
+            },
+            {
+              field: 'action',
+              header: 'Actions',
+              cell: (item) => (
+                <div className="la-template-actions">
+                  <button type="button" title="Edit" aria-label={`Edit ${item.name}`} onClick={() => openEdit(item)}>
+                    <Icon name="edit" size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    title="Preview"
+                    aria-label={`Preview ${item.name}`}
+                    onClick={() => openPreview(item)}
+                  >
+                    <Icon name="eye" size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className="danger"
+                    title="Delete"
+                    aria-label={`Delete ${item.name}`}
+                    onClick={() => {
+                      setDeleteError('')
+                      setPendingDelete(item)
+                    }}
+                  >
+                    <Icon name="trash" size={15} />
+                  </button>
+                </div>
+              ),
+            },
+          ]}
         />
       )}
       {message && (
@@ -521,51 +503,23 @@ export function EmailTemplatesPage() {
           </aside>
         </div>
       )}
-      {pendingDelete && (
-        <div
-          className="la-export-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !deleting) {
-              setPendingDelete(null)
-              setDeleteError('')
-            }
-          }}
-        >
-          <div
-            className="la-confirm-dialog"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="la-template-delete-title"
-            aria-describedby="la-template-delete-body"
-          >
-            <h2 id="la-template-delete-title">Delete template?</h2>
-            <p id="la-template-delete-body">
-              “{pendingDelete.name}” will be removed from this computer and from LeadsGhr Mailer.
-            </p>
-            {deleteError && (
-              <p className="la-template-warning" role="alert">
-                {deleteError}
-              </p>
-            )}
-            <div className="la-confirm-actions">
-              <button
-                ref={cancelRef}
-                type="button"
-                onClick={() => {
-                  setPendingDelete(null)
-                  setDeleteError('')
-                }}
-                disabled={deleting}
-              >
-                Cancel
-              </button>
-              <button type="button" className="danger" onClick={() => void confirmDelete()} disabled={deleting}>
-                {deleting ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteModal
+        open={pendingDelete !== null}
+        title="Delete template?"
+        description={
+          pendingDelete
+            ? `“${pendingDelete.name}” will be removed from this computer and from LeadsGhr Mailer.`
+            : ''
+        }
+        busy={deleting}
+        error={deleteError}
+        onCancel={() => {
+          if (deleting) return
+          setPendingDelete(null)
+          setDeleteError('')
+        }}
+        onConfirm={() => void confirmDelete()}
+      />
     </div>
   )
 }

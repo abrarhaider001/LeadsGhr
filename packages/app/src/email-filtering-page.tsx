@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import readXlsxFile from 'read-excel-file/browser'
-import { Button, EmptyTable, Icon, Textarea } from '@leadsghr/ui'
+import { Button, EmptyState, Icon, Table, Textarea } from '@leadsghr/ui'
 import {
   collectEmailInputs,
   detectEmailColumns,
@@ -101,11 +101,6 @@ export function EmailFilteringPage() {
   const visible = result?.kept.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE) ?? []
   return (
     <div className="la-email-filter-page">
-      <div className="la-email-filter-intro">
-        <span className="la-spam-local-badge">
-          <span aria-hidden="true" /> Private on this computer
-        </span>
-      </div>
       <div className="la-email-filter-layout">
         <section className="la-email-filter-panel" aria-label="Email input">
           <div className="la-email-filter-panel-heading la-spam-panel-title">
@@ -240,34 +235,26 @@ export function EmailFilteringPage() {
                 </Button>
               </div>
               <div className="la-email-filter-table-wrap">
-                <table className="la-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Email address</th>
-                      <th>Status</th>
-                      <th>Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((item, index) => (
-                      <tr key={item.email}>
-                        <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
-                        <td>{item.email}</td>
-                        <td>
-                          <span className="la-email-filter-kept">Kept</span>
-                        </td>
-                        <td>{item.reason}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {!result.kept.length && (
-                  <EmptyTable
-                    title="No emails passed the filter"
-                    description="Review the removed entries below or provide another list."
-                  />
-                )}
+              <Table
+                data={visible.map((item, index) => ({
+                  ...item,
+                  rowNumber: (page - 1) * PAGE_SIZE + index + 1,
+                }))}
+                loading={false}
+                paginator={false}
+                tableClassName="min-w-[500px]"
+                rowKey={(item) => item.email}
+                columns={[
+                  { field: 'rowNumber', header: '#' },
+                  { field: 'email', header: 'Email address' },
+                  {
+                    field: 'status',
+                    header: 'Status',
+                    cell: () => <span className="la-email-filter-kept">Kept</span>,
+                  },
+                  { field: 'reason', header: 'Reason' },
+                ]}
+              />
               </div>
               {totalPages > 1 && (
                 <div className="la-email-filter-pagination">
@@ -309,17 +296,10 @@ export function EmailFilteringPage() {
               )}
             </>
           ) : (
-            <EmptyTable
-              title="Ready to filter"
-              description="Add emails on the left, then select Start filtering to see the cleaned list here."
-            />
+            <EmptyState className="flex-1" />
           )}
         </section>
       </div>
-      <p className="la-email-filter-note">
-        This checks syntax and common junk patterns locally. It cannot confirm whether a mailbox
-        exists or accepts messages. Unrecognized domain endings are held for manual review.
-      </p>
       {message && (
         <p className="la-email-filter-message" role="status">
           {message}

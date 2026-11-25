@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import readXlsxFile from 'read-excel-file/browser'
-import { Button, EmptyTable, Icon, Textarea } from '@leadsghr/ui'
+import { Button, EmptyState, Icon, Table, Textarea } from '@leadsghr/ui'
 import type { DesktopPreferences, EmailVerifyResult } from '@leadsghr/schemas'
 import { defaultDesktopPreferences, emailVerifyChecksFromPreferences } from '@leadsghr/schemas'
 import {
@@ -70,7 +70,6 @@ export function EmailValidationPage({
   const [loading, setLoading] = useState(false)
   const [running, setRunning] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
-  const [progress, setProgress] = useState({ index: 0, total: 0 })
   const [concurrency, setConcurrency] = useState(EMAIL_VERIFY_CONCURRENCY_DEFAULT)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<'all' | EmailVerifyResult['status']>('all')
@@ -96,10 +95,6 @@ export function EmailValidationPage({
           next[event.index] = event.result
           return next
         })
-        setProgress({
-          index: event.completed ?? event.index + 1,
-          total: event.total,
-        })
       }
       if (event.done) {
         setRunning(false)
@@ -107,7 +102,7 @@ export function EmailValidationPage({
         if (event.error && event.results?.length === 0) setResults([])
         if (event.error && !/stopped/i.test(event.error)) setMessage(event.error)
         else if (event.stopped) setMessage('Stopped. Partial results kept.')
-        else setMessage('Done.')
+        else setMessage('')
       }
     })
   }, [])
@@ -182,9 +177,8 @@ export function EmailValidationPage({
     setActive(null)
     setPage(1)
     setStatusFilter('all')
-    setProgress({ index: 0, total: emails.length })
     setRunning(true)
-    setMessage(`Checking ${emails.length}...`)
+    setMessage('')
     try {
       const checks = emailVerifyChecksFromPreferences(preferences)
       const id = await api.startEmailVerify({
@@ -311,11 +305,6 @@ export function EmailValidationPage({
 
   return (
     <div className="la-email-filter-page la-email-verify-page">
-      <div className="la-email-filter-intro">
-        <span className="la-spam-local-badge">
-          <span aria-hidden="true" /> Local
-        </span>
-      </div>
       <div className="la-email-filter-layout">
         <section className="la-email-filter-panel" aria-label="Email input">
           <div className="la-email-filter-panel-heading la-spam-panel-title">
@@ -324,6 +313,7 @@ export function EmailValidationPage({
             </span>
             <div>
               <h3>Input</h3>
+              <p>Paste addresses or import an Excel or CSV file.</p>
             </div>
             <Button
               className="la-email-filter-import"
@@ -478,16 +468,12 @@ export function EmailValidationPage({
             </span>
             <div>
               <h3>Results</h3>
+              <p>Valid, risky, and invalid addresses appear here.</p>
             </div>
             {results && <span className="la-email-filter-result-count">{filled.length}</span>}
           </div>
           {results ? (
             <>
-              {running && (
-                <p className="la-email-verify-progress" role="status">
-                  {progress.index}/{progress.total}
-                </p>
-              )}
               <div className="la-email-filter-stats la-email-verify-stats">
                 <button
                   type="button"
@@ -561,41 +547,43 @@ export function EmailValidationPage({
                 </Button>
               </div>
               <div className="la-email-filter-table-wrap">
-                <table className="la-table la-email-verify-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Email</th>
-                      <th>Status</th>
-                      <th>Score</th>
-                      <th>Reason</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.map((item, index) => (
-                      <tr
-                        key={`${item.email}:${(page - 1) * PAGE_SIZE + index}`}
-                        className={activeResult?.email === item.email ? 'is-active' : undefined}
-                        onClick={() => setActive(item)}
-                      >
-                        <td>{(page - 1) * PAGE_SIZE + index + 1}</td>
-                        <td title={checkSummary(item)}>{item.email}</td>
-                        <td>
-                          <span className={statusClass(item.status)}>
-                            {statusLabel(item.status)}
-                          </span>
-                        </td>
-                        <td>{item.confidence}</td>
-                        <td title={item.code ? `${item.reason} (${item.code})` : item.reason}>
+                <Table
+                  data={visible.map((item, index) => ({
+                    ...item,
+                    rowNumber: (page - 1) * PAGE_SIZE + index + 1,
+                  }))}
+                  loading={false}
+                  paginator={false}
+                  tableClassName="la-email-verify-table"
+                  rowKey={(item, index) => `${item.email}:${item.rowNumber}:${index}`}
+                  isRowActive={(item) => activeResult?.email === item.email}
+                  onRowClick={setActive}
+                  columns={[
+                    { field: 'rowNumber', header: '#' },
+                    {
+                      field: 'email',
+                      header: 'Email',
+                      cell: (item) => <span title={checkSummary(item)}>{item.email}</span>,
+                    },
+                    {
+                      field: 'status',
+                      header: 'Status',
+                      cell: (item) => (
+                        <span className={statusClass(item.status)}>{statusLabel(item.status)}</span>
+                      ),
+                    },
+                    { field: 'confidence', header: 'Score' },
+                    {
+                      field: 'reason',
+                      header: 'Reason',
+                      cell: (item) => (
+                        <span title={item.code ? `${item.reason} (${item.code})` : item.reason}>
                           {item.reason}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {!filtered.length && (
-                  <EmptyTable title="No matches" description="Try another filter." />
-                )}
+                        </span>
+                      ),
+                    },
+                  ]}
+                />
               </div>
               {totalPages > 1 && (
                 <div className="la-email-filter-pagination la-email-verify-pagination">
@@ -630,7 +618,7 @@ export function EmailValidationPage({
               )}
             </>
           ) : (
-            <EmptyTable title="No results yet" description="Add emails, then validate." />
+            <EmptyState className="flex-1" />
           )}
         </section>
       </div>

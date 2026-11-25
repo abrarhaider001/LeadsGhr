@@ -164,9 +164,9 @@ const choiceLabel = (value: string) =>
       : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
   )
 const choiceGrid =
-  'grid grid-cols-2 items-stretch gap-(--ui-space-2) sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6'
+  'grid grid-cols-2 items-stretch gap-(--ui-space-1-5) sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5'
 const tileClass =
-  'inline-flex min-h-(--ui-control-height-md) max-w-full items-center gap-(--ui-space-2) rounded-(--ui-radius-lg) border px-(--ui-space-2-5) py-(--ui-space-1-5) text-left text-(length:--ui-text-sm) leading-snug transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer'
+  'inline-flex min-h-(--ui-control-height-sm) max-w-full items-center gap-(--ui-space-1-5) rounded-(--ui-radius-md) border px-(--ui-space-2) py-(--ui-space-1) text-left text-(length:--ui-text-2xs) leading-snug transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer'
 const pillClass =
   'inline-flex min-h-(--ui-control-height-sm) shrink-0 items-center rounded-(--ui-radius-full) border px-(--ui-space-3) text-(length:--ui-text-xs) font-(--ui-weight-medium) transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer'
 
@@ -175,15 +175,15 @@ function ChoiceMark({ selected }: { selected: boolean }) {
     <span
       aria-hidden="true"
       className={cn(
-        'grid size-(--ui-space-3-5) shrink-0 place-items-center rounded-(--ui-radius-xs) border',
+        'grid size-(--ui-space-3) shrink-0 place-items-center rounded-(--ui-radius-xs) border',
         selected
           ? 'border-primary-foreground text-primary-foreground'
           : 'border-border text-transparent',
       )}
     >
       <svg
-        width="10"
-        height="10"
+        width="8"
+        height="8"
         viewBox="0 0 12 12"
         fill="none"
         stroke="currentColor"
@@ -223,6 +223,7 @@ function ChoiceTile({
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border bg-card text-foreground hover:border-primary hover:bg-muted',
       )}
+      style={{ fontSize: 'var(--ui-text-xs)' }}
     >
       <ChoiceMark selected={selected} />
       {prefix && (
@@ -267,7 +268,6 @@ function IconAction({
 
 function ChoiceCard({
   title,
-  available,
   description,
   query,
   onQuery,
@@ -278,7 +278,6 @@ function ChoiceCard({
   empty,
 }: {
   title: string
-  available: number
   description: string
   query: string
   onQuery(value: string): void
@@ -290,20 +289,17 @@ function ChoiceCard({
 }) {
   return (
     <section className="rounded-(--ui-radius-4xl) border border-border bg-card p-(--ui-space-5)">
-      <div className="flex items-center justify-between gap-(--ui-space-3)">
-        <h2 className="m-0 text-(length:--ui-text-lg) font-(--ui-weight-semibold) tracking-tight text-foreground">
-          {title}
-        </h2>
-        <span className="shrink-0 rounded-(--ui-radius-full) bg-muted px-(--ui-space-2-5) py-(--ui-space-1) text-(length:--ui-text-2xs) font-(--ui-weight-medium) text-muted-foreground">
-          {available} available
-        </span>
-      </div>
-      <div className="mt-(--ui-space-1-5) flex flex-wrap items-start justify-between gap-(--ui-space-3)">
-        <p className="m-0 self-start text-(length:--ui-text-sm) text-muted-foreground">
-          {description}
-        </p>
-        <div className="flex w-full flex-wrap items-center gap-(--ui-space-2) xl:w-auto xl:justify-end">
-          <div className="relative w-full max-w-56">
+      <div className="flex items-center justify-between gap-(--ui-space-4)">
+        <div className="min-w-0">
+          <h2 className="m-0 text-(length:--ui-text-lg) font-(--ui-weight-semibold) tracking-tight text-foreground">
+            {title}
+          </h2>
+          <p className="m-0 mt-(--ui-space-1) text-(length:--ui-text-sm) text-muted-foreground">
+            {description}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-nowrap items-center gap-(--ui-space-2)">
+          <div className="relative w-56">
             <span className="pointer-events-none absolute top-1/2 left-(--ui-space-3) -translate-y-1/2 text-muted-foreground">
               <Icon name="search" size={14} />
             </span>
@@ -335,11 +331,17 @@ export function SearchSetupPage({
   iconActions = false,
   pipelineMode = false,
   pipelineDraft,
+  addNicheRef,
+  backRef,
+  onStepChange,
 }: {
   onSearch(criteria: SearchCriteria, details?: { name: string; provider: PipelineProvider }): void
   iconActions?: boolean
   pipelineMode?: boolean
   pipelineDraft?: PipelineDraft | null
+  addNicheRef?: { current: (() => void) | null }
+  backRef?: { current: (() => void) | null }
+  onStepChange?(step: 'details' | 'niches' | 'states' | 'locations'): void
 }) {
   const [pipelineName, setPipelineName] = useState(pipelineDraft?.name ?? '')
   const [provider, setProvider] = useState<PipelineProvider | null>(pipelineDraft?.provider ?? null)
@@ -347,6 +349,23 @@ export function SearchSetupPage({
   const [ready, setReady] = useState(false)
   const [draft, setDraft] = useState('')
   const [nichePanelOpen, setNichePanelOpen] = useState(false)
+  useEffect(() => {
+    if (!addNicheRef) return
+    addNicheRef.current = () => setNichePanelOpen(true)
+    return () => {
+      addNicheRef.current = null
+    }
+  })
+  useEffect(() => {
+    onStepChange?.(step)
+  })
+  useEffect(() => {
+    if (!backRef) return
+    backRef.current = () => setStep('niches')
+    return () => {
+      backRef.current = null
+    }
+  })
   const [nicheError, setNicheError] = useState('')
   const [nicheQuery, setNicheQuery] = useState('')
   const [nicheFilter, setNicheFilter] = useState<NicheFilter>('all')
@@ -597,14 +616,16 @@ export function SearchSetupPage({
           Clear niches
         </button>
       )}
-      <button
-        type="button"
-        className="inline-flex min-h-(--ui-control-height-sm) shrink-0 items-center gap-(--ui-space-1-5) rounded-(--ui-radius-md) border border-primary bg-transparent px-(--ui-space-3) text-(length:--ui-text-xs) font-(--ui-weight-semibold) text-primary transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer"
-        onClick={() => setNichePanelOpen(true)}
-      >
-        <Icon name="add" size={14} />
-        Add custom niche
-      </button>
+      {pipelineMode && (
+        <button
+          type="button"
+          className="inline-flex min-h-(--ui-control-height-sm) shrink-0 items-center gap-(--ui-space-1-5) rounded-(--ui-radius-md) border border-primary bg-transparent px-(--ui-space-3) text-(length:--ui-text-xs) font-(--ui-weight-semibold) text-primary transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring cursor-pointer"
+          onClick={() => setNichePanelOpen(true)}
+        >
+          <Icon name="add" size={14} />
+          Add custom niche
+        </button>
+      )}
     </>
   )
   const stateActions = (
@@ -664,11 +685,6 @@ export function SearchSetupPage({
 
   return (
     <div className="la-search-setup">
-      {!pipelineMode && (
-        <p className="m-0 text-right text-(length:--ui-text-sm) font-(--ui-weight-medium) text-muted-foreground">
-          {step === 'locations' ? 'Step 2 of 2: Choose locations' : 'Step 1 of 2: Define targets'}
-        </p>
-      )}
       {pipelineMode && (
         <PipelineTimeline
           current={{ details: 0, niches: 1, states: 2, locations: 3 }[step]}
@@ -777,17 +793,6 @@ export function SearchSetupPage({
           <Icon name="back" size={18} />
         </button>
       )}
-      {!pipelineMode && step === 'locations' && (
-        <button
-          type="button"
-          className="la-locations-back"
-          onClick={() => setStep('niches')}
-          aria-label="Back to niches and states"
-          title="Back to niches and states"
-        >
-          <Icon name="back" size={18} />
-        </button>
-      )}
       {message && (
         <p className="la-search-message" role="status">
           {message}
@@ -796,7 +801,6 @@ export function SearchSetupPage({
       {showNiches && (
         <ChoiceCard
           title="Contractor & Business Niches"
-          available={niches.length}
           description="Select niches to continue, or add your own."
           query={nicheQuery}
           onQuery={setNicheQuery}
@@ -840,7 +844,6 @@ export function SearchSetupPage({
       {showStates && (
         <ChoiceCard
           title="U.S. States"
-          available={locationData.states.length}
           description="Select one or more states to reveal locations."
           query={stateQuery}
           onQuery={setStateQuery}
@@ -871,13 +874,8 @@ export function SearchSetupPage({
         </ChoiceCard>
       )}
       {step === 'locations' && criteria.selectedNiches.length > 0 && selectedStates.length > 0 && (
-        <section className="la-choice-section">
+        <section className="la-choice-section la-location-section">
           <div className="la-choice-heading la-location-heading">
-            <div className="la-choice-heading-copy">
-              <h2>Locations</h2>
-              <p>Choose locations from the selected states.</p>
-              <span>{locationMatches.length} available</span>
-            </div>
             <div className="la-location-selection-controls">
               <div className="la-location-method">
                 <span>Selection method</span>
@@ -1038,24 +1036,27 @@ export function SearchSetupPage({
               )}
             </div>
           </div>
-          <div className="flex flex-wrap gap-(--ui-space-2)" aria-label="Location choices">
-            {visibleLocations.map((location, index) => (
-              <ChoiceTile
-                key={location}
-                label={location}
-                prefix={`${(currentLocationPage - 1) * locationsPerPage + index + 1}.`}
-                selected={selectedLocationSet.has(location)}
-                onClick={() =>
-                  setCriteria((current) => ({
-                    ...current,
-                    selectedLocations: toggle(current.selectedLocations, location),
-                  }))
-                }
-              />
-            ))}
-          </div>
-          {!locationMatches.length && (
-            <p className="la-choice-empty">No locations match this search.</p>
+          {visibleLocations.length === 0 ? (
+            <p className="m-0 text-(length:--ui-text-sm) text-muted-foreground">
+              No locations match this search.
+            </p>
+          ) : (
+            <div className={choiceGrid}>
+              {visibleLocations.map((location) => (
+                <ChoiceTile
+                  key={location}
+                  fill
+                  label={location}
+                  selected={selectedLocationSet.has(location)}
+                  onClick={() =>
+                    setCriteria((current) => ({
+                      ...current,
+                      selectedLocations: toggle(current.selectedLocations, location),
+                    }))
+                  }
+                />
+              ))}
+            </div>
           )}
           {rangeMessage && (
             <p className="la-choice-hint" role="status">
