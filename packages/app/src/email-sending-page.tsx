@@ -1,5 +1,16 @@
 import { useEffect, useState, type MutableRefObject } from 'react'
-import { Icon, type IconName } from '@leadsghr/ui'
+import {
+  BentoCursor,
+  BentoFloat,
+  BentoGrid,
+  BentoPill,
+  BentoTile,
+  BentoToast,
+  Icon,
+  MailerMark,
+  NavIcon,
+} from '@leadsghr/ui'
+import { ExtensionInstallSteps } from './extension-install-steps'
 
 type SendingBridge = {
   downloadMailerExtension(): Promise<string | null>
@@ -7,65 +18,31 @@ type SendingBridge = {
 
 const bridge = () => (window as Window & { leadsGhrDesktop?: SendingBridge }).leadsGhrDesktop
 
-const setupSteps: { title: string; body: string }[] = [
-  { title: 'Download and extract', body: 'Save the ZIP, then extract the folder.' },
-  { title: 'Load it in Chrome', body: 'Turn on Developer mode and choose Load unpacked.' },
-  { title: 'Pin the toolbar icon', body: 'Pin LeadsGhr Mailer, then save a template.' },
-]
-
-const howItWorks: { icon: IconName; title: string; body: string }[] = [
-  { icon: 'mail', title: 'Choose a template', body: 'Pick a saved message.' },
-  { icon: 'leads', title: 'Add recipients', body: 'Upload a CSV or Excel file.' },
-  { icon: 'runs', title: 'Set the range and delay', body: 'Choose the rows and the wait between sends.' },
-  { icon: 'mailSend', title: 'Send from Gmail', body: 'Start, pause, or stop from Gmail.' },
-]
-
-const needs: { icon: IconName; title: string; body: string }[] = [
-  { icon: 'settings', title: 'Chrome', body: 'Mailer loaded as an unpacked extension.' },
-  { icon: 'mail', title: 'Template', body: 'A message saved on Email Templates.' },
-  { icon: 'leads', title: 'Recipients', body: 'A CSV or Excel file of addresses.' },
-  { icon: 'mailSend', title: 'Gmail', body: 'Stay signed in on the send tab.' },
-]
-
-const duringSend: { icon: IconName; title: string; body: string }[] = [
-  { icon: 'mailCheck', title: 'One at a time', body: 'Each message waits its turn.' },
-  { icon: 'runs', title: 'Polite delay', body: '5–120 seconds between sends.' },
-  { icon: 'pause', title: 'You stay in control', body: 'Pause, resume, or stop anytime.' },
-  { icon: 'shield', title: 'Stays on this computer', body: 'Recipients and messages are not uploaded.' },
-]
-
-function FactPanel({
-  id,
-  title,
-  items,
-}: {
-  id: string
-  title: string
-  items: { icon: IconName; title: string; body: string }[]
-}) {
+/** A small, faithful picture of the Mailer popup in Gmail (template, Start, End, Delay, Send). */
+function MailerPopupPreview() {
   return (
-    <section className="la-mailer-panel" aria-labelledby={id}>
-      <header className="la-mailer-panel-title">
-        <h3 id={id}>{title}</h3>
-      </header>
-      <ul>
-        {items.map((item) => (
-          <li key={item.title}>
-            <span className="la-mailer-mark">
-              <Icon name={item.icon} size={18} />
-            </span>
-            <div>
-              <h4>{item.title}</h4>
-              <p>{item.body}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <BentoFloat className="la-ext-popup">
+      <div className="la-ext-popup-head">
+        <MailerMark size={16} />
+        LeadsGhr Mailer
+      </div>
+      <div className="la-ext-popup-field">
+        Spring offer — contractors <span>▾</span>
+      </div>
+      <div className="la-ext-popup-row">
+        <div className="la-ext-popup-field">1</div>
+        <div className="la-ext-popup-field">50</div>
+        <div className="la-ext-popup-field">30 s</div>
+      </div>
+      <div className="la-ext-popup-send">Send 50 emails</div>
+    </BentoFloat>
   )
 }
 
-/** Email Sending is the Mailer install guide. The download button stays in the page header. */
+/**
+ * LeadsGhr Mailer (Extensions): a bento page. What it does (with the popup as it looks in Gmail), where templates and
+ * lists come from, how to install it, and the sending limits. The download button stays in the page header.
+ */
 export function EmailSendingPage({
   downloadRef,
 }: {
@@ -96,46 +73,76 @@ export function EmailSendingPage({
   })
 
   return (
-    <section className="la-mailer-guide">
+    <section className="la-ext-page">
       {message ? (
         <p className="la-mailer-status" role="status">
           {message}
         </p>
       ) : null}
-      <section className="la-mailer-block" aria-labelledby="la-mailer-setup">
-        <header>
-          <h3 id="la-mailer-setup">Setup</h3>
-        </header>
-        <ol className="la-mailer-cards">
-          {setupSteps.map((step, index) => (
-            <li className="la-mailer-card" key={step.title}>
-              <span className="la-mailer-index">{String(index + 1).padStart(2, '0')}</span>
-              <h4>{step.title}</h4>
-              <p>{step.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <section className="la-mailer-block" aria-labelledby="la-mailer-how">
-        <header>
-          <h3 id="la-mailer-how">How it works</h3>
-        </header>
-        <ol className="la-mailer-cards la-mailer-cards-wide">
-          {howItWorks.map((item) => (
-            <li className="la-mailer-card" key={item.title}>
-              <span className="la-mailer-mark">
-                <Icon name={item.icon} size={20} />
-              </span>
-              <h4>{item.title}</h4>
-              <p>{item.body}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <div className="la-mailer-facts">
-        <FactPanel id="la-mailer-needs" title="What you need" items={needs} />
-        <FactPanel id="la-mailer-during" title="During a send" items={duringSend} />
-      </div>
+      <BentoGrid>
+        <BentoTile
+          tone="brand"
+          title="Send from your own Gmail"
+          art={
+            <>
+              <MailerPopupPreview />
+              <BentoToast
+                className="la-ext-toast-main"
+                icon={<Icon name="mail" size={20} />}
+                title="Email 12 of 50 sent"
+                subtitle="Next one in 30 seconds"
+              />
+              <BentoCursor className="la-ext-cursor" />
+            </>
+          }
+        >
+          Pick a template, add a CSV or Excel list, and LeadsGhr Mailer sends each email from your
+          Gmail, one at a time.
+        </BentoTile>
+        <BentoTile
+          title="Your lists, your templates"
+          art={
+            <>
+              <BentoPill className="la-ext-pill-1">@ templates</BentoPill>
+              <BentoPill tone="ink" className="la-ext-pill-2">
+                CSV
+              </BentoPill>
+              <BentoPill tone="accent" className="la-ext-pill-3">
+                Excel
+              </BentoPill>
+              <BentoPill tone="plain" className="la-ext-pill-4">
+                Start → End rows
+              </BentoPill>
+            </>
+          }
+        >
+          Templates come from Email Templates; lists from any CSV or Excel file. Choose which rows to
+          send.
+        </BentoTile>
+        <BentoTile
+          className="la-ext-install"
+          title="Install in two minutes"
+          art={<ExtensionInstallSteps lastStep="Pin the icon, then choose its data folder in settings" />}
+        >
+          Download the ZIP above and load it in Chrome. To update, download again and press Reload
+          in chrome://extensions; your templates are kept.
+        </BentoTile>
+        <BentoTile
+          tone="brand"
+          title="You stay in control"
+          art={
+            <BentoToast
+              className="la-ext-toast-corner"
+              icon={<NavIcon name="emailSending" size={20} />}
+              title="Sending paused"
+              subtitle="38 of 50 sent · Resume when ready"
+            />
+          }
+        >
+          A delay of 5 to 120 seconds between emails. Pause, resume, or stop at any time; keep the
+          Gmail tab open. Recipients never leave your Chrome profile.
+        </BentoTile>
+      </BentoGrid>
     </section>
   )
 }
