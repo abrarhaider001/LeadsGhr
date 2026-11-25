@@ -9784,3 +9784,59 @@ a {
   font-size: var(--ui-text-sm);
   font-weight: var(--ui-weight-semibold);
 }
+
+/* LeadsGhr Scraper page: the popup picture and its notice in the first tile. */
+.la-ext-scraper-popup {
+  top: 22px;
+  right: 40px;
+  width: 260px;
+  padding: var(--ui-space-3);
+  font-size: var(--ui-text-xs);
+  transform: rotate(3deg);
+}
+.la-ext-scraper-progress {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: var(--ui-text-sm);
+}
+.la-ext-scraper-progress span {
+  color: var(--ui-color-text-secondary);
+  font-family: var(--ui-font-mono);
+}
+.la-ext-scraper-bar {
+  height: 5px;
+  margin: var(--ui-space-1-5) 0 var(--ui-space-2);
+  overflow: hidden;
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-primary-soft);
+}
+.la-ext-scraper-bar i {
+  display: block;
+  width: 66%;
+  height: 100%;
+  background: var(--ui-color-primary);
+}
+.la-ext-scraper-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ui-space-1-5);
+  margin-bottom: var(--ui-space-2);
+}
+.la-ext-scraper-stats span {
+  padding: var(--ui-space-1-5) var(--ui-space-2);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-md);
+}
+.la-ext-scraper-stats b {
+  display: block;
+  font-size: var(--ui-text-lg);
+}
+.la-ext-scraper-stats small {
+  color: var(--ui-color-text-secondary);
+}
+.la-ext-scraper-toast {
+  top: 150px;
+  right: 320px;
+  transform: rotate(-3deg);
+}

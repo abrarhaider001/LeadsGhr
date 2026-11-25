@@ -1,6 +1,17 @@
 import { useEffect, useState, type MutableRefObject } from 'react'
 import type { ScraperJobSummary } from '@leadsghr/schemas'
-import { EmptyState, Icon, Table } from '@leadsghr/ui'
+import {
+  BentoFloat,
+  BentoGrid,
+  BentoTile,
+  BentoToast,
+  EmptyState,
+  Icon,
+  NavIcon,
+  ScraperMark,
+  Table,
+} from '@leadsghr/ui'
+import { ExtensionInstallSteps } from './extension-install-steps'
 
 type ScraperBridge = {
   downloadScraperExtension(): Promise<string | null>
@@ -31,10 +42,42 @@ const stateTone = (state: ScraperJobSummary['state']) =>
         ? ' is-idle'
         : ''
 
+/** A small, faithful picture of the Scraper popup while a job runs (job, progress, counts, Pause). */
+function ScraperPopupPreview() {
+  return (
+    <BentoFloat className="la-ext-scraper-popup">
+      <div className="la-ext-popup-head">
+        <ScraperMark size={16} />
+        LeadsGhr Scraper
+      </div>
+      <div className="la-ext-popup-field">General Contractor · Georgia · 3 locations</div>
+      <div className="la-ext-scraper-progress">
+        <strong>Search 2 of 3</strong>
+        <span>04:12</span>
+      </div>
+      <div className="la-ext-scraper-bar">
+        <i />
+      </div>
+      <div className="la-ext-scraper-stats">
+        <span>
+          <b>139</b>
+          <small>businesses</small>
+        </span>
+        <span>
+          <b>113</b>
+          <small>with website</small>
+        </span>
+      </div>
+      <div className="la-ext-popup-send">Pause</div>
+    </BentoFloat>
+  )
+}
+
 /**
- * LeadsGhr Scraper (under Extensions): the download button sits in the page header (like Email Sending and Email
- * Tracking); the page lists every job sent to the Scraper with its status, businesses, and websites found (and how
- * many are still being looked up), each with Open results.
+ * LeadsGhr Scraper (under Extensions): the download button sits in the page header, then two bento tiles like the
+ * Mailer and Tracker pages (what it does, with the popup as it looks while a job runs, and how to install it), then
+ * every job sent to the Scraper with its status, businesses, and websites found (and how many are still being looked
+ * up), each with Open results.
  */
 export function ScraperExtensionPage({
   downloadRef,
@@ -94,12 +137,40 @@ export function ScraperExtensionPage({
   })
 
   return (
-    <section className="la-mailer-guide">
+    <section className="la-ext-page">
       {message ? (
         <p className="la-mailer-status" role="status">
           {message}
         </p>
       ) : null}
+      <BentoGrid>
+        <BentoTile
+          tone="brand"
+          title="Google's business list, from your own Chrome"
+          art={
+            <>
+              <ScraperPopupPreview />
+              <BentoToast
+                className="la-ext-scraper-toast"
+                icon={<NavIcon name="scraper" size={20} />}
+                title="Acworth city, Georgia"
+                subtitle="98 businesses · 80 websites"
+              />
+            </>
+          }
+        >
+          Send a job from New Search; the Scraper reads each location one business at a time, finds
+          each website, and saves it here as it goes.
+        </BentoTile>
+        <BentoTile
+          className="la-ext-install"
+          title="Install in two minutes"
+          art={<ExtensionInstallSteps lastStep="Choose its data folder in settings" />}
+        >
+          Download the ZIP above and load it in a Chrome profile that is not signed in to Google. To
+          update, download again and press Reload in chrome://extensions.
+        </BentoTile>
+      </BentoGrid>
       <section className="la-mailer-block" aria-labelledby="la-scraper-jobs">
         <header>
           <h3 id="la-scraper-jobs">Jobs{jobs ? ` (${jobs.length})` : ''}</h3>
