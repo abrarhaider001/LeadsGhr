@@ -47,6 +47,7 @@ export const LICENSE_PRODUCTS = [
   { id: 'desktop', name: 'Desktop app', short: 'Desktop app' },
   { id: 'mailer', name: 'LeadsGhr Mailer', short: 'Mailer' },
   { id: 'tracker', name: 'LeadsGhr Tracker', short: 'Tracker' },
+  { id: 'scraper', name: 'LeadsGhr Scraper', short: 'Scraper' },
 ] as const
 export type LicenseProduct = (typeof LICENSE_PRODUCTS)[number]['id']
 

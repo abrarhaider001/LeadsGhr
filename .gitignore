@@ -74,3 +74,4 @@ apps/desktop/electron.vite.config.*.mjs
 
 # Supabase CLI local state (linked project, pooler URL)
 supabase/.temp/
+

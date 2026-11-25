@@ -61,6 +61,22 @@ const ICONS = {
     accent: ['F:M11.1 3.4a1.8 1.8 0 0 1 3.6 0v2.8h-3.6z'],
   },
   emailTracking: { base: ['M1.8 12.6l4.6 4.6L15.2 7'], accent: ['M11 16l1.2 1.2L22.2 7'] },
+  // LeadsGhr Scraper (owner-chosen R2, 2026-11-24): the robot head of the extension icon in outline, with green eyes
+  // and antenna light (outline, not solid, so the green eyes still show when the open item turns the icon green).
+  scraper: {
+    base: [
+      'M7 9h10a3 3 0 0 1 3 3v5a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-5a3 3 0 0 1 3-3z',
+      'M12 9V6.4',
+      'M1.8 13v3',
+      'M22.2 13v3',
+      'M10 17h4',
+    ],
+    accent: [
+      'F:M12 2.6a1.7 1.7 0 1 0 0 3.4a1.7 1.7 0 1 0 0-3.4z',
+      'F:M9 11.9a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z',
+      'F:M15 11.9a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0-3z',
+    ],
+  },
   leads: {
     base: ['M9 5a3 3 0 1 0 0 6a3 3 0 1 0 0-6z', 'M3.5 20a5.5 5.5 0 0 1 11 0'],
     accent: ['M16 5.5a2.8 2.8 0 0 1 0 5.4', 'M17.5 14a5 5 0 0 1 3 5.5'],

@@ -51,7 +51,7 @@ export function BrandLogo({ className }: { className?: string }) {
 }
 
 /*
- * Product marks for the two Chrome extensions, drawn from the tokens so they follow the light and dark themes
+ * Product marks for the Chrome extensions, drawn from the tokens so they follow the light and dark themes
  * (the extensions' own toolbar icons are generated from the same colours by scripts/regenerate-extension-icons.mjs).
  */
 /** LeadsGhr Tracker: a double tick on a rounded tile ("sent" and "opened"). */
@@ -119,6 +119,33 @@ export function MailerMark({ size = 18, className }: { size?: number; className?
       </defs>
       <path d="M922 102 L70 462 L438 590 Z" fill={`url(#wing-${id})`} />
       <path d="M922 102 L484 626 L612 930 Z" style={{ fill: 'var(--ui-logo-bar)' }} />
+    </svg>
+  )
+}
+
+/** LeadsGhr Scraper: a solid robot head with green eyes and antenna light on a rounded tile (like the Tracker mark). */
+export function ScraperMark({ size = 18, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      className={cn('la-product-mark', className)}
+      width={size}
+      height={size}
+      viewBox="0 0 1024 1024"
+      aria-hidden="true"
+    >
+      <rect x="96" y="96" width="832" height="832" rx="190" style={{ fill: 'var(--ui-logo-bar)' }} />
+      <g style={{ fill: 'var(--ui-color-surface)' }}>
+        <rect x="250" y="360" width="524" height="410" rx="110" />
+        <rect x="180" y="500" width="70" height="140" rx="35" />
+        <rect x="774" y="500" width="70" height="140" rx="35" />
+        <rect x="484" y="250" width="56" height="130" rx="28" />
+      </g>
+      <g style={{ fill: 'var(--ui-logo-accent)' }}>
+        <circle cx="512" cy="230" r="58" />
+        <circle cx="415" cy="540" r="58" />
+        <circle cx="609" cy="540" r="58" />
+      </g>
+      <rect x="410" y="650" width="204" height="40" rx="20" style={{ fill: 'var(--ui-logo-bar)' }} />
     </svg>
   )
 }

@@ -58,6 +58,19 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
     return () => ipcRenderer.removeListener('leadsghr:maps-scan:event', listener)
   },
   loadPreferences: () => ipcRenderer.invoke('leadsghr:preferences:load'),
+  // LeadsGhr Scraper: send New Search's searches as a job, then sync its result files into the run.
+  sendScraperJob: (input: unknown) =>
+    ipcRenderer.invoke('leadsghr:scraper:send-job', createCrawlRunSchema.parse(input)),
+  syncScraperJob: (jobId: unknown) =>
+    ipcRenderer.invoke('leadsghr:scraper:sync', crawlRunIdSchema.parse(jobId)),
+  openScraperFolder: () => ipcRenderer.invoke('leadsghr:scraper:open-folder'),
+  listScraperJobs: () => ipcRenderer.invoke('leadsghr:scraper:list-jobs'),
+  onScraperChanged: (callback: (jobIds: string[]) => void) => {
+    const listener = (_event: unknown, jobIds: unknown) =>
+      callback(Array.isArray(jobIds) ? jobIds.filter((id): id is string => typeof id === 'string') : [])
+    ipcRenderer.on('leadsghr:scraper:changed', listener)
+    return () => ipcRenderer.removeListener('leadsghr:scraper:changed', listener)
+  },
   onDisplaySizeChanged: (callback: (size: number) => void) => {
     const listener = (_event: unknown, size: unknown) => {
       if (typeof size === 'number') callback(size)
@@ -115,6 +128,7 @@ contextBridge.exposeInMainWorld('leadsGhrDesktop', {
   },
   downloadTrackingExtension: () => ipcRenderer.invoke('leadsghr:tracking:download-extension'),
   downloadMailerExtension: () => ipcRenderer.invoke('leadsghr:mailer:download-extension'),
+  downloadScraperExtension: () => ipcRenderer.invoke('leadsghr:scraper:download-extension'),
   listEmailTemplates: () => ipcRenderer.invoke('leadsghr:email-templates:list'),
   saveEmailTemplate: (input: unknown) =>
     ipcRenderer.invoke('leadsghr:email-templates:save', emailTemplateDraftSchema.parse(input)),

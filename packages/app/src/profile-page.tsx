@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import Avatar, { genConfig } from 'react-nice-avatar'
 import {
   PREFERENCE_SECTIONS,
@@ -11,7 +11,15 @@ import {
   clampDisplaySize,
   clampFontSize,
   applyEmailVerifyChecksToPreferences,
+  matchingSearchSpeed,
+  minutesPerLocation,
+  SEARCH_TIMING_LIMITS,
+  SEARCH_TIMING_PRESETS,
+  searchTimingFrom,
+  searchTimingPreferences,
   type DesktopPreferences,
+  type SearchSpeed,
+  type SearchTiming,
 } from '@leadsghr/schemas'
 import { saveLocalAccount, type LocalAccount } from './account-data'
 import { UpdatesPanel, type UpdateState } from './updates'
@@ -66,6 +74,10 @@ function describeValue(
   if (key === 'theme')
     return value === 'dark' ? 'Dark' : value === 'system' ? 'Match Windows' : 'Light'
   if (key === 'displaySize' || key === 'fontSize') return `${value}%`
+  if (key === 'searchSpeed') return String(value).charAt(0).toUpperCase() + String(value).slice(1)
+  if (key === 'searchBreakEvery') return value ? `Every ${value} locations` : 'Off'
+  if (key === 'searchBreakMinutes') return `${value} min`
+  if (/^search.*Sec$/.test(key)) return `${value} s`
   return String(value)
 }
 
@@ -452,6 +464,17 @@ type PreferenceKey = Exclude<
   | 'theme'
   | 'displaySize'
   | 'fontSize'
+  | 'searchSpeed'
+  | 'searchListingPauseSec'
+  | 'searchScrollPauseSec'
+  | 'searchMorePlacesPauseSec'
+  | 'searchScrollRounds'
+  | 'searchPagePauseMinSec'
+  | 'searchPagePauseMaxSec'
+  | 'searchPagesPerLocation'
+  | 'searchLocationPauseSec'
+  | 'searchBreakEvery'
+  | 'searchBreakMinutes'
 >
 
 const emailVerifyCheckOptions: { key: EmailVerifyCheckKey; title: string; detail: string }[] = [
@@ -518,12 +541,19 @@ const groups: {
   },
   {
     title: 'Search sources',
-    description: 'Choose whether public Maps business listings appear in Search Results.',
+    description:
+      'Choose where each search looks for businesses. With both on, Google Maps is searched first, then Google Search, and both appear in one results table.',
     options: [
       {
         key: 'searchGoogleMaps',
         title: 'Show Google Maps listings',
         detail: 'Show public business rows found in Maps.',
+      },
+      {
+        key: 'searchGooglePlaces',
+        title: 'Show Google Search business listings',
+        detail:
+          'Also read the business list behind "More businesses" in Google Search (all of its pages). It often finds businesses Maps misses. Slower, and Google may show a captcha sooner.',
       },
     ],
   },
@@ -626,6 +656,275 @@ function ThemePreview({ theme }: { theme: 'light' | 'dark' }) {
     </span>
   )
 }
+const SPEED_OPTIONS: { value: SearchSpeed; label: string; hint: string }[] = [
+  {
+    value: 'careful',
+    label: 'Careful',
+    hint: 'Longest pauses. For big jobs or after Google has shown its check page.',
+  },
+  { value: 'normal', label: 'Normal', hint: 'Balanced pauses for everyday jobs. The default.' },
+  {
+    value: 'faster',
+    label: 'Faster',
+    hint: 'Shortest allowed pauses. Google may show its check page sooner.',
+  },
+  { value: 'custom', label: 'Custom', hint: 'Chosen automatically when you change a pause below.' },
+]
+type TimingKey = keyof SearchTiming
+
+/** A number field that accepts typing freely and saves only values inside the allowed range (clamped on leaving). */
+function TimingField({
+  value,
+  limit,
+  step,
+  unit,
+  label,
+  onCommit,
+}: {
+  value: number
+  limit: readonly [number, number]
+  step: number
+  unit: string
+  label: string
+  onCommit(next: number): void
+}) {
+  const [text, setText] = useState(String(value))
+  useEffect(() => setText(String(value)), [value])
+  const valid = (raw: string) => {
+    const number = Number(raw)
+    return raw.trim() !== '' && Number.isFinite(number) && number >= limit[0] && number <= limit[1]
+  }
+  return (
+    <span className="la-timing-field">
+      <input
+        type="number"
+        inputMode="decimal"
+        min={limit[0]}
+        max={limit[1]}
+        step={step}
+        value={text}
+        aria-label={label}
+        aria-invalid={!valid(text)}
+        onChange={(event) => {
+          const raw = event.currentTarget.value
+          setText(raw)
+          if (valid(raw)) onCommit(Number(raw))
+        }}
+        onBlur={() => {
+          const number = Number(text)
+          const next =
+            text.trim() !== '' && Number.isFinite(number)
+              ? Math.min(limit[1], Math.max(limit[0], number))
+              : value
+          setText(String(next))
+          if (next !== value) onCommit(next)
+        }}
+      />
+      {unit && <em>{unit}</em>}
+    </span>
+  )
+}
+
+/**
+ * Search timing (at the end of Preferences → Search): presets and the pauses used by LeadsGhr Scraper and the Google
+ * Search business list (packages/schemas/src/search-timing.ts). Picking a preset fills in its pauses; changing a
+ * pause picks Custom (or the preset it now matches).
+ */
+function SearchTimingSettings({
+  preferences,
+  onChange,
+}: {
+  preferences: DesktopPreferences
+  onChange(next: DesktopPreferences): void
+}) {
+  const timing = searchTimingFrom(preferences)
+  const update = (key: TimingKey, value: number) => {
+    const next = { ...timing, [key]: value }
+    if (key === 'pagePauseMinSec' && next.pagePauseMaxSec < value) next.pagePauseMaxSec = value
+    if (key === 'pagePauseMaxSec' && next.pagePauseMinSec > value) next.pagePauseMinSec = value
+    onChange({
+      ...preferences,
+      ...searchTimingPreferences(next),
+      searchSpeed: matchingSearchSpeed(next),
+    })
+  }
+  const pick = (speed: SearchSpeed) =>
+    onChange(
+      speed === 'custom'
+        ? { ...preferences, searchSpeed: 'custom' }
+        : {
+            ...preferences,
+            ...searchTimingPreferences(SEARCH_TIMING_PRESETS[speed]),
+            searchSpeed: speed,
+          },
+    )
+  const field = (key: TimingKey, unit: string, label: string, step = 1) => (
+    <TimingField
+      value={timing[key]}
+      limit={SEARCH_TIMING_LIMITS[key]}
+      step={step}
+      unit={unit}
+      label={label}
+      onCommit={(next) => update(key, next)}
+    />
+  )
+  const row = (title: string, hint: string, control: ReactNode) => (
+    <div className="la-profile-option la-timing-row">
+      <span>
+        <strong>{title}</strong>
+        <small>{hint}</small>
+      </span>
+      {control}
+    </div>
+  )
+  const range = (key: TimingKey) =>
+    `${SEARCH_TIMING_LIMITS[key][0]} to ${SEARCH_TIMING_LIMITS[key][1]}`
+  return (
+    <div className="la-timing">
+      <div className="la-timing-head">
+        <h2>Search timing</h2>
+        <p>
+          How long Google searches wait between steps, so Google is less likely to stop them. Used
+          by LeadsGhr Scraper and the Google Search business list.
+        </p>
+      </div>
+      <section className="la-profile-preference-group">
+        <div>
+          <h2>Speed</h2>
+          <p>
+            Start from a preset, then fine-tune the pauses below. Slower is less likely to be
+            stopped by Google's check page.
+          </p>
+        </div>
+        <div className="la-timing-presets" role="radiogroup" aria-label="Search speed">
+          {SPEED_OPTIONS.map((option) => {
+            const preset = option.value === 'custom' ? timing : SEARCH_TIMING_PRESETS[option.value]
+            const minutes = minutesPerLocation(preset)
+            return (
+              <label
+                key={option.value}
+                className={`la-timing-preset${preferences.searchSpeed === option.value ? ' is-selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="search-speed"
+                  checked={preferences.searchSpeed === option.value}
+                  onChange={() => pick(option.value)}
+                />
+                <span>
+                  <strong>{option.label}</strong>
+                  <small>{option.hint}</small>
+                  <b>
+                    ~{minutes < 1.95 ? minutes.toFixed(1) : Math.round(minutes)} min per location
+                  </b>
+                </span>
+              </label>
+            )
+          })}
+        </div>
+      </section>
+      <section className="la-profile-preference-group">
+        <div>
+          <h2>Scrolling</h2>
+          <p>
+            The Scraper moves down the list one business at a time, looks up its website, and saves
+            it; at the end of the list it loads more until no new businesses appear.
+          </p>
+        </div>
+        <div className="la-profile-option-list">
+          {row(
+            'Pause on each listing',
+            `${range('listingPauseSec')} seconds. Time spent on each business before moving to the next one.`,
+            field('listingPauseSec', 's', 'Pause on each listing', 0.1),
+          )}
+          {row(
+            'Pause before loading more',
+            `${range('scrollPauseSec')} seconds. At the end of the list, time for Google to load more businesses.`,
+            field('scrollPauseSec', 's', 'Pause before loading more', 0.1),
+          )}
+          {row(
+            'Pause after "More places"',
+            `${range('morePlacesPauseSec')} seconds. Used when the Scraper presses Google's More places button.`,
+            field('morePlacesPauseSec', 's', 'Pause after More places', 0.5),
+          )}
+          {row(
+            'Loads per page',
+            `${range('scrollRounds')}. How many times to load more on one page; stops earlier when two loads in a row find nothing new.`,
+            field('scrollRounds', 'max', 'Loads per page'),
+          )}
+        </div>
+      </section>
+      <section className="la-profile-preference-group">
+        <div>
+          <h2>Pages</h2>
+          <p>After a page is read, the next-page arrow is followed.</p>
+        </div>
+        <div className="la-profile-option-list">
+          {row(
+            'Pause before the next page',
+            `${range('pagePauseMinSec')} seconds. A random time between the two values, so the timing is not mechanical.`,
+            <span className="la-timing-range">
+              {field('pagePauseMinSec', 's', 'Shortest pause before the next page', 0.5)}
+              <i>to</i>
+              {field('pagePauseMaxSec', 's', 'Longest pause before the next page', 0.5)}
+            </span>,
+          )}
+          {row(
+            'Pages per location',
+            `${range('pagesPerLocation')}. Google rarely shows useful results after page 5.`,
+            field('pagesPerLocation', 'pages', 'Pages per location'),
+          )}
+        </div>
+      </section>
+      <section className="la-profile-preference-group">
+        <div>
+          <h2>Locations</h2>
+          <p>Each location opens in a new tab after the previous one is finished.</p>
+        </div>
+        <div className="la-profile-option-list">
+          {row(
+            'Pause between locations',
+            `${range('locationPauseSec')} seconds. Counted from the start of the previous location.`,
+            field('locationPauseSec', 's', 'Pause between locations', 5),
+          )}
+          {row(
+            'Longer break',
+            'Every few locations, rest longer. Set locations to 0 to turn it off.',
+            <span className="la-timing-range">
+              {field('breakEvery', 'locations', 'Longer break every how many locations')}
+              <i>rest</i>
+              {field('breakMinutes', 'min', 'Longer break minutes')}
+            </span>,
+          )}
+        </div>
+      </section>
+      <div className="la-timing-note">
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 11v5m0-8h.01" />
+        </svg>
+        <p>
+          <strong>Applies to LeadsGhr Scraper and the Google Search business list.</strong> A
+          Scraper job keeps the pauses it was sent with; change them here before you select Send to
+          LeadsGhr Scraper. The lower limits keep searches polite and cannot be set lower.{' '}
+          <button type="button" className="la-timing-link" onClick={() => pick('normal')}>
+            Reset to Normal
+          </button>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 const ZOOM_SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['Ctrl', '+'], label: 'Larger' },
   { keys: ['Ctrl', '−'], label: 'Smaller' },
@@ -1351,6 +1650,9 @@ export function ProfilePage({
                       </div>
                     </section>
                   ))}
+                {preferenceCategory === 'Search' && (
+                  <SearchTimingSettings preferences={preferences} onChange={onPreferencesChange} />
+                )}
                 <p className="la-profile-note">Preference settings are saved on this computer.</p>
                 <p className="la-profile-save-status" role="status">
                   {saveMessage}

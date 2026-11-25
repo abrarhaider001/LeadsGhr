@@ -3,6 +3,11 @@ import { test } from 'node:test'
 import {
   applyPreferencesFile,
   buildPreferencesFile,
+  clampSearchTiming,
+  matchingSearchSpeed,
+  SEARCH_TIMING_PRESETS,
+  searchTimingFrom,
+  searchTimingPreferences,
   defaultDesktopPreferences,
   desktopPreferencesSchema,
   EXPORTABLE_PREFERENCE_KEYS,
@@ -104,4 +109,48 @@ test('files without usable LeadsGhr preferences are rejected', () => {
     () => applyPreferencesFile({ preferences: {} }, current),
     /does not contain LeadsGhr settings/,
   )
+})
+
+test('search timing settings export and import, and out-of-range values are skipped', () => {
+  const careful = {
+    ...current,
+    ...searchTimingPreferences(SEARCH_TIMING_PRESETS.careful),
+    searchSpeed: 'careful' as const,
+  }
+  const file = JSON.parse(JSON.stringify(buildPreferencesFile(careful, '0.1.0')))
+  for (const key of [
+    'searchSpeed',
+    'searchScrollPauseSec',
+    'searchPagePauseMinSec',
+    'searchPagePauseMaxSec',
+    'searchLocationPauseSec',
+    'searchBreakEvery',
+    'searchBreakMinutes',
+  ])
+    assert.ok(key in file.preferences, key)
+  const imported = applyPreferencesFile(file, defaultDesktopPreferences).preferences
+  assert.equal(imported.searchSpeed, 'careful')
+  assert.deepEqual(searchTimingFrom(imported), SEARCH_TIMING_PRESETS.careful)
+  // Faster than the allowed minimum is not imported; the current value stays.
+  const tooFast = applyPreferencesFile(
+    { preferences: { searchLocationPauseSec: 5, searchScrollPauseSec: 2 } },
+    defaultDesktopPreferences,
+  )
+  assert.deepEqual(tooFast.skipped, ['searchLocationPauseSec'])
+  assert.equal(tooFast.preferences.searchLocationPauseSec, 45)
+  assert.equal(tooFast.preferences.searchScrollPauseSec, 2)
+})
+
+test('search timing presets are recognised and kept inside the limits', () => {
+  assert.equal(matchingSearchSpeed(SEARCH_TIMING_PRESETS.normal), 'normal')
+  assert.equal(matchingSearchSpeed({ ...SEARCH_TIMING_PRESETS.normal, locationPauseSec: 50 }), 'custom')
+  assert.deepEqual(searchTimingFrom(defaultDesktopPreferences), SEARCH_TIMING_PRESETS.normal)
+  const clamped = clampSearchTiming({
+    ...SEARCH_TIMING_PRESETS.faster,
+    locationPauseSec: 1,
+    pagePauseMinSec: 20,
+    pagePauseMaxSec: 10,
+  })
+  assert.equal(clamped.locationPauseSec, 30)
+  assert.equal(clamped.pagePauseMaxSec, 20)
 })

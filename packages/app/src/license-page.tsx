@@ -7,7 +7,7 @@ import {
   type LicenseView,
 } from '@leadsghr/license'
 import { useMaskedKey } from '@leadsghr/license/masked-key'
-import { BrandLogo, LicenseKeyArt, MailerMark, TrackerMark } from '@leadsghr/ui'
+import { BrandLogo, LicenseKeyArt, MailerMark, ScraperMark, TrackerMark } from '@leadsghr/ui'
 import { SplashBackground } from './splash-screen'
 
 type LicenseBridge = {
@@ -122,6 +122,8 @@ const productIcon = (product: LicenseProduct, size = 18) =>
     <MailerMark size={size} />
   ) : product === 'tracker' ? (
     <TrackerMark size={size} />
+  ) : product === 'scraper' ? (
+    <ScraperMark size={size} />
   ) : (
     desktopIcon(size)
   )

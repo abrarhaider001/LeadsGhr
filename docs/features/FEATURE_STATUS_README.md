@@ -59,6 +59,7 @@ Email Tracking is the Gmail extension documented in [Email Tracking](../EMAIL_TR
 | [G5: Compliance Center](G5-Compliance%20Center/FEATURES-G5-README.md) | Not implemented | No compliance center or suppression controls. |
 | [G6: Accounts, Billing and Plans](G6-Accounts%2C%20Billing%20and%20Plans/FEATURES-G6-README.md) | Replaced | License keys instead of accounts (no sign-up): admin-generated Supabase keys, one activation per product (desktop, Mailer, Tracker), license screen at every entry point, encrypted local storage, check at every start with 7 offline days. Billing and plans are not part of the product. |
 | [G7: Settings and Team](G7-Settings%20and%20Team/FEATURES-G7-README.md) | Partial | Local desktop preferences persist for Crawler, Search, and Email Validation, including every confidence check; team, roles and broader organisation settings are missing. |
+| [LeadsGhr Scraper](../SCRAPER_README.md) | Partial | Chrome extension that runs New Search's searches on Google Search's business list and saves results for the desktop app (Send to LeadsGhr Scraper, Scraper Results). Built and tested end to end in a test browser; Google showed its check page there, so a full run in a normal Chrome profile is still to be confirmed. Not bundled in the installer yet. |
 
 ## Separate future Chrome extension
 

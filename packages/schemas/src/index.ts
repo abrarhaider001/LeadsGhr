@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { SEARCH_SPEEDS, SEARCH_TIMING_LIMITS, SEARCH_TIMING_PRESETS } from './search-timing'
 
 export const leadSchema = z.object({
   id: z.string().optional(),
@@ -78,6 +79,8 @@ export const clampFontSize = (value: number) =>
     Math.max(FONT_SIZE_MIN, Math.round(value / FONT_SIZE_STEP) * FONT_SIZE_STEP),
   )
 
+const L = SEARCH_TIMING_LIMITS
+const N = SEARCH_TIMING_PRESETS.normal
 export const desktopPreferencesSchema = z.object({
   /** Light or dark look; `system` follows the Windows setting (Settings → Preferences → Appearance). */
   theme: z.enum(['light', 'dark', 'system']).default('light'),
@@ -92,6 +95,8 @@ export const desktopPreferencesSchema = z.object({
   crawlerConcurrentPages: z.number().int().min(1).max(8).default(2),
   showChromeDuringSearch: z.boolean(),
   searchGoogleMaps: z.boolean().default(true),
+  /** Also read Google Search's business list (the Places page behind "More businesses"); see AGENTS.md rule 5. */
+  searchGooglePlaces: z.boolean().default(false),
   useNicheKeywords: z.boolean().default(false),
   showListingsWithoutWebsite: z.boolean().default(false),
   scanPublicWebsites: z.boolean().default(false),
@@ -100,6 +105,18 @@ export const desktopPreferencesSchema = z.object({
   includePhone: z.boolean(),
   includeAddress: z.boolean(),
   includeLocation: z.boolean(),
+  /** Search timing (Preferences → Search): a preset or `custom`, and the pauses it sets (packages/schemas/src/search-timing.ts). */
+  searchSpeed: z.enum(SEARCH_SPEEDS).default('normal'),
+  searchListingPauseSec: z.number().min(L.listingPauseSec[0]).max(L.listingPauseSec[1]).default(N.listingPauseSec),
+  searchScrollPauseSec: z.number().min(L.scrollPauseSec[0]).max(L.scrollPauseSec[1]).default(N.scrollPauseSec),
+  searchMorePlacesPauseSec: z.number().min(L.morePlacesPauseSec[0]).max(L.morePlacesPauseSec[1]).default(N.morePlacesPauseSec),
+  searchScrollRounds: z.number().int().min(L.scrollRounds[0]).max(L.scrollRounds[1]).default(N.scrollRounds),
+  searchPagePauseMinSec: z.number().min(L.pagePauseMinSec[0]).max(L.pagePauseMinSec[1]).default(N.pagePauseMinSec),
+  searchPagePauseMaxSec: z.number().min(L.pagePauseMaxSec[0]).max(L.pagePauseMaxSec[1]).default(N.pagePauseMaxSec),
+  searchPagesPerLocation: z.number().int().min(L.pagesPerLocation[0]).max(L.pagesPerLocation[1]).default(N.pagesPerLocation),
+  searchLocationPauseSec: z.number().min(L.locationPauseSec[0]).max(L.locationPauseSec[1]).default(N.locationPauseSec),
+  searchBreakEvery: z.number().int().min(L.breakEvery[0]).max(L.breakEvery[1]).default(N.breakEvery),
+  searchBreakMinutes: z.number().min(L.breakMinutes[0]).max(L.breakMinutes[1]).default(N.breakMinutes),
   emailVerifyCheckSyntax: z.boolean().default(true),
   emailVerifyCheckDomain: z.boolean().default(true),
   emailVerifyCheckMx: z.boolean().default(true),
@@ -126,6 +143,7 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   crawlerConcurrentPages: 2,
   showChromeDuringSearch: true,
   searchGoogleMaps: true,
+  searchGooglePlaces: false,
   useNicheKeywords: false,
   showListingsWithoutWebsite: false,
   scanPublicWebsites: false,
@@ -134,6 +152,17 @@ export const defaultDesktopPreferences: DesktopPreferences = {
   includePhone: true,
   includeAddress: true,
   includeLocation: true,
+  searchSpeed: 'normal',
+  searchListingPauseSec: SEARCH_TIMING_PRESETS.normal.listingPauseSec,
+  searchScrollPauseSec: SEARCH_TIMING_PRESETS.normal.scrollPauseSec,
+  searchMorePlacesPauseSec: SEARCH_TIMING_PRESETS.normal.morePlacesPauseSec,
+  searchScrollRounds: SEARCH_TIMING_PRESETS.normal.scrollRounds,
+  searchPagePauseMinSec: SEARCH_TIMING_PRESETS.normal.pagePauseMinSec,
+  searchPagePauseMaxSec: SEARCH_TIMING_PRESETS.normal.pagePauseMaxSec,
+  searchPagesPerLocation: SEARCH_TIMING_PRESETS.normal.pagesPerLocation,
+  searchLocationPauseSec: SEARCH_TIMING_PRESETS.normal.locationPauseSec,
+  searchBreakEvery: SEARCH_TIMING_PRESETS.normal.breakEvery,
+  searchBreakMinutes: SEARCH_TIMING_PRESETS.normal.breakMinutes,
   emailVerifyCheckSyntax: true,
   emailVerifyCheckDomain: true,
   emailVerifyCheckMx: true,
@@ -243,6 +272,32 @@ export const preparedCrawlSearchSchema = z.object({
   query: mapsQuerySchema,
 })
 export type PreparedCrawlSearch = z.infer<typeof preparedCrawlSearchSchema>
+/**
+ * Where a result row came from. "Google Search" is the business list behind Google Search's "More businesses"
+ * (the Places page); "+ website" is added once the business's own website has been checked for emails.
+ */
+export const CRAWL_ROW_SOURCES = [
+  'Maps',
+  'Website',
+  'Maps + website',
+  'Google Search',
+  'Google Search + website',
+  'Maps + Google Search',
+  'Maps + Google Search + website',
+] as const
+export type CrawlRowSource = (typeof CRAWL_ROW_SOURCES)[number]
+/** Combines sources (for example a Maps row also found in Google Search, then its website checked) into one value. */
+export function combineSources(...sources: CrawlRowSource[]): CrawlRowSource {
+  const maps = sources.some((source) => source.startsWith('Maps'))
+  const search = sources.some((source) => source.includes('Google Search'))
+  const website = sources.some((source) => /website$/i.test(source))
+  if (!maps && !search) return 'Website'
+  const parts = [maps && 'Maps', search && 'Google Search', website && 'website'].filter(Boolean)
+  return parts.join(' + ') as CrawlRowSource
+}
+/** The source after the business's website was checked: keeps where the listing came from and adds "website". */
+export const withWebsiteSource = (source: CrawlRowSource): CrawlRowSource =>
+  combineSources(source, 'Website')
 export const crawlRowSchema = z.object({
   id: z.string().min(1).max(500),
   niche: z.string().max(120).optional(),
@@ -252,7 +307,7 @@ export const crawlRowSchema = z.object({
   location: z.string().max(200),
   address: z.string().max(1000),
   mapsUrl: z.string().max(2000),
-  source: z.enum(['Maps', 'Website', 'Maps + website']),
+  source: z.enum(CRAWL_ROW_SOURCES),
   emails: z.array(z.string()).max(1000),
   emailsScanned: z.boolean(),
 })
@@ -378,3 +433,5 @@ export const emailVerifyJobIdSchema = z.string().uuid()
 
 export * from './preferences-file'
 export * from './email-templates'
+export * from './scraper'
+export * from './search-timing'

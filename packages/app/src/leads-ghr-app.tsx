@@ -9,6 +9,7 @@ import { DashboardPage } from './dashboard-page'
 import { NicheLibraryPage } from './niche-library-page'
 import { PageHeader } from './page-header'
 import { SearchSetupPage } from './search-setup-page'
+import { ScraperResultsPage } from './scraper-results-page'
 import { SearchResultsPage } from './search-results-page'
 import { ProfilePage } from './profile-page'
 import {
@@ -46,20 +47,23 @@ import {
   syncProfileFromDisk,
 } from './account-data'
 import { EmailSendingPage } from './email-sending-page'
+import { ScraperExtensionPage } from './scraper-extension-page'
 import { EmailTemplatesPage } from './email-templates-page'
 import { UpdateBanner, useAppVersion, useUpdateState } from './updates'
 import { LicenseScreen, LicenseSettingsPage, loadLicense } from './license-page'
 import type { LicenseView } from '@leadsghr/license'
 
 /** Sidebar tabs. Each icon is a NavIcon in the duotone line style (packages/ui/src/nav-icons.tsx; AGENTS.md, "Sidebar icons"). */
-const navigation: { label: string; icon: NavIconName }[] = [
+const navigation: { label: string; icon: NavIconName; text?: string }[] = [
   { label: 'Dashboard', icon: 'dashboard' },
   { label: 'Pipeline', icon: 'pipeline' },
   { label: 'Crawler', icon: 'crawler' },
   { label: 'New Search', icon: 'newSearch' },
   { label: 'Niche Library', icon: 'nicheLibrary' },
   { label: 'Email', icon: 'email' },
-  { label: 'Extensions', icon: 'extensions' },
+  { label: 'Email Sending', icon: 'emailSending', text: 'LeadsGhr Mailer' },
+  { label: 'Email Tracking', icon: 'emailTracking', text: 'LeadsGhr Tracker' },
+  { label: 'LeadsGhr Scraper', icon: 'scraper' },
   { label: 'Leads', icon: 'leads' },
   { label: 'Runs', icon: 'runs' },
   { label: 'Profiles', icon: 'profiles' },
@@ -67,6 +71,11 @@ const navigation: { label: string; icon: NavIconName }[] = [
   { label: 'Compliance', icon: 'compliance' },
   { label: 'Settings', icon: 'settings' },
 ]
+/** The Chrome extension pages are named after their extensions in the sidebar and the page header. */
+const pageTitles: Record<string, string> = {
+  'Email Sending': 'LeadsGhr Mailer',
+  'Email Tracking': 'LeadsGhr Tracker',
+}
 const descriptions: Record<string, string> = {
   Dashboard: 'Real businesses. Public data. More opportunities.',
   Pipeline: 'Create, monitor, and resume your local business crawls.',
@@ -83,6 +92,8 @@ const descriptions: Record<string, string> = {
   'Email Templates': 'Write plain or HTML messages, preview them, and use them in LeadsGhr Mailer.',
   'Email Tracking': 'Review delivery and engagement for sent emails.',
   'Crawl Results': 'Review businesses found across the selected niche and locations.',
+  'LeadsGhr Scraper': 'Download the Chrome extension that searches Google Search business listings for you.',
+  'Scraper Results': 'Businesses found by LeadsGhr Scraper on Google Search, saved as they arrive.',
   Leads: 'Review businesses and contacts saved on this computer.',
   Runs: 'Review crawl progress, saved results, and selected state ranges.',
   Profiles: 'Organize reusable search settings and extraction rules.',
@@ -119,6 +130,7 @@ export function LeadsGhrApp() {
   const exportAgainRef = useRef<(() => void) | null>(null)
   const downloadMailerRef = useRef<(() => void) | null>(null)
   const downloadTrackerRef = useRef<(() => void) | null>(null)
+  const downloadScraperRef = useRef<(() => void) | null>(null)
   const [crawlExport, setCrawlExport] = useState<{
     fileName: string
     filePath: string
@@ -133,7 +145,6 @@ export function LeadsGhrApp() {
     'niches',
   )
   const [settingsExpanded, setSettingsExpanded] = useState(false)
-  const [extensionsExpanded, setExtensionsExpanded] = useState(false)
   const [emailExpanded, setEmailExpanded] = useState(false)
   const [splashComplete, setSplashComplete] = useState(false)
   const [leads, setLeads] = useState<LocalLead[]>([])
@@ -143,6 +154,8 @@ export function LeadsGhrApp() {
   const navSearchRef = useRef<HTMLInputElement>(null)
   const [filter, setFilter] = useState('all')
   const [searchCriteria, setSearchCriteria] = useState<SearchCriteria | null>(null)
+  // A Scraper job opened from the job list on the LeadsGhr Scraper page (Scraper Results then shows it without sending).
+  const [openScraperJob, setOpenScraperJob] = useState<{ jobId: string; runId: string; searches: number } | null>(null)
   const [pipelineDetails, setPipelineDetails] = useState<{
     name: string
     provider: PipelineProvider
@@ -222,6 +235,11 @@ export function LeadsGhrApp() {
       active = false
     }
   }, [])
+
+  // Stable, so the Scraper results page does not resend its job or restart its sync when the app re-renders.
+  // refreshCrawlHistory only uses state setters, so the first version stays correct.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const refreshScraperHistory = useCallback(() => void refreshCrawlHistory(), [])
 
   async function refreshCrawlHistory() {
     const desktop = crawlRunBridge()
@@ -360,77 +378,75 @@ export function LeadsGhrApp() {
         </label>
         <nav className="la-nav" aria-label="Main navigation">
           {navigation
-            .filter(({ label }) => {
+            .filter(({ label, text }) => {
               const query = navQuery.trim().toLowerCase()
               if (!query) return true
-              if (label.toLowerCase().includes(query)) return true
+              if (label.toLowerCase().includes(query) || text?.toLowerCase().includes(query)) return true
               if (label === 'Settings' && 'preferences'.includes(query)) return true
               const children =
-                label === 'Extensions'
-                  ? ['email sending', 'email tracking']
-                  : label === 'Email'
-                    ? ['email filtering', 'email validation', 'email spam check', 'email templates']
-                    : []
+                label === 'Email'
+                  ? ['email filtering', 'email validation', 'email spam check', 'email templates']
+                  : []
               return children.some((name) => name.includes(query))
             })
-            .map(({ label, icon }) => (
+            .map(({ label, icon, text }) => (
               <div key={label} className="la-nav-item">
                 {!navQuery &&
-                  (label === 'Dashboard' || label === 'Crawler' || label === 'Leads') && (
+                  (label === 'Dashboard' ||
+                    label === 'Crawler' ||
+                    label === 'Email Sending' ||
+                    label === 'Leads') && (
                     <span className="la-nav-group">
                       {label === 'Dashboard'
                         ? 'MAIN'
                         : label === 'Crawler'
                           ? 'DISCOVERY TOOLS'
-                          : 'WORKSPACE'}
+                          : label === 'Email Sending'
+                            ? 'EXTENSIONS'
+                            : 'WORKSPACE'}
                     </span>
                   )}
                 <button
                   type="button"
                   aria-current={
                     label !== 'Settings' &&
-                    label !== 'Extensions' &&
                     label !== 'Email' &&
                     (page === label ||
                       ((page === 'Crawl Results' ||
                         page === 'New Pipeline' ||
                         page === 'Pipeline Export') &&
-                        label === searchOrigin))
+                        label === searchOrigin) ||
+                      (page === 'Scraper Results' &&
+                        label === (openScraperJob ? 'LeadsGhr Scraper' : 'New Search')))
                       ? 'page'
                       : undefined
                   }
                   aria-expanded={
                     label === 'Settings'
                       ? settingsExpanded
-                      : label === 'Extensions'
-                        ? extensionsExpanded
-                        : label === 'Email'
-                          ? emailExpanded
-                          : undefined
+                      : label === 'Email'
+                        ? emailExpanded
+                        : undefined
                   }
                   aria-controls={
                     label === 'Settings'
                       ? 'la-settings-submenu'
-                      : label === 'Extensions'
-                        ? 'la-extensions-submenu'
-                        : label === 'Email'
-                          ? 'la-email-submenu'
-                          : undefined
+                      : label === 'Email'
+                        ? 'la-email-submenu'
+                        : undefined
                   }
                   onClick={() =>
                     label === 'Settings'
                       ? setSettingsExpanded((current) => !current)
-                      : label === 'Extensions'
-                        ? setExtensionsExpanded((current) => !current)
-                        : label === 'Email'
-                          ? setEmailExpanded((current) => !current)
-                          : void showPage(label)
+                      : label === 'Email'
+                        ? setEmailExpanded((current) => !current)
+                        : void showPage(label)
                   }
-                  title={label}
+                  title={text ?? label}
                 >
                   <NavIcon name={icon} size={18} />
-                  <span>{label}</span>
-                  {(label === 'Settings' || label === 'Extensions' || label === 'Email') && (
+                  <span>{text ?? label}</span>
+                  {(label === 'Settings' || label === 'Email') && (
                     <svg
                       className="la-nav-caret"
                       width="14"
@@ -506,34 +522,6 @@ export function LeadsGhrApp() {
                     </div>
                   </div>
                 )}
-                {label === 'Extensions' && (
-                  <div
-                    className="la-sidebar-settings-collapse"
-                    data-open={Boolean(extensionsExpanded || navQuery.trim())}
-                    inert={!(extensionsExpanded || navQuery.trim())}
-                  >
-                    <div className="la-sidebar-settings-clip">
-                      <div className="la-sidebar-settings-children" id="la-extensions-submenu">
-                        {(
-                          [
-                            ['Email Sending', 'emailSending'],
-                            ['Email Tracking', 'emailTracking'],
-                          ] as const
-                        ).map(([child, childIcon]) => (
-                          <button
-                            key={child}
-                            type="button"
-                            aria-current={page === child ? 'page' : undefined}
-                            onClick={() => void showPage(child)}
-                          >
-                            <NavIcon name={childIcon} size={16} />
-                            {child}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
         </nav>
@@ -557,7 +545,7 @@ export function LeadsGhrApp() {
       </aside>
       <main className="la-main">
         <PageHeader
-          title={page === 'New Search' && searchStep === 'locations' ? 'Location' : page}
+          title={page === 'New Search' && searchStep === 'locations' ? 'Location' : (pageTitles[page] ?? page)}
           subtitle={
             page === 'New Search' && searchStep === 'locations'
               ? 'Choose locations from the selected states.'
@@ -593,6 +581,10 @@ export function LeadsGhrApp() {
               </Button>
             ) : page === 'Email Tracking' ? (
               <Button type="button" onClick={() => downloadTrackerRef.current?.()}>
+                <Icon name="download" size={16} /> Download extension ZIP
+              </Button>
+            ) : page === 'LeadsGhr Scraper' ? (
+              <Button type="button" onClick={() => downloadScraperRef.current?.()}>
                 <Icon name="download" size={16} /> Download extension ZIP
               </Button>
             ) : undefined
@@ -634,6 +626,14 @@ export function LeadsGhrApp() {
             <EmailSpamEnginePage />
           ) : page === 'Email Sending' ? (
             <EmailSendingPage downloadRef={downloadMailerRef} />
+          ) : page === 'LeadsGhr Scraper' ? (
+            <ScraperExtensionPage
+              downloadRef={downloadScraperRef}
+              onOpenJob={(job) => {
+                setOpenScraperJob(job)
+                setPage('Scraper Results')
+              }}
+            />
           ) : page === 'Email Templates' ? (
             <EmailTemplatesPage />
           ) : page === 'Email Tracking' ? (
@@ -674,6 +674,31 @@ export function LeadsGhrApp() {
                 setSearchCriteria(criteria)
                 setPage('Crawl Results')
               }}
+              onSendToScraper={
+                page === 'New Search'
+                  ? (criteria) => {
+                      setOpenScraperJob(null)
+                      setSearchCriteria(criteria)
+                      setPage('Scraper Results')
+                    }
+                  : undefined
+              }
+            />
+          ) : page === 'Scraper Results' && openScraperJob ? (
+            <ScraperResultsPage
+              key={openScraperJob.jobId}
+              existing={openScraperJob}
+              preferences={preferences}
+              backLabel="LeadsGhr Scraper"
+              onBack={() => void showPage('LeadsGhr Scraper')}
+              onSaved={refreshScraperHistory}
+            />
+          ) : page === 'Scraper Results' && searchCriteria ? (
+            <ScraperResultsPage
+              criteria={searchCriteria}
+              preferences={preferences}
+              onBack={() => void showPage('New Search')}
+              onSaved={refreshScraperHistory}
             />
           ) : page === 'Crawl Results' && searchCriteria ? (
             <SearchResultsPage

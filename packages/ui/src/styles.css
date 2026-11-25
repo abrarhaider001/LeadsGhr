@@ -4510,7 +4510,8 @@ body {
 }
 .la-maps-table th:first-child,
 .la-maps-table td:first-child {
-  width: 45px;
+  /* Room for four-digit row numbers (1000+ results) after the cell padding. */
+  width: 64px;
 }
 .la-maps-table th,
 .la-maps-table td {
@@ -7713,21 +7714,26 @@ a {
 /* Preferences: a settings menu beside the main sidebar, like a two-level settings page. */
 .la-main:has(.la-pref-layout) .la-content {
   padding: 0;
+  /* The settings menu stays in place; only the settings beside it scroll (.la-pref-main). */
+  overflow: hidden;
 }
 .la-main:has(.la-pref-layout) .la-profile {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   max-width: none;
+  min-height: 0;
 }
 .la-pref-layout {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: 236px minmax(0, 1fr);
-  min-height: 100vh;
+  min-height: 0;
   background: var(--ui-color-surface);
 }
 .la-pref-nav {
-  position: sticky;
-  top: 0;
-  align-self: start;
-  height: 100vh;
+  align-self: stretch;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--ui-space-5-5) var(--ui-space-3);
   border-right: 1px solid var(--ui-color-border);
@@ -7794,8 +7800,12 @@ a {
 }
 .la-pref-main {
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-color-border-strong) transparent;
 }
 .la-pref-head {
   padding: var(--ui-space-5) var(--ui-space-8) var(--ui-space-4);
@@ -7821,8 +7831,17 @@ a {
   .la-pref-layout {
     grid-template-columns: 1fr;
   }
+  /* Narrow windows: the menu sits above the settings and the whole page scrolls. */
+  .la-main:has(.la-pref-layout) .la-content {
+    overflow: auto;
+  }
+  .la-pref-layout {
+    flex: none;
+  }
+  .la-pref-main {
+    overflow: visible;
+  }
   .la-pref-nav {
-    position: static;
     height: auto;
     border-right: 0;
     border-bottom: 1px solid var(--ui-color-border);
@@ -9140,3 +9159,289 @@ a {
   }
 }
 
+/* Search Results: the search box in the table toolbar (same look as the Leads search) and the Source column. */
+.la-result-table-toolbar .la-result-search {
+  flex: 0 1 360px;
+  min-height: var(--ui-control-height-md);
+  margin-right: auto;
+}
+/* Scraper Results: the search box sits right before Open data folder and Export CSV. */
+.la-scraper-results .la-result-table-toolbar .la-result-search {
+  margin-right: 0;
+  margin-left: auto;
+}
+.la-result-source {
+  white-space: nowrap;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+
+/* New Search: "Send to LeadsGhr Scraper" beside "Search contractors". */
+.la-search-start .la-search-scraper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-2);
+  border: var(--ui-border);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+}
+.la-search-start .la-search-scraper:hover:not(:disabled) {
+  background: var(--ui-color-surface-muted);
+  border-color: var(--ui-color-border-strong);
+  color: var(--ui-color-text);
+}
+
+/* Scraper Results: the run filled by LeadsGhr Scraper's result files. */
+.la-scraper-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ui-space-3);
+  margin-bottom: var(--ui-space-3);
+}
+.la-scraper-back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  padding: var(--ui-space-1-5) var(--ui-space-2-5);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+  font-size: var(--ui-text-sm);
+  cursor: pointer;
+}
+.la-scraper-back svg {
+  transform: rotate(180deg);
+}
+.la-scraper-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  padding: var(--ui-space-1) var(--ui-space-3);
+  border-radius: var(--ui-radius-full);
+  background: var(--ui-color-primary-soft);
+  color: var(--ui-color-primary);
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-scraper-state.is-warning {
+  background: var(--ui-color-warning-soft);
+  color: var(--ui-color-warning);
+}
+.la-scraper-state.is-done {
+  background: var(--ui-color-success-soft);
+  color: var(--ui-color-success);
+}
+.la-scraper-state.is-idle {
+  background: var(--ui-color-surface-muted);
+  color: var(--ui-color-text-secondary);
+}
+.la-scraper-error {
+  color: var(--ui-color-danger);
+}
+.la-scraper-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  min-height: var(--ui-control-height-sm);
+  padding: 0 var(--ui-space-3);
+  border: var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+  cursor: pointer;
+}
+.la-scraper-action:hover:not(:disabled) {
+  background: var(--ui-color-surface-muted);
+}
+.la-scraper-action:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Preferences → Search → Search timing (presets, pause fields, and the note). */
+.la-timing-head {
+  margin: var(--ui-space-6) 0 var(--ui-space-2);
+  padding-top: var(--ui-space-5);
+  border-top: 1px solid var(--ui-color-border);
+}
+.la-timing-head h2 {
+  margin: 0;
+  color: var(--ui-color-text);
+  font-size: var(--ui-text-lg);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-timing-head p {
+  margin: var(--ui-space-1) 0 0;
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-sm);
+}
+.la-timing-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ui-space-3);
+}
+.la-timing-preset {
+  display: flex;
+  gap: var(--ui-space-2);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-surface);
+  cursor: pointer;
+}
+.la-timing-preset:hover {
+  border-color: var(--ui-color-border-strong);
+}
+.la-timing-preset input {
+  margin-top: var(--ui-space-1);
+  accent-color: var(--ui-color-primary);
+}
+.la-timing-preset > span {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-1);
+}
+.la-timing-preset strong {
+  color: var(--ui-color-text);
+  font-size: var(--ui-text-base);
+}
+.la-timing-preset small {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+  line-height: 1.45;
+}
+.la-timing-preset b {
+  margin-top: auto;
+  padding-top: var(--ui-space-1);
+  color: var(--ui-color-primary);
+  font-size: var(--ui-text-xs);
+  font-weight: var(--ui-weight-semibold);
+}
+.la-timing-preset.is-selected {
+  border-color: var(--ui-color-primary);
+  background: var(--ui-color-primary-soft);
+}
+.la-profile-option.la-timing-row {
+  cursor: default;
+}
+.la-timing-row > span:first-child {
+  flex: 1;
+  min-width: 0;
+}
+.la-timing-field,
+.la-timing-range,
+.la-profile-option > .la-timing-field,
+.la-profile-option > .la-timing-range {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--ui-space-2);
+}
+.la-timing-range > i {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-sm);
+  font-style: normal;
+}
+.la-timing-field input {
+  /* Same as the other number fields in Preferences (.la-profile-concurrency-option input). */
+  width: 72px;
+  height: var(--ui-control-height-md);
+  padding: 0 var(--ui-space-2);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-field-radius);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font-size: var(--ui-text-sm);
+  font-weight: var(--ui-weight-semibold);
+  text-align: center;
+  cursor: text;
+}
+.la-timing-field input:focus {
+  border-color: var(--ui-color-primary);
+  outline: none;
+}
+.la-timing-field input[aria-invalid='true'] {
+  border-color: var(--ui-color-danger);
+}
+.la-timing-field em {
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-sm);
+  font-style: normal;
+}
+/* Single fields line up: the unit column has one width ("locations" is the longest unit). */
+.la-profile-option > .la-timing-field em {
+  min-width: 40px;
+}
+.la-timing-note {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ui-space-2);
+  margin-top: var(--ui-space-4);
+  padding: var(--ui-space-3) var(--ui-space-4);
+  border: 1px solid var(--ui-color-border);
+  border-radius: var(--ui-radius-lg);
+  background: var(--ui-color-surface);
+  color: var(--ui-color-text-secondary);
+}
+.la-timing-note svg {
+  flex: none;
+  margin-top: var(--ui-space-1);
+}
+.la-timing-note p {
+  margin: 0;
+  font-size: var(--ui-text-sm);
+  line-height: 1.5;
+}
+.la-timing-note strong {
+  color: var(--ui-color-text);
+}
+.la-timing-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ui-color-primary);
+  font-weight: var(--ui-weight-semibold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+@media (max-width: 900px) {
+  .la-timing-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .la-profile-option.la-timing-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* LeadsGhr Scraper page: the job list under the setup steps. */
+.la-scraper-jobs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ui-space-3);
+}
+.la-scraper-jobs-table td {
+  vertical-align: middle;
+}
+.la-scraper-jobs-table td strong {
+  display: block;
+  max-width: 360px;
+}
+.la-scraper-jobs-date,
+.la-scraper-jobs-pending {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-1-5);
+  margin-top: var(--ui-space-1);
+  color: var(--ui-color-text-secondary);
+  font-size: var(--ui-text-xs);
+}
+.la-scraper-jobs-table td:last-child {
+  text-align: right;
+  white-space: nowrap;
+}

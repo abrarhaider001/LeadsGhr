@@ -5,7 +5,12 @@ import { randomUUID } from 'node:crypto'
 import { lookup } from 'node:dns/promises'
 import { discoverPage, extractContacts, extractRenderedHtmlEmails } from '@leadsghr/extract'
 import type { HttpAdapter } from '@leadsghr/platform'
-import { crawlRunIdSchema, crawlRunRowInputSchema, type CrawlRow } from '@leadsghr/schemas'
+import {
+  crawlRunIdSchema,
+  crawlRunRowInputSchema,
+  withWebsiteSource,
+  type CrawlRow,
+} from '@leadsghr/schemas'
 import type { createCrawlRunStore } from './crawl-runs'
 import { publicIp } from './adapters'
 
@@ -376,7 +381,7 @@ export function registerPipelinePages(
           ...row,
           emails: [...new Set([...row.emails, ...emails])].slice(0, 1000),
           emailsScanned: true,
-          source: 'Maps + website',
+          source: withWebsiteSource(row.source),
         },
       })
     }

@@ -6,6 +6,7 @@ The source is the 90-page original "LeadAtlas Complete Specification" (version 3
 
 - [Feature implementation status](features/FEATURE_STATUS_README.md)
 - [Email Sending: LeadsGhr Mailer extension](EMAIL_SENDING_README.md)
+- [LeadsGhr Scraper: Google Search business list extension](SCRAPER_README.md)
 
 - [Crawler test page](crawler/CRAWLER_README.md)
 - [Email Tracking local prototype](EMAIL_TRACKING_README.md)

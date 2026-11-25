@@ -7,6 +7,7 @@ import { crawlRowsToCsv } from '@leadsghr/export'
 import { leadsGhrExportsDirectory } from './paths'
 import { filterEmails } from '@leadsghr/quality'
 import {
+  combineSources,
   createCrawlRunSchema,
   crawlRunIdSchema,
   crawlRunProgressSchema,
@@ -113,7 +114,8 @@ export function createCrawlRunStore(db: Database.Database) {
     create(input: CreateCrawlRun) {
       const run = createCrawlRunSchema.parse(input)
       const id = randomUUID()
-      if (run.provider !== 'google-maps')
+      // google-maps: the desktop Maps search; google: Google Search's business list read by LeadsGhr Scraper.
+      if (run.provider !== 'google-maps' && run.provider !== 'google')
         throw new Error(`${run.provider} is not available for automated public crawling.`)
       db.prepare(
         'INSERT INTO crawl_runs (id,name,provider,kind,criteria_json,preferences_json,searches_json,state_start_number,state_end_number,started_at,status,next_query_index) VALUES (?,?,?,?,?,?,?,?,?,?,?,0)',
@@ -195,9 +197,13 @@ export function createCrawlRunStore(db: Database.Database) {
       const merged: CrawlRow = previous
         ? {
             ...row,
+            // A later save without a website (or phone or address) never erases one already known.
+            website: row.website || previous.website,
+            phone: row.phone || previous.phone,
+            address: row.address || previous.address,
             emails: [...new Set([...previous.emails, ...row.emails])].slice(0, 1000),
             emailsScanned: previous.emailsScanned || row.emailsScanned,
-            source: previous.emailsScanned ? previous.source : row.source,
+            source: combineSources(previous.source, row.source),
           }
         : row
       db.prepare(

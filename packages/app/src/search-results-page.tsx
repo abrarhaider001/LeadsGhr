@@ -11,7 +11,7 @@ import { getNichePack } from './niche-library-data'
 import { crawlRunBridge, type PipelinePage } from './crawl-run-bridge'
 import locationData from '../data/us-states-locations.json'
 import { CustomSelect } from './custom-select'
-import { Icon, Table } from '@leadsghr/ui'
+import { EmptyState, Icon, Table } from '@leadsghr/ui'
 import { FaPause, FaPlay, FaStop } from 'react-icons/fa'
 import { MdOutlineVisibility } from 'react-icons/md'
 import { PipelineTimeline } from './pipeline-timeline'
@@ -32,7 +32,40 @@ type MapsBridge = {
 }
 const mapsBridge = () => (window as Window & { leadsGhrDesktop?: MapsBridge }).leadsGhrDesktop
 
-type PreparedSearch = { niche: string; term: string; place: string; query: string }
+export type PreparedSearch = { niche: string; term: string; place: string; query: string }
+
+/** One search per niche term and place: `<term> in <place>` (niche names, or every Niche Library term when on). */
+export function prepareSearches(criteria: SearchCriteria, useNicheKeywords: boolean): PreparedSearch[] {
+  const locationsByState = new Map(
+    criteria.selectedStates.map((state) => [state, [] as string[]]),
+  )
+  for (const place of criteria.selectedLocations) {
+    const state = place.slice(place.lastIndexOf(', ') + 2)
+    locationsByState.get(state)?.push(place)
+  }
+  const seen = new Set<string>()
+  return criteria.selectedNiches.flatMap((niche) =>
+    (useNicheKeywords ? getNichePack(niche, criteria).searchTerms : [niche]).flatMap(
+      (term) =>
+        criteria.selectedStates.flatMap((state) =>
+          (locationsByState.get(state) ?? []).flatMap((place) => {
+            const key = `${term.toLocaleLowerCase()}|${place.toLocaleLowerCase()}`
+            if (seen.has(key)) return []
+            seen.add(key)
+            return [{ niche, term, place, query: `${term} in ${place}` }]
+          }),
+        ),
+    ),
+  )
+}
+
+/** The first and last selected state's position in the location list (stored with every run). */
+export function stateRange(criteria: SearchCriteria): { stateStartNumber: number; stateEndNumber: number } {
+  const numbers = criteria.selectedStates
+    .map((state) => locationData.states.findIndex((item) => item.name === state) + 1)
+    .filter((number) => number > 0)
+  return { stateStartNumber: Math.min(...numbers), stateEndNumber: Math.max(...numbers) }
+}
 type RunPhase = 'running' | 'pausing' | 'paused' | 'stopped' | 'completed' | 'error'
 
 /** Maps errors that affect every search, so the run stops (with its reason) instead of skipping the location. */
@@ -72,6 +105,7 @@ export function SearchResultsPage({
   const [phase, setPhase] = useState<RunPhase>('running')
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(50)
+  const [resultQuery, setResultQuery] = useState('')
   const [runId, setRunId] = useState<string | null>(null)
   const [crawlRunId, setCrawlRunId] = useState<string | null>(initialRun?.id ?? null)
   const [lastExport, setLastExport] = useState<CrawlExport | null>(null)
@@ -94,34 +128,26 @@ export function SearchResultsPage({
   onSavedRef.current = onSaved
   const onFinishedRef = useRef(onFinished)
   onFinishedRef.current = onFinished
-  const searches = useMemo<PreparedSearch[]>(() => {
-    if (initialRun) return initialRun.searches
-    const locationsByState = new Map(
-      criteria.selectedStates.map((state) => [state, [] as string[]]),
-    )
-    for (const place of criteria.selectedLocations) {
-      const state = place.slice(place.lastIndexOf(', ') + 2)
-      locationsByState.get(state)?.push(place)
-    }
-    const seen = new Set<string>()
-    return criteria.selectedNiches.flatMap((niche) =>
-      (preferences.useNicheKeywords ? getNichePack(niche, criteria).searchTerms : [niche]).flatMap(
-        (term) =>
-          criteria.selectedStates.flatMap((state) =>
-            (locationsByState.get(state) ?? []).flatMap((place) => {
-              const key = `${term.toLocaleLowerCase()}|${place.toLocaleLowerCase()}`
-              if (seen.has(key)) return []
-              seen.add(key)
-              return [{ niche, term, place, query: `${term} in ${place}` }]
-            }),
-          ),
-      ),
-    )
-  }, [criteria, preferences.useNicheKeywords, initialRun])
-  const pageCount = Math.max(1, Math.ceil(rows.length / perPage))
+  const searches = useMemo<PreparedSearch[]>(
+    () => initialRun?.searches ?? prepareSearches(criteria, preferences.useNicheKeywords),
+    [criteria, preferences.useNicheKeywords, initialRun],
+  )
+  // The search box above the table filters the results by any shown detail (name, website, phone, place,
+  // address, source, or email); paging and counts follow the filtered list.
+  const filteredRows = useMemo(() => {
+    const words = resultQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
+    if (!words.length) return rows
+    return rows.filter((row) => {
+      const text = [row.name, row.website, row.phone, row.location, row.address, row.source, row.niche ?? '', ...row.emails]
+        .join(' ')
+        .toLocaleLowerCase()
+      return words.every((word) => text.includes(word))
+    })
+  }, [rows, resultQuery])
+  const pageCount = Math.max(1, Math.ceil(filteredRows.length / perPage))
   const currentPage = Math.min(page, pageCount)
   const pageStart = (currentPage - 1) * perPage
-  const visibleRows = rows.slice(pageStart, pageStart + perPage)
+  const visibleRows = filteredRows.slice(pageStart, pageStart + perPage)
   const firstPageButton = Math.max(1, Math.min(currentPage - 2, pageCount - 4))
   const pageButtons = Array.from(
     { length: Math.min(5, pageCount) },
@@ -803,12 +829,27 @@ export function SearchResultsPage({
             <>
               <div className="la-result-table-toolbar">
                 <span>
-                  {rows.length.toLocaleString()} {rows.length === 1 ? 'result' : 'results'}
+                  {resultQuery.trim()
+                    ? `${filteredRows.length.toLocaleString()} of ${rows.length.toLocaleString()} results match`
+                    : `${rows.length.toLocaleString()} ${rows.length === 1 ? 'result' : 'results'}`}
                 </span>
+                <label className="la-records-search la-result-search">
+                  <Icon name="search" size={16} />
+                  <input
+                    type="search"
+                    value={resultQuery}
+                    onChange={(event) => {
+                      setResultQuery(event.target.value)
+                      setPage(1)
+                    }}
+                    placeholder="Search results: name, website, phone, address..."
+                    aria-label="Search the results table"
+                  />
+                </label>
                 <nav className="la-result-pagination" aria-label="Search result pages">
                   <span>
-                    {rows.length
-                      ? `${pageStart + 1}-${Math.min(pageStart + perPage, rows.length)} of ${rows.length.toLocaleString()}`
+                    {filteredRows.length
+                      ? `${pageStart + 1}-${Math.min(pageStart + perPage, filteredRows.length)} of ${filteredRows.length.toLocaleString()}`
                       : '0 results'}
                   </span>
                   <button
@@ -941,7 +982,31 @@ export function SearchResultsPage({
                           },
                         ]
                       : []),
+                    {
+                      field: 'source',
+                      header: 'Source',
+                      cell: (row: (typeof visibleRows)[number]) => (
+                        <span className="la-result-source">{row.source}</span>
+                      ),
+                    },
                   ]}
+                  empty={
+                    rows.length > 0 ? (
+                      <EmptyState
+                        title="No matching results"
+                        description="No result matches this search. Clear the search box to see every result."
+                      />
+                    ) : (
+                      <EmptyState
+                        title={isActive ? 'Searching for businesses' : 'No results found'}
+                        description={
+                          isActive
+                            ? 'Public result cards will appear here as they load.'
+                            : 'Try another niche or location to find public business listings.'
+                        }
+                      />
+                    )
+                  }
                 />
               </div>
             </>
